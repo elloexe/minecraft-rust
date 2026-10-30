@@ -1,76 +1,109 @@
-name: build
-
+name: checks
+# verify: formatting, lint and the Rust tests for the game workspace, on every pull request and every push to main.
+# launcher: the launcher is its own Cargo workspace (launcher/Cargo.toml), so verify never builds it; it is checked
+# here. Upstream Horizon also runs ~290 differential parity harnesses against a real Minecraft install on a
+# self-hosted runner; those are not wired up here because they need the maintainer's own game files.
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
-
 permissions:
-  contents: write
-
+  contents: read
+concurrency:
+  # A new push to a pull request replaces its running checks; main's runs all finish (releases follow them).
+  group: checks-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
-  CARGO_TERM_COLOR: always
+  # Test runs never reach the telemetry server: no live-count ping, no uploads (docs/telemetry.md).
+  HORIZON_TELEMETRY_URL: "off"
 
 jobs:
-  test:
-    name: test (ubuntu)
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Install Linux build deps
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Does this pull request need Rust checks?
+        if: github.event_name == 'pull_request'
+        id: rust
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 tools/ci/rust_changes.py "$BASE_SHA" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+      - name: Keep game artifacts out of Git
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libxkbcommon-dev libwayland-dev libxcb1-dev \
-            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libgl1-mesa-dev
-      - run: cargo test --release --verbose
-      - run: cargo build --release
-
-  build:
-    name: build (${{ matrix.os }})
-    needs: test
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            suffix: ".exe"
-            label: windows
-          - os: macos-latest
-            suffix: ""
-            label: macos
-          - os: ubuntu-latest
-            suffix: ""
-            label: linux
-    runs-on: ${{ matrix.os }}
+          python tools/check_public_tree.py
+          python tools/check_public_tree.py --history
+      - name: Test offline research tooling
+        run: python -m unittest discover -s tests -v
+      - name: Install Rust toolchain and the ALSA and udev headers the client links against
+        if: steps.rust.outputs.required != 'false'
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+      # Dependencies and the workspace's own build, saved from main's runs (pull requests read main's cache).
+      - uses: Swatinem/rust-cache@v2
+        if: steps.rust.outputs.required != 'false'
+        with:
+          shared-key: verify
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Check formatting and lint
+        if: steps.rust.outputs.required != 'false'
+        run: |
+          cargo +stable fmt --all -- --check
+          cargo +stable clippy --workspace --all-targets -- -D warnings
+          # The server build (released as horizon-engine): the game without sound or controllers.
+          cargo +stable clippy -p horizon-client --all-targets --no-default-features -- -D warnings
+      # Libraries, binaries and integration tests, then doc tests: not the ~275 examples, which clippy above already
+      # type-checks and the parity job builds and runs (they were most of this step's build and link time).
+      - name: Test Rust core and voxel kernel correctness
+        if: steps.rust.outputs.required != 'false'
+        run: |
+          cargo +stable test --workspace --lib --bins --tests
+          # The full content-root tests (#[ignore]d: minutes each on a laptop). The same build as above; they need the
+          # prepared vanilla data, so without it they pass at once.
+          cargo +stable test --workspace --lib mod_content::tests:: -- --ignored
+          cargo +stable test --workspace --doc
+  # The launcher is its own workspace (launcher/Cargo.toml), so verify's cargo runs never build it. A pull request that
+  # changes it or a crate it builds is checked here, and so is every push to main: two pull requests can each pass
+  # alone and break it together (#2059 and the registry ratings did, 2026-10-26).
+  launcher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+        with:
+          fetch-depth: 0
+      - name: Does this pull request change the launcher or a crate it builds?
+        if: github.event_name == 'pull_request'
+        id: launcher
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 tools/ci/rust_changes.py --launcher "$BASE_SHA" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+      - name: Install Rust and the headers GPUI links against
+        if: steps.launcher.outputs.required != 'false'
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends libxkbcommon-x11-dev libwayland-dev \
+            libx11-xcb-dev libfontconfig-dev libvulkan-dev libasound2-dev libudev-dev
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Install Linux build deps
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxkbcommon-dev libwayland-dev libxcb1-dev \
-            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libgl1-mesa-dev
-      - run: cargo build --release
-      - name: Collect binaries
-        shell: bash
-        run: |
-          mkdir dist
-          cp "target/release/claudium${{ matrix.suffix }}" "dist/claudium-${{ matrix.label }}${{ matrix.suffix }}"
-          cp "target/release/claudium-launcher${{ matrix.suffix }}" "dist/claudium-launcher-${{ matrix.label }}${{ matrix.suffix }}"
-      - uses: actions/upload-artifact@v4
+        if: steps.launcher.outputs.required != 'false'
         with:
-          name: claudium-${{ matrix.label }}
-          path: dist/*
-          if-no-files-found: error
-      - name: Attach binaries to the release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*
-          generate_release_notes: true
+          workspaces: launcher
+          shared-key: launcher
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Check the launcher's formatting, lint and tests
+        if: steps.launcher.outputs.required != 'false'
+        working-directory: launcher
+        run: |
+          cargo +stable fmt --check
+          cargo +stable clippy --all-targets --locked -- -D warnings
+          cargo +stable test --locked --lib
