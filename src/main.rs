@@ -1,7 +1,8 @@
-//! Claudium: a fast block-game client written from scratch in Rust.
+//! Claudium: a fast Minecraft client written from scratch in Rust.
 //!
-//! Play a local world, or join Java Edition servers. Claudium contains no game
-//! code or art; it can read textures from your own installed copy of the game.
+//! Play a local world, or join Minecraft: Java Edition servers. Claudium contains
+//! no Minecraft code or art; it reads textures from your own installed copy of the
+//! game at runtime. Not affiliated with or endorsed by Mojang or Microsoft.
 
 mod assets;
 mod menu;
@@ -72,11 +73,11 @@ struct Args {
 }
 
 const HELP: &str = "\
-Claudium - a block-game client written in Rust
+Claudium - a Minecraft client written in Rust (targets Minecraft 26.1.2 - 26.3)
 
 USAGE:
   claudium                              play the local world
-  claudium --connect HOST[:PORT]        join a server
+  claudium --connect HOST[:PORT]        join a Minecraft server
   claudium --ping HOST[:PORT]           show a server's status
 
 OPTIONS:
@@ -86,8 +87,8 @@ OPTIONS:
   --logout                forget the saved sign-in
   --world NAME            local world name (default: world)
   --seed N                seed for a new local world
-  --assets PATH           game jar or resource-pack zip to read textures from
-  --version V             game version to look for in your launcher folder (default: 26.1.2)
+  --assets PATH           Minecraft jar or resource-pack zip to read textures from
+  --version V             Minecraft version to look for in your .minecraft folder (e.g. 26.3; default: 26.1.2)
   --blocks PATH           blocks.json from the data generator (needed to show server blocks correctly)
   --render-distance N     in chunks (default: 12)
   --fov DEGREES           field of view (default: 70)
@@ -113,7 +114,7 @@ fn parse_args() -> Args {
         seed: 0,
         assets: None,
         blocks: None,
-        version: net::GAME_VERSION.into(),
+        version: net::DEFAULT_VERSION.into(),
         render_distance: 12,
         vsync: true,
         fov: 70.0,
@@ -337,23 +338,22 @@ impl Game {
             } else {
                 None
             };
-            let mut protocol = args.protocol.unwrap_or(net::PROTOCOL);
+            // Pick the protocol number: explicit override, else a known value for the
+            // requested version, else whatever the server advertises, else the baseline.
+            let mut protocol = args.protocol.or_else(|| net::protocol_for(&args.version)).unwrap_or(net::PROTOCOL);
             if args.protocol.is_none() {
                 match net::ping(addr) {
                     Ok(st) => {
                         println!("{} - {} ({} / {} players, {} ms)", addr, st.version, st.online, st.max, st.latency_ms);
                         println!("{}", st.motd);
-                        if st.protocol != net::PROTOCOL && st.protocol > 0 {
-                            println!(
-                                "Note: server uses protocol {} but Claudium's packet ids target {} ({}). Trying anyway.",
-                                st.protocol,
-                                net::PROTOCOL,
-                                net::GAME_VERSION
-                            );
+                        // Point releases in the 26.x line share packet ids, so we speak the
+                        // exact protocol the server reports (this is how 26.3 is supported).
+                        if st.protocol > 0 && st.protocol != protocol {
+                            println!("Server reports protocol {} (version {}); matching it.", st.protocol, st.version);
                             protocol = st.protocol;
                         }
                     }
-                    Err(e) => println!("Status ping failed ({e}); connecting anyway"),
+                    Err(e) => println!("Status ping failed ({e}); using protocol {protocol}"),
                 }
             }
             let net = net::connect(net::ConnectOptions {

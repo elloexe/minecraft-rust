@@ -2,7 +2,7 @@
 name = "claudium"
 version = "0.1.0"
 edition = "2024"
-description = "A fast block-game client written from scratch in Rust, compatible with Java Edition servers"
+description = "An open-source Minecraft client written from scratch in Rust, compatible with Minecraft: Java Edition servers (26.x). Not affiliated with Mojang."
 license = "MIT OR Apache-2.0"
 
 [dependencies]

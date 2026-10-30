@@ -24,10 +24,25 @@ use crypto::Cfb8;
 
 use crate::world::Column;
 
+/// Baseline protocol the packet-id tables below are written against (Minecraft 26.1.2).
 pub const PROTOCOL: i32 = 775;
-pub const GAME_VERSION: &str = "26.1.2";
+pub const DEFAULT_VERSION: &str = "26.1.2";
+/// The Minecraft versions Claudium targets. Point releases in the 26.x line share
+/// the same packet layout, so one id table serves all of them; only the protocol
+/// integer changes between them, and Claudium adopts the server's advertised number.
+pub const SUPPORTED_VERSIONS: &str = "26.1.2 - 26.3";
 
-/// Packet ids for protocol 26.1.2.
+/// Protocol integer for a known version name, where we have a verified value.
+/// For newer 26.x point releases the number is taken from the server's status ping
+/// instead (see `main`), which is how multi-version clients stay current.
+pub fn protocol_for(version: &str) -> Option<i32> {
+    match version {
+        "26.1.2" | "26.1.1" | "26.1" => Some(775),
+        _ => None,
+    }
+}
+
+/// Packet ids for the Minecraft 26.x protocol line (written against 26.1.2 / 775).
 pub mod id {
     pub mod login {
         pub const CB_DISCONNECT: i32 = 0x00;
