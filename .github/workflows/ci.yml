@@ -21,7 +21,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libxcb1-dev \
-            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libgl1-mesa-dev
       - run: cargo test --release --verbose
       - run: cargo build --release
 
@@ -33,14 +33,14 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact: claudium.exe
-            path: target/release/claudium.exe
+            suffix: ".exe"
+            label: windows
           - os: macos-latest
-            artifact: claudium-macos
-            path: target/release/claudium
+            suffix: ""
+            label: macos
           - os: ubuntu-latest
-            artifact: claudium-linux
-            path: target/release/claudium
+            suffix: ""
+            label: linux
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -51,10 +51,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libxcb1-dev \
-            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libgl1-mesa-dev
       - run: cargo build --release
+      - name: Collect binaries
+        shell: bash
+        run: |
+          mkdir dist
+          cp "target/release/claudium${{ matrix.suffix }}" "dist/claudium-${{ matrix.label }}${{ matrix.suffix }}"
+          cp "target/release/claudium-launcher${{ matrix.suffix }}" "dist/claudium-launcher-${{ matrix.label }}${{ matrix.suffix }}"
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.path }}
+          name: claudium-${{ matrix.label }}
+          path: dist/*
           if-no-files-found: error

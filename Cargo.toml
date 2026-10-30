@@ -5,6 +5,14 @@ edition = "2024"
 description = "An open-source Minecraft client written from scratch in Rust, compatible with Minecraft: Java Edition servers (26.x). Not affiliated with Mojang."
 license = "MIT OR Apache-2.0"
 
+[[bin]]
+name = "claudium"
+path = "src/main.rs"
+
+[[bin]]
+name = "claudium-launcher"
+path = "src/bin/launcher.rs"
+
 [dependencies]
 wgpu = "25"
 winit = "0.30"
@@ -24,6 +32,8 @@ ureq = { version = "2", features = ["json"] }
 # reading the player's own game files
 zip = { version = "2", default-features = false, features = ["deflate"] }
 png = "0.17"
+# launcher GUI (OpenGL backend, so it doesn't pull a second copy of wgpu)
+eframe = { version = "0.29", default-features = false, features = ["glow", "default_fonts", "wayland", "x11"] }
 
 [profile.release]
 opt-level = 3
