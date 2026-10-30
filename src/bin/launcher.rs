@@ -1,6 +1,6 @@
 //! Claudium Launcher — a small desktop launcher in the spirit of the Minecraft
-//! launcher (sidebar + a Play panel), themed in Claude's warm palette. It collects
-//! options and starts the `claudium` game binary; it shares no code with the game.
+//! launcher (a brand rail beside a Play panel), themed in Claude's warm palette.
+//! It collects options and starts the `claudium` game binary; no shared game code.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -8,40 +8,55 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use eframe::egui;
-use egui::{Color32, RichText, Rounding, Stroke, vec2};
+use egui::{Color32, FontId, Rect, RichText, Rounding, Sense, Stroke, TextStyle, pos2, vec2};
 
-// --- Claude theme -----------------------------------------------------------
+// --- Claude theme (burnt-sienna accent so it isn't the exact default coral) --
 
-const CREAM: Color32 = Color32::from_rgb(244, 242, 236);
-const CARD: Color32 = Color32::from_rgb(252, 251, 248);
-const INK: Color32 = Color32::from_rgb(43, 42, 39);
-const MUTED: Color32 = Color32::from_rgb(124, 120, 112);
-const ACCENT: Color32 = Color32::from_rgb(217, 119, 87); // Claude coral
-const ACCENT_DK: Color32 = Color32::from_rgb(197, 103, 74);
-const SIDEBAR: Color32 = Color32::from_rgb(48, 48, 44);
-const SIDEBAR_TX: Color32 = Color32::from_rgb(234, 230, 222);
+const PAPER: Color32 = Color32::from_rgb(241, 237, 228);
+const CARD: Color32 = Color32::from_rgb(251, 250, 246);
+const INK: Color32 = Color32::from_rgb(32, 29, 24);
+const MUTED: Color32 = Color32::from_rgb(133, 125, 110);
+const LINE: Color32 = Color32::from_rgb(227, 222, 210);
+const ACCENT: Color32 = Color32::from_rgb(199, 95, 56);
+const ACCENT_PRESS: Color32 = Color32::from_rgb(173, 78, 43);
+const RAIL: Color32 = Color32::from_rgb(40, 36, 30);
+const RAIL_FG: Color32 = Color32::from_rgb(236, 230, 219);
+const RAIL_DIM: Color32 = Color32::from_rgb(154, 145, 131);
+const SAGE: Color32 = Color32::from_rgb(94, 110, 79);
 
-fn theme(ctx: &egui::Context) {
-    let mut v = egui::Visuals::light();
-    v.panel_fill = CREAM;
-    v.window_fill = CREAM;
-    v.extreme_bg_color = Color32::from_rgb(255, 255, 253);
-    v.override_text_color = Some(INK);
-    v.selection.bg_fill = ACCENT.linear_multiply(0.35);
-    v.selection.stroke = Stroke::new(1.0, ACCENT);
-    let r = Rounding::same(8.0);
-    for w in [&mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open] {
-        w.rounding = r;
-    }
-    v.widgets.inactive.bg_fill = CARD;
-    v.widgets.inactive.weak_bg_fill = CARD;
-    v.widgets.hovered.bg_fill = Color32::from_rgb(246, 238, 232);
-    v.widgets.hovered.weak_bg_fill = Color32::from_rgb(246, 238, 232);
-    ctx.set_visuals(v);
-
+fn setup_style(ctx: &egui::Context) {
     let mut style = (*ctx.style()).clone();
-    style.spacing.item_spacing = vec2(10.0, 10.0);
-    style.spacing.button_padding = vec2(12.0, 8.0);
+    use egui::FontFamily::Proportional;
+    style.text_styles = [
+        (TextStyle::Heading, FontId::new(30.0, Proportional)),
+        (TextStyle::Body, FontId::new(15.5, Proportional)),
+        (TextStyle::Button, FontId::new(15.5, Proportional)),
+        (TextStyle::Small, FontId::new(12.5, Proportional)),
+        (TextStyle::Monospace, FontId::new(13.0, egui::FontFamily::Monospace)),
+    ]
+    .into();
+
+    let v = &mut style.visuals;
+    v.panel_fill = PAPER;
+    v.window_fill = CARD;
+    v.extreme_bg_color = PAPER; // text-field background
+    v.override_text_color = Some(INK);
+    v.selection.bg_fill = ACCENT.linear_multiply(0.30);
+    v.selection.stroke = Stroke::new(1.0, ACCENT);
+    let r9 = Rounding::same(9.0);
+    for w in [&mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open] {
+        w.rounding = r9;
+        w.bg_fill = PAPER;
+        w.weak_bg_fill = PAPER;
+        w.bg_stroke = Stroke::new(1.0, LINE);
+        w.fg_stroke = Stroke::new(1.0, INK);
+    }
+    v.widgets.hovered.bg_stroke = Stroke::new(1.2, ACCENT);
+    v.widgets.active.bg_stroke = Stroke::new(1.4, ACCENT);
+
+    style.spacing.item_spacing = vec2(12.0, 12.0);
+    style.spacing.button_padding = vec2(14.0, 9.0);
+    style.spacing.interact_size.y = 20.0;
     ctx.set_style(style);
 }
 
@@ -50,7 +65,6 @@ enum Mode {
     Single,
     Multi,
 }
-
 #[derive(PartialEq, Clone, Copy)]
 enum View {
     Play,
@@ -64,25 +78,29 @@ struct Launcher {
     seed: String,
     server: String,
     name: String,
-    version: String,
+    version: usize, // index into VERSIONS
     login: bool,
     assets: String,
     status: String,
+    status_good: bool,
 }
+
+const VERSIONS: [&str; 2] = ["26.3", "26.1.2"];
 
 impl Default for Launcher {
     fn default() -> Self {
         Launcher {
             view: View::Play,
             mode: Mode::Single,
-            world: "world".into(),
+            world: "New World".into(),
             seed: String::new(),
             server: String::new(),
             name: "Player".into(),
-            version: "26.3".into(),
+            version: 0,
             login: false,
             assets: String::new(),
-            status: String::new(),
+            status: "Ready — uses your installed game's textures when it starts.".into(),
+            status_good: true,
         }
     }
 }
@@ -97,7 +115,7 @@ fn game_binary() -> PathBuf {
             }
         }
     }
-    PathBuf::from(name) // fall back to PATH
+    PathBuf::from(name)
 }
 
 impl Launcher {
@@ -109,7 +127,7 @@ impl Launcher {
                 cmd.args(["--seed", self.seed.trim()]);
             }
         } else {
-            cmd.args(["--version", self.version.trim()]);
+            cmd.args(["--version", VERSIONS[self.version]]);
             match self.mode {
                 Mode::Single => {
                     cmd.args(["--world", self.world.trim()]);
@@ -130,145 +148,214 @@ impl Launcher {
             }
         }
         match cmd.spawn() {
-            Ok(_) => self.status = if server { "Claudium server started.".into() } else { "Launched Claudium — have fun!".into() },
-            Err(e) => self.status = format!("Could not start {}: {e}", game_binary().display()),
+            Ok(_) => {
+                self.status =
+                    if server { "Claudium server started on port 25565.".into() } else { "Launched Claudium — have fun!".into() };
+                self.status_good = true;
+            }
+            Err(e) => {
+                self.status = format!("Couldn't start {}: {e}", game_binary().display());
+                self.status_good = false;
+            }
         }
     }
+}
 
-    fn sidebar(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(22.0);
-        ui.vertical_centered(|ui| {
-            ui.label(RichText::new("CLAUDIUM").size(26.0).strong().color(SIDEBAR_TX));
-            ui.label(RichText::new("Rust Edition").size(13.0).color(ACCENT));
-        });
-        ui.add_space(26.0);
+/// Draws the isometric voxel mark in `rect`.
+fn voxel_cube(painter: &egui::Painter, rect: Rect) {
+    let p = |x: f32, y: f32| pos2(rect.min.x + x / 40.0 * rect.width(), rect.min.y + y / 40.0 * rect.height());
+    let top = vec![p(20.0, 4.0), p(35.0, 12.5), p(20.0, 21.0), p(5.0, 12.5)];
+    let left = vec![p(5.0, 13.0), p(20.0, 21.5), p(20.0, 37.0), p(5.0, 28.5)];
+    let right = vec![p(35.0, 13.0), p(20.0, 21.5), p(20.0, 37.0), p(35.0, 28.5)];
+    let n = Stroke::NONE;
+    painter.add(egui::Shape::convex_polygon(top, Color32::from_rgb(230, 138, 94), n));
+    painter.add(egui::Shape::convex_polygon(left, ACCENT, n));
+    painter.add(egui::Shape::convex_polygon(right, Color32::from_rgb(169, 75, 41), n));
+}
 
-        let mut nav = |ui: &mut egui::Ui, view: View, label: &str| {
-            let selected = self.view == view;
-            let color = if selected { ACCENT } else { SIDEBAR_TX };
-            let text = RichText::new(label).size(16.0).color(color);
-            if ui.add_sized(vec2(ui.available_width(), 34.0), egui::SelectableLabel::new(selected, text)).clicked() {
-                self.view = view;
-            }
-        };
-        nav(ui, View::Play, "  Play");
-        nav(ui, View::About, "  About");
-
-        ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-            ui.add_space(14.0);
-            ui.label(RichText::new("not affiliated with Mojang").size(10.0).color(MUTED));
-            ui.label(RichText::new(concat!("v", env!("CARGO_PKG_VERSION"))).size(11.0).color(SIDEBAR_TX.linear_multiply(0.7)));
-        });
-    }
-
-    fn play_view(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(18.0);
-        ui.label(RichText::new("Play").size(30.0).strong());
-        ui.label(RichText::new("Start a local world, host a server, or join one.").color(MUTED));
-        ui.add_space(16.0);
-
-        egui::Frame::none().fill(CARD).rounding(Rounding::same(12.0)).inner_margin(egui::Margin::same(18.0)).show(ui, |ui| {
+fn rail_nav(ui: &mut egui::Ui, current: &mut View, view: View, label: &str) {
+    let selected = *current == view;
+    let (fg, bg) = if selected { (RAIL_FG, Color32::from_rgba_unmultiplied(255, 255, 255, 18)) } else { (RAIL_DIM, Color32::TRANSPARENT) };
+    let frame = egui::Frame::none().fill(bg).rounding(Rounding::same(10.0)).inner_margin(egui::Margin::symmetric(13.0, 10.0));
+    let r = frame
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
             ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.mode, Mode::Single, RichText::new("Singleplayer").size(15.0));
-                ui.selectable_value(&mut self.mode, Mode::Multi, RichText::new("Multiplayer").size(15.0));
+                let (dot, _) = ui.allocate_exact_size(vec2(7.0, 7.0), Sense::hover());
+                ui.painter().rect_filled(dot, Rounding::same(2.0), if selected { ACCENT } else { RAIL_DIM });
+                ui.add_space(4.0);
+                ui.label(RichText::new(label).size(15.0).strong().color(fg));
             });
-            ui.add_space(12.0);
+        })
+        .response;
+    if ui.interact(r.rect, r.id.with(label), Sense::click()).clicked() {
+        *current = view;
+    }
+}
 
-            egui::Grid::new("form").num_columns(2).spacing(vec2(14.0, 12.0)).show(ui, |ui| {
-                ui.label("Version");
-                egui::ComboBox::from_id_salt("version").selected_text(&self.version).show_ui(ui, |ui| {
-                    for v in ["26.3", "26.1.2"] {
-                        ui.selectable_value(&mut self.version, v.to_string(), v);
-                    }
-                });
-                ui.end_row();
-
-                match self.mode {
-                    Mode::Single => {
-                        ui.label("World name");
-                        ui.text_edit_singleline(&mut self.world);
-                        ui.end_row();
-                        ui.label("Seed (optional)");
-                        ui.text_edit_singleline(&mut self.seed);
-                        ui.end_row();
-                    }
-                    Mode::Multi => {
-                        ui.label("Server address");
-                        ui.text_edit_singleline(&mut self.server);
-                        ui.end_row();
-                        ui.label("Username");
-                        ui.text_edit_singleline(&mut self.name);
-                        ui.end_row();
-                        ui.label("");
-                        ui.checkbox(&mut self.login, "Sign in with Microsoft (online-mode servers)");
-                        ui.end_row();
+fn segmented(ui: &mut egui::Ui, mode: &mut Mode) {
+    egui::Frame::none()
+        .fill(PAPER)
+        .stroke(Stroke::new(1.0, LINE))
+        .rounding(Rounding::same(11.0))
+        .inner_margin(egui::Margin::same(4.0))
+        .show(ui, |ui| {
+            ui.spacing_mut().item_spacing.x = 4.0;
+            ui.horizontal(|ui| {
+                for (m, label) in [(Mode::Single, "Singleplayer"), (Mode::Multi, "Multiplayer")] {
+                    let on = *mode == m;
+                    let text = RichText::new(label).size(14.0).strong().color(if on { INK } else { MUTED });
+                    let btn = egui::Button::new(text)
+                        .fill(if on { CARD } else { Color32::TRANSPARENT })
+                        .stroke(if on { Stroke::new(1.0, LINE) } else { Stroke::NONE })
+                        .rounding(Rounding::same(8.0))
+                        .min_size(vec2(0.0, 30.0));
+                    if ui.add(btn).clicked() {
+                        *mode = m;
                     }
                 }
-
-                ui.label("Textures jar (optional)");
-                ui.text_edit_singleline(&mut self.assets);
-                ui.end_row();
             });
         });
+}
 
-        ui.add_space(18.0);
+fn field(ui: &mut egui::Ui, label: &str, value: &mut String, hint: &str) {
+    ui.label(RichText::new(label).size(14.0).strong().color(MUTED));
+    ui.add(egui::TextEdit::singleline(value).hint_text(hint).margin(egui::Margin::symmetric(12.0, 9.0)).desired_width(f32::INFINITY));
+    ui.end_row();
+}
+
+impl Launcher {
+    fn play_view(&mut self, ui: &mut egui::Ui) {
+        ui.add_space(4.0);
+        ui.label(RichText::new("Play").heading().strong());
+        ui.label(RichText::new("Start a local world, host a server, or join one.").color(MUTED));
+        ui.add_space(10.0);
+
+        egui::Frame::none()
+            .fill(CARD)
+            .stroke(Stroke::new(1.0, LINE))
+            .rounding(Rounding::same(14.0))
+            .inner_margin(egui::Margin::same(20.0))
+            .show(ui, |ui| {
+                segmented(ui, &mut self.mode);
+                ui.add_space(16.0);
+                egui::Grid::new("form").num_columns(2).spacing(vec2(16.0, 14.0)).min_col_width(108.0).show(ui, |ui| {
+                    ui.label(RichText::new("Version").size(14.0).strong().color(MUTED));
+                    egui::ComboBox::from_id_salt("ver").selected_text(VERSIONS[self.version]).width(ui.available_width()).show_ui(
+                        ui,
+                        |ui| {
+                            for (i, v) in VERSIONS.iter().enumerate() {
+                                ui.selectable_value(&mut self.version, i, *v);
+                            }
+                        },
+                    );
+                    ui.end_row();
+
+                    match self.mode {
+                        Mode::Single => {
+                            field(ui, "World", &mut self.world, "New World");
+                            field(ui, "Seed", &mut self.seed, "random");
+                        }
+                        Mode::Multi => {
+                            field(ui, "Server", &mut self.server, "play.example.net");
+                            field(ui, "Username", &mut self.name, "Player");
+                            ui.label("");
+                            ui.checkbox(&mut self.login, RichText::new("Sign in with Microsoft").size(14.0));
+                            ui.end_row();
+                        }
+                    }
+                    field(ui, "Textures", &mut self.assets, "from your Minecraft install");
+                });
+            });
+
+        ui.add_space(14.0);
         ui.horizontal(|ui| {
-            let play =
-                egui::Button::new(RichText::new("PLAY").size(20.0).strong().color(Color32::WHITE)).fill(ACCENT).min_size(vec2(170.0, 50.0));
-            if ui.add(play).on_hover_text("Launch the game").clicked() {
+            let total = ui.available_width();
+            let play = egui::Button::new(RichText::new("Play  ▸").size(20.0).strong().color(Color32::WHITE))
+                .fill(ACCENT)
+                .rounding(Rounding::same(13.0))
+                .min_size(vec2(total - 150.0, 56.0));
+            if ui.add(play).clicked() {
                 self.launch(false);
             }
-            ui.add_space(8.0);
             let host = egui::Button::new(RichText::new("Host server").size(15.0).color(INK))
-                .fill(Color32::from_rgb(236, 230, 222))
-                .min_size(vec2(130.0, 50.0));
-            if ui.add(host).on_hover_text("Run a Claudium server with this seed").clicked() {
+                .fill(CARD)
+                .stroke(Stroke::new(1.0, LINE))
+                .rounding(Rounding::same(13.0))
+                .min_size(vec2(134.0, 56.0));
+            if ui.add(host).clicked() {
                 self.launch(true);
             }
         });
-
-        if !self.status.is_empty() {
-            ui.add_space(12.0);
-            ui.label(RichText::new(&self.status).color(ACCENT_DK));
-        }
+        ui.add_space(8.0);
+        ui.label(RichText::new(&self.status).size(13.5).strong().color(if self.status_good { SAGE } else { ACCENT_PRESS }));
     }
 
     fn about_view(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(18.0);
-        ui.label(RichText::new("About Claudium").size(30.0).strong());
+        ui.add_space(4.0);
+        ui.label(RichText::new("About Claudium").heading().strong());
         ui.add_space(10.0);
-        ui.label("An open-source Minecraft client written from scratch in Rust.");
-        ui.add_space(6.0);
-        ui.label(RichText::new("• Play local worlds, host a Claudium server, or join Java Edition servers.").color(MUTED));
-        ui.label(RichText::new("• Loads textures from your own installed copy of the game at runtime.").color(MUTED));
-        ui.label(RichText::new("• Targets the Minecraft 26.x line (26.1.2 – 26.3).").color(MUTED));
-        ui.add_space(14.0);
-        ui.label(RichText::new("Not affiliated with, endorsed by, or associated with Mojang or Microsoft.\n\"Minecraft\" is a trademark of Mojang Synergies AB. You must own the game to use its files.").color(MUTED));
+        ui.label(RichText::new("An open-source Minecraft client written from scratch in Rust.").size(16.0));
+        ui.add_space(8.0);
+        for line in [
+            "Play local worlds, host a Claudium server, or join Java Edition servers. Block textures and the title logo load from your own installed copy of the game at runtime — nothing from Mojang ships inside Claudium.",
+            "Targets the Minecraft 26.x line (26.1.2 through 26.3).",
+        ] {
+            ui.label(RichText::new(line).color(MUTED));
+            ui.add_space(6.0);
+        }
+        ui.add_space(8.0);
+        ui.label(RichText::new("Not affiliated with, endorsed by, or associated with Mojang or Microsoft. \"Minecraft\" is a trademark of Mojang Synergies AB. You must own the game to use its files.").size(13.0).color(MUTED));
     }
 }
 
 impl eframe::App for Launcher {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::SidePanel::left("nav")
-            .exact_width(200.0)
+        egui::SidePanel::left("rail")
+            .exact_width(216.0)
             .resizable(false)
-            .frame(egui::Frame::none().fill(SIDEBAR).inner_margin(egui::Margin::same(14.0)))
-            .show(ctx, |ui| self.sidebar(ui));
+            .frame(egui::Frame::none().fill(RAIL).inner_margin(egui::Margin { left: 18.0, right: 18.0, top: 26.0, bottom: 18.0 }))
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    let (rect, _) = ui.allocate_exact_size(vec2(32.0, 32.0), Sense::hover());
+                    voxel_cube(ui.painter(), rect);
+                    ui.add_space(6.0);
+                    ui.label(RichText::new("Claudium").size(22.0).strong().color(RAIL_FG));
+                });
+                ui.add_space(2.0);
+                ui.horizontal(|ui| {
+                    ui.add_space(46.0);
+                    ui.label(RichText::new("RUST EDITION").size(11.5).strong().color(ACCENT));
+                });
+                ui.add_space(20.0);
+                rail_nav(ui, &mut self.view, View::Play, "Play");
+                rail_nav(ui, &mut self.view, View::About, "About");
 
-        egui::CentralPanel::default().frame(egui::Frame::none().fill(CREAM).inner_margin(egui::Margin::same(28.0))).show(ctx, |ui| {
-            match self.view {
+                ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+                    ui.add_space(2.0);
+                    ui.label(RichText::new("Not affiliated with Mojang").size(10.5).color(RAIL_DIM));
+                    ui.label(
+                        RichText::new(concat!("v", env!("CARGO_PKG_VERSION"), "  ·  26.1.2–26.3"))
+                            .size(12.0)
+                            .color(RAIL_FG.linear_multiply(0.72)),
+                    );
+                });
+            });
+
+        egui::CentralPanel::default()
+            .frame(egui::Frame::none().fill(PAPER).inner_margin(egui::Margin { left: 32.0, right: 28.0, top: 30.0, bottom: 28.0 }))
+            .show(ctx, |ui| match self.view {
                 View::Play => self.play_view(ui),
                 View::About => self.about_view(ui),
-            }
-        });
+            });
     }
 }
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([900.0, 580.0])
-            .with_min_inner_size([720.0, 480.0])
+            .with_inner_size([940.0, 600.0])
+            .with_min_inner_size([760.0, 520.0])
             .with_title("Claudium Launcher"),
         ..Default::default()
     };
@@ -276,7 +363,7 @@ fn main() -> eframe::Result<()> {
         "Claudium Launcher",
         options,
         Box::new(|cc| {
-            theme(&cc.egui_ctx);
+            setup_style(&cc.egui_ctx);
             Ok(Box::new(Launcher::default()))
         }),
     )
