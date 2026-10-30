@@ -103,7 +103,11 @@ impl Theme {
             WindowAppearance::Light | WindowAppearance::VibrantLight
         );
         let dark = pinned_dark(choice).unwrap_or(system_dark);
-        let night = if dark { night::NIGHT } else { night::DAWN };
+        let night = if dark {
+            night::VANILLA
+        } else {
+            night::VANILLA_LIGHT
+        };
         Self::from(accent.apply(night.blocks()), night)
     }
 

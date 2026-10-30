@@ -120,6 +120,61 @@ pub const DAWN: Night = Night {
     dark: false,
 };
 
+/// Claudium's look: the official Minecraft launcher's, which is flat rather than painted. The
+/// sidebar is near-black, the page a dark neutral grey, the one main action is Minecraft's green
+/// and everything else is white at three weights. Every sky stop is the page colour, so the sky
+/// renders as the flat surface the real launcher has without the sky code needing to know.
+///
+/// Contrast: white on the green face is 4.6:1, and `accent_hi` is the lighter green that stays
+/// readable as text on both the page and the sidebar, where the face green would not be.
+pub const VANILLA: Night = Night {
+    sky: [0x1b1b1b; 6],
+    page: 0x1b1b1b,
+    side: 0x141414,
+    card: 0x272727,
+    card_alpha: 1.0,
+    card_hi: 0x333333,
+    card_hi_alpha: 1.0,
+    stroke: 0xffffff,
+    stroke_alpha: 0.10,
+    rule_alpha: 0.08,
+    ink: 0xffffff,
+    ink_soft: 0xdcdcdc,
+    muted: 0x9b9b9b,
+    accent: 0x3c8527,
+    accent_hi: 0x6cc349,
+    on_accent: 0xffffff,
+    success: 0x6cc349,
+    warn: 0xffb02e,
+    danger: 0xff5555,
+    dark: true,
+};
+
+/// The same look for players who pin Light: the launcher's greys inverted, with the green kept
+/// dark enough to carry white (5.0:1) and to read as text on the pale page.
+pub const VANILLA_LIGHT: Night = Night {
+    sky: [0xf2f2f2; 6],
+    page: 0xf2f2f2,
+    side: 0xe4e4e4,
+    card: 0xffffff,
+    card_alpha: 1.0,
+    card_hi: 0xffffff,
+    card_hi_alpha: 1.0,
+    stroke: 0x1b1b1b,
+    stroke_alpha: 0.14,
+    rule_alpha: 0.10,
+    ink: 0x1b1b1b,
+    ink_soft: 0x3a3a3a,
+    muted: 0x5f5f5f,
+    accent: 0x357322,
+    accent_hi: 0x2c601c,
+    on_accent: 0xffffff,
+    success: 0x2c601c,
+    warn: 0x7a4f00,
+    danger: 0xa3301d,
+    dark: false,
+};
+
 /// `top` at `alpha` over `under`, as the GPU blends them.
 pub fn over(top: u32, alpha: f32, under: u32) -> u32 {
     [16, 8, 0].iter().fold(0, |out, s| {

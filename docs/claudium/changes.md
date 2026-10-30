@@ -6,6 +6,21 @@ are ours.
 
 ## Unreleased
 
+### Launcher
+
+- Repainted the launcher in the Minecraft launcher's colours: near-black sidebar,
+  dark neutral page, Minecraft green for the one main action, white text at three
+  weights (`horizon-theme`'s `night::VANILLA` and `VANILLA_LIGHT`). White on the
+  green face is 4.6:1; `accent_hi` is the lighter green that stays readable as
+  text on both the page and the sidebar.
+- Replaced Horizon's painted night sky with a flat surface, as the real launcher
+  has (`launcher/src/sky.rs`, `FLAT`). This skips the bands, stars, clouds, sun
+  and skylines, their baked sprites and the window wake-ups that animated them,
+  so the launcher now stands completely still at rest. Set `FLAT` to `false` to
+  get the sky back; the module still implements it in full.
+
+### Base
+
 - Copied Horizon `c995c9b` into this repository as the base, kept its MIT licence
   and recorded the derivation in `NOTICE.md`. Removed upstream workflows that
   depend on their runners and signing keys (see `upstream.md`).

@@ -13,6 +13,11 @@ use horizon_theme::night::Night;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
+/// Draw the page colour instead of the sky. Claudium follows the Minecraft launcher, which has a
+/// flat background; set this to `false` to get Horizon's painted night sky back, which the rest of
+/// this module still implements in full.
+const FLAT: bool = true;
+
 /// Logical pixels per texel: the sky's bands, the stars and the clouds; the sun and skylines.
 const TEXEL: f32 = 4.;
 const LAND: f32 = 6.;
@@ -270,6 +275,21 @@ impl Sky {
         focused: bool,
         now: Instant,
     ) -> (Div, Option<Duration>) {
+        // Claudium's look is the Minecraft launcher's, which is flat: a solid surface behind the
+        // chrome and a hero image on Play, with no sky at all. Returning the fill here skips the
+        // bands, stars, clouds, sun and skylines, their baked sprites and the window's wake-ups,
+        // so the launcher stands completely still at rest.
+        if FLAT {
+            return (
+                div()
+                    .absolute()
+                    .top_0()
+                    .left_0()
+                    .size_full()
+                    .bg(rgb(n.page)),
+                None,
+            );
+        }
         if focused {
             self.unfocused = None;
         } else {
