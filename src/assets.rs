@@ -8,21 +8,31 @@ use std::path::{Path, PathBuf};
 
 pub const TILE: usize = 16;
 
+/// A decoded image kept at full size (width, height, RGBA8).
+pub struct Image {
+    pub w: u32,
+    pub h: u32,
+    pub rgba: Vec<u8>,
+}
+
 pub struct TextureSource {
     images: HashMap<String, Vec<u8>>, // name -> raw png bytes (lazy decode)
     pub origin: Option<PathBuf>,
+    /// The game's own title-screen logo, loaded from the player's install (never shipped by us).
+    pub logo: Option<Image>,
 }
 
 impl TextureSource {
     pub fn empty() -> Self {
-        TextureSource { images: HashMap::new(), origin: None }
+        TextureSource { images: HashMap::new(), origin: None, logo: None }
     }
 
-    /// Reads every block texture from a game jar or resource-pack zip.
+    /// Reads every block texture (and the title logo) from a game jar or resource-pack zip.
     pub fn from_zip(path: &Path) -> anyhow::Result<Self> {
         let f = std::fs::File::open(path)?;
         let mut zip = zip::ZipArchive::new(std::io::BufReader::new(f))?;
         let mut images = HashMap::new();
+        let mut logo_bytes: Option<Vec<u8>> = None;
         let prefix = "assets/minecraft/textures/block/";
         for i in 0..zip.len() {
             let mut entry = zip.by_index(i)?;
@@ -36,12 +46,23 @@ impl TextureSource {
                     entry.read_to_end(&mut buf)?;
                     images.insert(stem.to_string(), buf);
                 }
+            } else if logo_bytes.is_none()
+                && name.starts_with("assets/minecraft/textures/gui/title/")
+                && name.ends_with(".png")
+                && name.rsplit('/').next().map(|f| f.to_ascii_lowercase().contains("minecraft")).unwrap_or(false)
+            {
+                // The wordmark logo lives here (e.g. gui/title/minecraft.png). The player
+                // owns this file; Claudium loads it at runtime and never redistributes it.
+                let mut buf = Vec::with_capacity(entry.size() as usize);
+                entry.read_to_end(&mut buf)?;
+                logo_bytes = Some(buf);
             }
         }
         if images.is_empty() {
             anyhow::bail!("no block textures found in {}", path.display());
         }
-        Ok(TextureSource { images, origin: Some(path.to_path_buf()) })
+        let logo = logo_bytes.and_then(|b| decode_full(&b));
+        Ok(TextureSource { images, origin: Some(path.to_path_buf()), logo })
     }
 
     pub fn has(&self, name: &str) -> bool {
@@ -88,6 +109,35 @@ impl TextureSource {
         }
         Some(out)
     }
+}
+
+/// Decodes a PNG to full-size RGBA8 (used for the title logo).
+pub fn decode_full(bytes: &[u8]) -> Option<Image> {
+    let mut dec = png::Decoder::new(std::io::Cursor::new(bytes));
+    dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
+    let mut reader = dec.read_info().ok()?;
+    let mut buf = vec![0; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf).ok()?;
+    let (w, h) = (info.width as usize, info.height as usize);
+    let channels = match info.color_type {
+        png::ColorType::Rgba => 4,
+        png::ColorType::Rgb => 3,
+        png::ColorType::GrayscaleAlpha => 2,
+        png::ColorType::Grayscale => 1,
+        _ => return None,
+    };
+    let mut rgba = vec![0u8; w * h * 4];
+    for i in 0..w * h {
+        let px = &buf[i * channels..i * channels + channels];
+        let out = match channels {
+            4 => [px[0], px[1], px[2], px[3]],
+            3 => [px[0], px[1], px[2], 255],
+            2 => [px[0], px[0], px[0], px[1]],
+            _ => [px[0], px[0], px[0], 255],
+        };
+        rgba[i * 4..i * 4 + 4].copy_from_slice(&out);
+    }
+    Some(Image { w: w as u32, h: h as u32, rgba })
 }
 
 /// Finds the player's installed game jar for a version (e.g. "26.1.2").

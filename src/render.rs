@@ -66,6 +66,9 @@ pub struct Renderer {
     depth: wgpu::TextureView,
     globals: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
+    /// Bind group used on the title screen, with the game logo bound in place of the atlas.
+    menu_bind: Option<wgpu::BindGroup>,
+    logo_aspect: Option<f32>,
     terrain: wgpu::RenderPipeline,
     water: wgpu::RenderPipeline,
     lines: wgpu::RenderPipeline,
@@ -109,7 +112,14 @@ fn quad_indices(quads: u32) -> Vec<u32> {
 }
 
 impl Renderer {
-    pub async fn new(window: Arc<Window>, atlas: &[u8], atlas_w: u32, atlas_h: u32, vsync: bool) -> anyhow::Result<Self> {
+    pub async fn new(
+        window: Arc<Window>,
+        atlas: &[u8],
+        atlas_w: u32,
+        atlas_h: u32,
+        vsync: bool,
+        logo: Option<&crate::assets::Image>,
+    ) -> anyhow::Result<Self> {
         let size = window.inner_size();
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let surface = instance.create_surface(window.clone())?;
@@ -215,6 +225,38 @@ impl Renderer {
                 wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::Sampler(&sampler) },
             ],
         });
+
+        // Optional title-screen logo texture, loaded from the player's own game files.
+        let (menu_bind, logo_aspect) = if let Some(img) = logo {
+            let tex = device.create_texture_with_data(
+                &queue,
+                &wgpu::TextureDescriptor {
+                    label: Some("logo"),
+                    size: wgpu::Extent3d { width: img.w, height: img.h, depth_or_array_layers: 1 },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING,
+                    view_formats: &[],
+                },
+                wgpu::util::TextureDataOrder::LayerMajor,
+                &img.rgba,
+            );
+            let view = tex.create_view(&wgpu::TextureViewDescriptor::default());
+            let bg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("menu"),
+                layout: &bgl,
+                entries: &[
+                    wgpu::BindGroupEntry { binding: 0, resource: globals.as_entire_binding() },
+                    wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(&view) },
+                    wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::Sampler(&sampler) },
+                ],
+            });
+            (Some(bg), Some(img.w as f32 / img.h.max(1) as f32))
+        } else {
+            (None, None)
+        };
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("claudium"),
@@ -334,6 +376,8 @@ impl Renderer {
             depth,
             globals,
             bind_group,
+            menu_bind,
+            logo_aspect,
             terrain,
             water,
             lines,
@@ -367,6 +411,11 @@ impl Renderer {
 
     pub fn size(&self) -> (f32, f32) {
         (self.config.width.max(1) as f32, self.config.height.max(1) as f32)
+    }
+
+    /// Aspect ratio (w/h) of the game logo, if one was loaded from the player's files.
+    pub fn logo_aspect(&self) -> Option<f32> {
+        self.logo_aspect
     }
 
     /// Draws a HUD-only screen (the title menu): clears to `clear`, then draws the
@@ -405,7 +454,9 @@ impl Renderer {
                 occlusion_query_set: None,
             });
             if n > 0 {
-                pass.set_bind_group(0, &self.bind_group, &[]);
+                // Bind the logo texture (if we loaded one) so logo quads sample it; solid
+                // quads ignore the bound texture (the shader returns vertex colour for uv < 0).
+                pass.set_bind_group(0, self.menu_bind.as_ref().unwrap_or(&self.bind_group), &[]);
                 pass.set_pipeline(&self.hud);
                 pass.set_vertex_buffer(0, self.hud_buf.slice(..));
                 pass.draw(0..n as u32, 0..1);

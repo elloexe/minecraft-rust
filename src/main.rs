@@ -320,7 +320,10 @@ impl Game {
         let window = Arc::new(event_loop.create_window(
             Window::default_attributes().with_title("Claudium").with_inner_size(winit::dpi::LogicalSize::new(1280.0, 720.0)),
         )?);
-        let renderer = pollster::block_on(Renderer::new(window.clone(), &atlas, aw, ah, args.vsync))?;
+        let renderer = pollster::block_on(Renderer::new(window.clone(), &atlas, aw, ah, args.vsync, textures.logo.as_ref()))?;
+        if textures.logo.is_some() {
+            println!("Loaded the game's title logo from your install");
+        }
         println!("GPU: {}", renderer.adapter_name);
 
         let tile_of_block: Vec<u16> = registry.blocks.iter().map(|b| b.tex[2]).collect();
@@ -878,13 +881,15 @@ impl Game {
         }
         self.schedule_meshes();
         let (w, h) = self.renderer.size();
-        let canvas = self.title.build(w, h, self.cursor, self.started.elapsed().as_secs_f32());
+        let logo = self.renderer.logo_aspect();
+        let canvas = self.title.build(w, h, self.cursor, self.started.elapsed().as_secs_f32(), logo);
         self.renderer.render_menu(&canvas.verts, [0.10, 0.12, 0.18]);
     }
 
     fn menu_click(&mut self, event_loop: &ActiveEventLoop) {
         let (w, h) = self.renderer.size();
-        let canvas = self.title.build(w, h, self.cursor, self.started.elapsed().as_secs_f32());
+        let logo = self.renderer.logo_aspect();
+        let canvas = self.title.build(w, h, self.cursor, self.started.elapsed().as_secs_f32(), logo);
         match canvas.hit(self.cursor.0, self.cursor.1) {
             Some(menu::Action::Play) | Some(menu::Action::JoinServer) => {
                 self.screen = Screen::Playing;

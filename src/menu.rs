@@ -100,6 +100,24 @@ impl Canvas {
         self.verts.extend_from_slice(&[p(x0, y0), p(x1, y0), p(x1, y1), p(x0, y0), p(x1, y1), p(x0, y1)]);
     }
 
+    /// A quad textured with the bound menu texture (the game logo), uv spanning 0..1.
+    fn textured(&mut self, x: f32, y: f32, rw: f32, rh: f32) {
+        let x0 = x / self.w * 2.0 - 1.0;
+        let x1 = (x + rw) / self.w * 2.0 - 1.0;
+        let y0 = 1.0 - y / self.h * 2.0;
+        let y1 = 1.0 - (y + rh) / self.h * 2.0;
+        let w = [1.0, 1.0, 1.0, 1.0];
+        let p = |px: f32, py: f32, u: f32, v: f32| HudVertex { pos: [px, py], uv: [u, v], color: w };
+        self.verts.extend_from_slice(&[
+            p(x0, y0, 0.0, 0.0),
+            p(x1, y0, 1.0, 0.0),
+            p(x1, y1, 1.0, 1.0),
+            p(x0, y0, 0.0, 0.0),
+            p(x1, y1, 1.0, 1.0),
+            p(x0, y1, 0.0, 1.0),
+        ]);
+    }
+
     fn quad_shaded(&mut self, x: f32, y: f32, rw: f32, rh: f32, top: [f32; 4], bot: [f32; 4]) {
         let x0 = x / self.w * 2.0 - 1.0;
         let x1 = (x + rw) / self.w * 2.0 - 1.0;
@@ -172,8 +190,9 @@ pub struct TitleScreen {
 
 impl TitleScreen {
     /// Builds the full title screen. `mouse` is the cursor in physical pixels; `time`
-    /// drives the splash pulse.
-    pub fn build(&self, w: f32, h: f32, mouse: (f32, f32), time: f32) -> Canvas {
+    /// drives the splash pulse. `logo_aspect` is Some(w/h) when the game's own logo was
+    /// loaded from the player's files, in which case it is drawn in place of the wordmark.
+    pub fn build(&self, w: f32, h: f32, mouse: (f32, f32), time: f32, logo_aspect: Option<f32>) -> Canvas {
         let mut c = Canvas::new(w, h);
         let s = (h / 240.0).max(1.0);
 
@@ -190,23 +209,40 @@ impl TitleScreen {
             c.quad(x, h * 0.72 - hh, tile + 1.0, hh, [g * 0.6, g, g * 0.5, 1.0]);
         }
 
-        // Wordmark
-        let logo_scale = (w / 90.0).min(h / 46.0).floor().max(3.0);
-        let title = "CLAUDIUM";
-        let tw = text_width(title, logo_scale);
-        let ty = h * 0.14;
-        c.text_shadow(w / 2.0 - tw / 2.0, ty, logo_scale, [0.86, 0.90, 0.96, 1.0], title);
+        // Logo: the game's own wordmark loaded from the player's files when present,
+        // otherwise Claudium's own blocky wordmark. The "RUST EDITION" line is always ours.
+        let ty = h * 0.12;
+        let (logo_w, logo_h, logo_right);
+        match logo_aspect {
+            Some(aspect) => {
+                logo_h = (h * 0.20).clamp(40.0, 220.0);
+                logo_w = (logo_h * aspect).min(w * 0.82);
+                let lh = logo_w / aspect;
+                c.textured(w / 2.0 - logo_w / 2.0, ty, logo_w, lh);
+                logo_right = w / 2.0 + logo_w / 2.0;
+            }
+            None => {
+                let logo_scale = (w / 90.0).min(h / 46.0).floor().max(3.0);
+                let title = "CLAUDIUM";
+                let tw = text_width(title, logo_scale);
+                c.text_shadow(w / 2.0 - tw / 2.0, ty, logo_scale, [0.86, 0.90, 0.96, 1.0], title);
+                logo_w = tw;
+                logo_h = GH as f32 * logo_scale;
+                logo_right = w / 2.0 + tw / 2.0;
+            }
+        }
+        let _ = logo_w;
 
-        // "Rust Edition" line under the wordmark.
-        let sub_scale = (logo_scale * 0.42).floor().max(2.0);
-        c.text_centered(w / 2.0, ty + GH as f32 * logo_scale + 6.0 * s, sub_scale, [0.78, 0.82, 0.90, 1.0], "RUST EDITION");
+        // "Rust Edition" line directly under the logo.
+        let sub_scale = (h / 150.0).floor().max(2.0);
+        c.text_centered(w / 2.0, ty + logo_h + 4.0 * s, sub_scale, [0.86, 0.88, 0.94, 1.0], "RUST EDITION");
 
-        // Yellow splash to the side, gently pulsing, like a classic title splash.
+        // Yellow splash tucked by the lower-right of the logo, gently pulsing.
         let pulse = 1.0 + (time * 3.0).sin() * 0.06;
-        let splash_scale = (sub_scale as f32 * pulse).max(2.0);
+        let splash_scale = (sub_scale * pulse).max(2.0);
         c.text_shadow(
-            w / 2.0 + tw / 2.0 - text_width(&self.splash, splash_scale) * 0.3,
-            ty + GH as f32 * logo_scale + 2.0 * s,
+            (logo_right - text_width(&self.splash, splash_scale) * 0.35).min(w - text_width(&self.splash, splash_scale) - 4.0),
+            ty + logo_h - 2.0 * s,
             splash_scale,
             [1.0, 0.92, 0.25, 1.0],
             &self.splash,
@@ -217,7 +253,7 @@ impl TitleScreen {
         let bh = (26.0 * s).clamp(26.0, 52.0);
         let gap = 10.0 * s;
         let total = self.entries.len() as f32 * (bh + gap) - gap;
-        let mut by = (h * 0.52).max(ty + GH as f32 * logo_scale + 40.0 * s);
+        let mut by = (h * 0.52).max(ty + logo_h + 40.0 * s);
         let _ = total;
         for (label, action) in &self.entries {
             let hovered = mouse.0 >= w / 2.0 - bw / 2.0 && mouse.0 <= w / 2.0 + bw / 2.0 && mouse.1 >= by && mouse.1 <= by + bh;
@@ -230,9 +266,9 @@ impl TitleScreen {
             c.text_centered(w / 2.0, by + 4.0 * s, (2.0 * s).max(2.0), [0.85, 0.9, 1.0, 1.0], &self.status);
         }
         let foot = (2.0 * s).max(2.0);
-        c.text_shadow(6.0 * s, h - GH as f32 * foot - 6.0 * s, foot, [0.8, 0.8, 0.85, 1.0], &self.version);
-        let disc = "UNOFFICIAL - NOT MADE BY OR AFFILIATED WITH MOJANG";
-        c.text_shadow(w - text_width(disc, foot) - 6.0 * s, h - GH as f32 * foot - 6.0 * s, foot, [0.7, 0.7, 0.72, 1.0], disc);
+        c.text_shadow(6.0 * s, h - GH as f32 * foot - 6.0 * s, foot, [0.82, 0.82, 0.86, 1.0], &self.version);
+        let disc = "NOT AFFILIATED WITH MOJANG";
+        c.text_shadow(w - text_width(disc, foot) - 6.0 * s, h - GH as f32 * foot - 6.0 * s, foot, [0.82, 0.82, 0.86, 1.0], disc);
         c
     }
 }
@@ -260,8 +296,11 @@ mod tests {
             splash: "MADE IN RUST!".into(),
             version: "CLAUDIUM 0.1.0".into(),
         };
-        let c = ts.build(1280.0, 720.0, (0.0, 0.0), 0.0);
+        let c = ts.build(1280.0, 720.0, (0.0, 0.0), 0.0, None);
         assert_eq!(c.buttons.len(), 2);
+        // With a logo loaded, the layout still produces the same buttons.
+        let c2 = ts.build(1280.0, 720.0, (0.0, 0.0), 0.0, Some(2.5));
+        assert_eq!(c2.buttons.len(), 2);
         // The center of the first button should hit Play.
         let b = &c.buttons[0];
         let (mx, my) = (b.rect[0] + b.rect[2] / 2.0, b.rect[1] + b.rect[3] / 2.0);
