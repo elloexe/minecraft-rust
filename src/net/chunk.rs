@@ -4,7 +4,7 @@
 //! arrays was removed, a fluid count was added), so the decoder tries each known
 //! layout and keeps the one that consumes the data exactly.
 
-use super::buf::{DResult, DecodeError, Reader};
+use super::buf::{DResult, DecodeError, Reader, Writer};
 use super::nbt;
 use crate::world::{Column, SECTION};
 
@@ -186,6 +186,63 @@ pub fn apply_light(col: &mut Column, light: &LightData) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Encoding (used by Claudium's own server). Produces the 26.x layout the decoder
+// above reads as LAYOUTS[0]: a fluid count per section and no length prefix.
+
+/// Encodes one paletted container: single-valued when uniform, otherwise direct.
+fn encode_container(w: &mut Writer, values: &[u16], direct_bits: u8) {
+    let first = values[0];
+    if values.iter().all(|&v| v == first) {
+        w.u8(0);
+        w.varint(first as i32);
+        return;
+    }
+    let bits = direct_bits;
+    w.u8(bits);
+    let per = 64 / bits as usize;
+    let mut longs = vec![0u64; values.len().div_ceil(per)];
+    for (i, &v) in values.iter().enumerate() {
+        longs[i / per] |= (v as u64) << ((i % per) * bits as usize);
+    }
+    for l in longs {
+        w.i64(l as i64);
+    }
+}
+
+fn encode_section(w: &mut Writer, blocks: &[u16; SECTION]) {
+    let non_air = blocks.iter().filter(|&&v| v != 0).count() as i16;
+    w.i16(non_air);
+    w.i16(0); // fluid count
+    encode_container(w, &blocks[..], 15); // block states, direct = 15 bits
+    encode_container(w, &[0u16; 64], 4); // biomes: single-valued (plains)
+}
+
+/// Body of a "Level Chunk With Light" packet for a column (without the packet id,
+/// which the caller prepends). Kept id-free so this module has no protocol-table deps.
+pub fn encode_chunk_body(cx: i32, cz: i32, col: &Column) -> Vec<u8> {
+    let mut w = Writer::default();
+    w.i32(cx).i32(cz);
+    w.varint(0); // heightmaps: empty map
+
+    let empty = Box::new([0u16; SECTION]);
+    let mut blob = Writer::default();
+    for sec in &col.sections {
+        let blocks = sec.as_deref().unwrap_or(&empty);
+        encode_section(&mut blob, blocks);
+    }
+    w.byte_array(&blob.buf);
+
+    w.varint(0); // block entities
+
+    // Light: send full-bright by marking every section empty-sky (no block light).
+    // Four bitsets then two array lists; all empty means the client keeps full sky light.
+    for _ in 0..6 {
+        w.varint(0);
+    }
+    w.done()
+}
+
 /// Parses "Level Chunk With Light". Returns chunk coordinates and the column.
 pub fn read_chunk(r: &mut Reader, section_count: usize, layout: &mut Layout) -> DResult<(i32, i32, Column)> {
     let cx = r.i32()?;
@@ -306,6 +363,30 @@ mod tests {
             assert_eq!(&s0[..], &expected[..4096]);
             assert_eq!(&s2[..], &expected[4096..]);
         }
+    }
+
+    #[test]
+    fn encode_decode_round_trip() {
+        // A column with a uniform section, an empty section and a varied section.
+        let mut col = Column::new(3);
+        for i in 0..SECTION {
+            col.set(i & 15, i >> 8, (i >> 4) & 15, 7); // section 0: all id 7
+        }
+        // section 1 left empty (None)
+        col.set(3, 32, 4, 42); // section 2: a couple of blocks
+        col.set(9, 40, 1, 999);
+        let body = encode_chunk_body(5, -3, &col);
+        let mut layout = LAYOUTS[0];
+        let (cx, cz, out) = read_chunk(&mut Reader::new(&body), 3, &mut layout).expect("decode");
+        assert_eq!((cx, cz), (5, -3));
+        for y in 0..48 {
+            for z in 0..16 {
+                for x in 0..16 {
+                    assert_eq!(out.get(x, y, z), col.get(x, y, z), "mismatch at {x},{y},{z}");
+                }
+            }
+        }
+        assert!(out.sections[1].is_none(), "empty section should stay empty");
     }
 
     #[test]

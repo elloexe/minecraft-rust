@@ -12,6 +12,7 @@ mod player;
 mod registry;
 mod render;
 mod save;
+mod server;
 mod world;
 mod worldgen;
 
@@ -70,6 +71,8 @@ struct Args {
     fov: f32,
     protocol: Option<i32>,
     accept_conduct: bool,
+    server: bool,
+    port: u16,
 }
 
 const HELP: &str = "\
@@ -77,7 +80,8 @@ Claudium - a Minecraft client written in Rust (targets Minecraft 26.1.2 - 26.3)
 
 USAGE:
   claudium                              play the local world
-  claudium --connect HOST[:PORT]        join a Minecraft server
+  claudium --connect HOST[:PORT]        join a Minecraft (or Claudium) server
+  claudium --server                     run a headless Claudium server
   claudium --ping HOST[:PORT]           show a server's status
 
 OPTIONS:
@@ -95,6 +99,8 @@ OPTIONS:
   --no-vsync              uncapped frame rate
   --protocol N            override the protocol number sent to servers
   --accept-conduct        accept a server's code of conduct automatically
+  --server                run a dedicated Claudium server instead of the game
+  --port N                port for --server (default: 25565)
 
 CONTROLS:
   WASD move, Space jump/up, Shift sneak/down, Ctrl sprint, F toggle flying
@@ -120,6 +126,8 @@ fn parse_args() -> Args {
         fov: 70.0,
         protocol: None,
         accept_conduct: false,
+        server: false,
+        port: 25565,
     };
     let mut seed_set = false;
     let mut it = std::env::args().skip(1);
@@ -151,6 +159,8 @@ fn parse_args() -> Args {
             "--no-vsync" => a.vsync = false,
             "--protocol" => a.protocol = val().parse().ok(),
             "--accept-conduct" => a.accept_conduct = true,
+            "--server" => a.server = true,
+            "--port" => a.port = val().parse().unwrap_or(25565),
             "--help" | "-h" => {
                 print!("{HELP}");
                 std::process::exit(0);
@@ -290,9 +300,12 @@ impl Game {
         };
         let has_tex = |n: &str| textures.has(n);
 
-        // Block registry
+        // Block registry. Claudium's own server uses the singleplayer block ids, so when
+        // we detect one (by its status brand) we use the matching registry and textures.
         let multiplayer = args.connect.is_some();
-        let (registry, tiles) = if multiplayer {
+        let claudium_server =
+            args.connect.as_deref().map(|a| net::ping(a).map(|s| s.version.starts_with("Claudium")).unwrap_or(false)).unwrap_or(false);
+        let (registry, tiles) = if multiplayer && !claudium_server {
             match find_blocks_report(&args) {
                 Some(p) => {
                     let text = std::fs::read_to_string(&p)?;
@@ -312,6 +325,9 @@ impl Game {
                 }
             }
         } else {
+            if claudium_server {
+                println!("Connecting to a Claudium server; using matching block set.");
+            }
             registry::build_singleplayer(&has_tex)
         };
         let registry = Arc::new(registry);
@@ -1166,6 +1182,14 @@ fn main() {
     if args.logout {
         let _ = std::fs::remove_file(data_dir().join("auth.json"));
         println!("Signed out.");
+        return;
+    }
+    if args.server {
+        // Headless dedicated server: no window, no GPU.
+        if let Err(e) = server::run(args.port, args.seed) {
+            eprintln!("server error: {e:#}");
+            std::process::exit(1);
+        }
         return;
     }
     if let Some(addr) = &args.ping {
