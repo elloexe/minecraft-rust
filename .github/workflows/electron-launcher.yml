@@ -88,7 +88,7 @@ jobs:
           echo "Downloading Temurin JDK ${major} for Windows x64"
           curl -fL --retry 4 --retry-delay 5 "$url" -o jdk.zip
           mkdir -p jdk-extract
-          tar -xf jdk.zip -C jdk-extract
+          powershell -NoProfile -Command "Expand-Archive -Path jdk.zip -DestinationPath jdk-extract -Force"
           inner=$(ls -d jdk-extract/*/ | head -1)
           mkdir -p launcher-electron/jdk
           cp -r "${inner}." launcher-electron/jdk/
