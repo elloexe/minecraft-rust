@@ -1,0 +1,96 @@
+name: windows exe
+# Builds what players download on Windows: Claudium-Launcher.exe and Claudium.exe.
+#
+# Both have to be built on a Windows runner, not cross-compiled from Linux: wgpu and GPUI draw
+# through DirectX there, and the icon is embedded by a Windows-only build script (winresource).
+#
+# The launcher is the one players run. The game needs resources prepared from the player's own
+# copy of Minecraft before it will start, which is what the launcher does for them.
+#
+# Every run uploads the exes as artifacts (Actions -> the run -> Artifacts). A `v*` tag also
+# attaches them to the release.
+# Only where an exe is actually wanted. Pull requests are compile-checked on Linux by ci.yml,
+# which is far cheaper than a cold 877k-line Windows build.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-exe-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  launcher:
+    name: launcher
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: launcher
+          shared-key: launcher-windows
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Build
+        working-directory: launcher
+        run: cargo build --release --locked --bin claudium-launcher
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp launcher/target/release/claudium-launcher.exe dist/Claudium-Launcher.exe
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: claudium-launcher-windows
+          path: dist/Claudium-Launcher.exe
+          if-no-files-found: error
+
+  game:
+    name: game
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: game-windows
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Build
+        run: cargo build --release --locked -p horizon-client --bins
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir -p dist
+          # The crate is still named for upstream, so the binary is renamed on the way out
+          # rather than in Cargo.toml, where the library target's name is load-bearing.
+          cp target/release/horizon-client.exe dist/Claudium.exe
+          cp target/release/horizon-ctl.exe dist/claudium-ctl.exe
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: claudium-game-windows
+          path: dist/*.exe
+          if-no-files-found: error
+
+  release:
+    name: attach to the release
+    needs: [launcher, game]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+          generate_release_notes: true

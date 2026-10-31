@@ -12,11 +12,11 @@ are ours.
   and sidebar wordmark to Claudium. The Cargo package keeps upstream's name so
   the library target stays `horizon_launcher`, which the whole crate imports by
   that path; only the binary is renamed.
-- Added `.github/workflows/launcher-exe.yml`: builds `claudium-launcher.exe` on
-  a Windows runner and uploads it as an artifact, attaching it to the release on
-  a `launcher-v*` tag. GPUI draws through DirectX on Windows and the icon is
-  embedded by a Windows-only build script, so this cannot be cross-compiled from
-  Linux.
+- Added `.github/workflows/windows-exe.yml`: builds `Claudium-Launcher.exe` and
+  `Claudium.exe` (plus `claudium-ctl.exe`) on Windows runners, uploads them as
+  artifacts on every run and attaches them to the release on a `v*` tag. Neither
+  can be cross-compiled from Linux: wgpu and GPUI draw through DirectX there,
+  and the icon is embedded by a Windows-only build script.
 
 - Rebuilt the Play row as the Minecraft launcher's play bar: a full-width band
   under the hero with its own fill and a rule along the top, the version picker
@@ -51,6 +51,12 @@ are ours.
 - Removed the previous from-scratch Claudium client (~7.5k lines: wgpu renderer,
   world generation, Java Edition protocol client, egui launcher). It is still on
   the `main` branch if anything there is worth recovering.
+
+### Notes
+
+- [docs/claudium/roadmap.md](roadmap.md) records what is already done upstream
+  in mod porting and performance, what is genuinely open, and what each open
+  item is blocked on. Read it before planning work in either area.
 
 ## Known gaps
 
