@@ -5,3 +5,4 @@ bin/claudium-launcher*
 game/*.exe
 game/research-lock.json
 jdk/
+game/mods/

@@ -67,7 +67,13 @@ jobs:
           cp target/release/claudium-ctl.exe     launcher-electron/game/claudium-ctl.exe
           cp target/release/claudium-prepare.exe launcher-electron/game/claudium-prepare.exe
           cp research-lock.json                  launcher-electron/game/research-lock.json
+          # The exporter sources prepare compiles on the player's machine (javac). They must land
+          # at <version>/mods/claudium/src/test/java/... after the launcher installs the bundle.
+          mkdir -p launcher-electron/game/mods/claudium/src/test/java/dev/claudiumlab
+          cp -r mods/claudium/src/test/java/dev/claudiumlab/parity \
+                launcher-electron/game/mods/claudium/src/test/java/dev/claudiumlab/
           ls -l launcher-electron/bin launcher-electron/game
+          echo "exporter sources: $(find launcher-electron/game/mods -name '*.java' | wc -l) .java files"
 
       # 4) Bundle a Java JDK so preparing the game needs no Java install and no Mojang download.
       #    research-lock.json pins java_major (25); Temurin (Adoptium) ships that as a redistributable
