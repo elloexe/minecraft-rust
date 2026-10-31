@@ -417,7 +417,7 @@ impl Default for Links {
     fn default() -> Self {
         Self {
             discord: "https://discord.gg/HcTeMZxe5E".into(),
-            sponsor: "https://github.com/sponsors/ludovic111".into(),
+            sponsor: "https://github.com/sponsors/elloexe".into(),
             website: "https://claudium.invalid".into(),
         }
     }
@@ -4007,11 +4007,11 @@ pub fn {f}("
     fn links_fall_back_to_the_built_in_ones() {
         let defaults = Links::default();
         assert_eq!(defaults.discord, "https://discord.gg/HcTeMZxe5E");
-        assert_eq!(defaults.sponsor, "https://github.com/sponsors/ludovic111");
+        assert_eq!(defaults.sponsor, "https://github.com/sponsors/elloexe");
         assert_eq!(defaults.website, "https://claudium.invalid");
         // The file on main says the same thing as the defaults.
         let file = Links::parse(
-            r#"{"discord": "https://discord.gg/HcTeMZxe5E", "sponsor": "https://github.com/sponsors/ludovic111", "website": "https://claudium.invalid"}"#,
+            r#"{"discord": "https://discord.gg/HcTeMZxe5E", "sponsor": "https://github.com/sponsors/elloexe", "website": "https://claudium.invalid"}"#,
         );
         assert_eq!(file, defaults);
         // Unreadable or missing, offline included: the defaults.

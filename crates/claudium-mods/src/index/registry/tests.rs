@@ -28,7 +28,7 @@ name = "Coordinates HUD"
 summary = "Your coordinates, facing and the time of day in a corner of the screen."
 description = "`/where` puts them in chat, `/coords` hides or shows the panel."
 authors = ["Claudium"]
-owners = ["ludovic111"]
+owners = ["elloexe"]
 license = "MIT"
 source = "https://github.com/elloexe/minecraft-rust/tree/main/crates/claudium-mod-sdk/examples/coords-hud"
 icon = "icons/coords_hud.png"
@@ -50,7 +50,7 @@ kind = "modpack"
 name = "Cozy"
 summary = "Coordinates and a calm render distance."
 authors = ["Claudium"]
-owners = ["ludovic111"]
+owners = ["elloexe"]
 license = "MIT"
 source = "https://github.com/elloexe/claudium-mods"
 
@@ -67,7 +67,7 @@ kind = "shader"
 name = "Soft Glow"
 summary = "A post-processing pass over the world."
 authors = ["Claudium"]
-owners = ["ludovic111"]
+owners = ["elloexe"]
 license = "MIT"
 source = "https://github.com/elloexe/claudium-mods"
 
@@ -222,7 +222,7 @@ fn a_review_protects_published_files() {
     let mut next = update.versions[0].clone();
     next.version = "0.2.0".into();
     update.versions.insert(0, next);
-    let r = review(one, std::slice::from_ref(&update), "ludovic111");
+    let r = review(one, std::slice::from_ref(&update), "elloexe");
     assert!(r.errors.is_empty(), "{r:?}");
     assert_eq!(r.notes, ["coords_hud: 1 new version(s)"]);
     let r = review(one, &[update], "stranger");
@@ -232,7 +232,7 @@ fn a_review_protects_published_files() {
     swapped.versions[0].sha256 = HPACK.into();
     swapped.kind = Kind::ResourcePack;
     swapped.key = None;
-    let r = review(&[base.clone(), cozy.clone()], &[swapped], "ludovic111");
+    let r = review(&[base.clone(), cozy.clone()], &[swapped], "elloexe");
     assert_eq!(r.errors.len(), 3, "{r:?}");
     assert!(r.errors.iter().any(|e| e.contains("cozy: removed")));
     assert!(r.errors.iter().any(|e| e.contains("never changes")));
@@ -240,7 +240,7 @@ fn a_review_protects_published_files() {
     assert!(r.notes.iter().any(|n| n.contains("signing key")));
 
     let r = review(&[], &[cozy], "newcomer");
-    assert_eq!(r.notes, ["cozy: a new modpack by ludovic111"]);
+    assert_eq!(r.notes, ["cozy: a new modpack by elloexe"]);
 }
 
 #[test]
@@ -255,7 +255,7 @@ fn a_mod_may_turn_native_once() {
     let r = review(
         std::slice::from_ref(&base),
         std::slice::from_ref(&native),
-        "ludovic111",
+        "elloexe",
     );
     assert!(r.errors.is_empty(), "{r:?}");
     assert!(r.notes.iter().any(|n| n.contains("turns native")), "{r:?}");
@@ -263,7 +263,7 @@ fn a_mod_may_turn_native_once() {
     assert_eq!(file_kind(&native, &native.versions[1]), Kind::Mod);
     assert_eq!(file_kind(&native, &native.versions[0]), Kind::NativeMod);
     // And never back.
-    let r = review(&[native], &[base], "ludovic111");
+    let r = review(&[native], &[base], "elloexe");
     assert!(
         r.errors.iter().any(|e| e.contains("kind can't change")),
         "{r:?}"

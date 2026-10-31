@@ -220,7 +220,7 @@ later the panel) on 127.0.0.1 inside the container: `docker exec <name> claudium
 On the first start, `CLAUDIUM_EULA=true` and `CLAUDIUM_WORLD`, `CLAUDIUM_SEED`, `CLAUDIUM_PORT`,
 `CLAUDIUM_WHITELIST`, `CLAUDIUM_PLAYERS` and `CLAUDIUM_OP` answer `init`'s questions; without the EULA answer
 the container exits and says why. `docker stop` sends SIGTERM, which saves and stops cleanly (give it
-`--stop-timeout 180`). The image is published only with Ludovic's OK (it's hosted infrastructure).
+`--stop-timeout 180`). The image is published only with the maintainer's OK (it's hosted infrastructure).
 
 **Services.**
 

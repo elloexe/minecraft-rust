@@ -19,7 +19,7 @@ Level: preview ([stability.md](stability.md)). Schema 1.
   "generated": "2026-10-24T18:00:00Z",
   "projects": [{
     "id": "coords_hud", "kind": "mod", "name": "Coordinates HUD", "summary": "One line.",
-    "description": "Markdown.", "authors": ["Claudium"], "owners": ["ludovic111"],
+    "description": "Markdown.", "authors": ["Claudium"], "owners": ["elloexe"],
     "license": "MIT", "source": "https://github.com/...", "icon": "https://...png", "key": "RWT...", "downloads": 1234,
     "versions": [{
       "version": "0.1.0", "published": "2026-10-24", "changelog": "",
@@ -107,7 +107,7 @@ check (`index::inspect`): a mod's API, side and capabilities, a modpack's mods, 
 id = "coords_hud"                # the file's name, and the manifest's id
 kind = "mod"                     # mod | native-mod | modpack | resourcepack | shader
 repo = "elloexe/coords-hud" # GitHub owner/name: its releases are its versions
-owners = ["ludovic111"]          # GitHub logins responsible for the project
+owners = ["elloexe"]          # GitHub logins responsible for the project
 key = "RWT..."                   # optional: the minisign public key every version is signed with
 icon = "icons/coords_hud.png"    # optional: a PNG of at most 256 KiB in the repository, or https://
 # The page. Each field may instead come from claudium-registry.toml in the repo (below); these win.

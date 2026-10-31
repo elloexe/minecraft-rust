@@ -13,13 +13,13 @@ fn search_matches_every_word_in_any_case() {
 
 #[test]
 fn the_shared_log_has_no_home_folder_or_names() {
-    let log = "Loading /Users/ludovicmarie/Library/Application Support/claudium/options.txt\n\
-               C:\\Users\\ludovicmarie\\AppData\\claudium too\n\
+    let log = "Loading /Users/owner/Library/Application Support/claudium/options.txt\n\
+               C:\\Users\\owner\\AppData\\claudium too\n\
                Ludo47 joined the game\n\
                <ludo47> hi, Ludo470 is someone else\n\
-               user LUDOVICMARIE on ludovicmarie-mac\n";
-    let names = vec!["ludovicmarie".to_string(), "Ludo47".to_string()];
-    let out = private(log, Some(Path::new("/Users/ludovicmarie")), &names);
+               user OWNER on owner-mac\n";
+    let names = vec!["owner".to_string(), "Ludo47".to_string()];
+    let out = private(log, Some(Path::new("/Users/owner")), &names);
     assert_eq!(
         out,
         "Loading ~/Library/Application Support/claudium/options.txt\n\

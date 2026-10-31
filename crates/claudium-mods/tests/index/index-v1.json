@@ -12,7 +12,7 @@
         "Claudium"
       ],
       "owners": [
-        "ludovic111"
+        "elloexe"
       ],
       "license": "MIT",
       "source": "https://github.com/elloexe/minecraft-rust/tree/main/crates/claudium-mod-sdk/examples/coords-hud",
@@ -50,7 +50,7 @@
         "Claudium"
       ],
       "owners": [
-        "ludovic111"
+        "elloexe"
       ],
       "license": "MIT",
       "source": "https://github.com/elloexe/claudium-mods",
@@ -85,7 +85,7 @@
         "Claudium"
       ],
       "owners": [
-        "ludovic111"
+        "elloexe"
       ],
       "license": "MIT",
       "source": "https://github.com/elloexe/claudium-mods",

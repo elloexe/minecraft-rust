@@ -21,10 +21,10 @@
     "explore_speed": 0,
     "gamerule": "",
     "heap": "4g",
-    "out": "/home/ludovic/code/claudium/.claude/worktrees/server-host-4/.local/bench-out/walk-explore.json",
+    "out": "/home/owner/code/claudium/.claude/worktrees/server-host-4/.local/bench-out/walk-explore.json",
     "nice": 19,
     "bots_via": "ssh macmini",
-    "bots_bin": "/Users/ludovicmarie/code/claudium/.claude/worktrees/server-host-4/target/release/claudium-bots",
+    "bots_bin": "/Users/owner/code/claudium/.claude/worktrees/server-host-4/target/release/claudium-bots",
     "connect": "<server address>",
     "properties": {
       "level-seed": "12345",

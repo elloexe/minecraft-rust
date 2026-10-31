@@ -953,7 +953,7 @@ pub fn publish(
         .collect();
     let body = format!(
         "<!-- submitted-by: {login} -->\n🤖 Submitted through [{site}]({public}/mods/submit) by @{login}. The form opens the pull request with \
-         the registry's token: neither Ludovic nor a reviewer wrote it.\n\n\
+         the registry's token: neither the maintainer nor a reviewer wrote it.\n\n\
          | | |\n|---|---|\n| Project | `{id}` ({kind}, {new}) |\n| Version | {version} for {game} |\n| File | `{file}`, {size} bytes, SHA-256 `{sha256}` |\n| Signed | {signed} |\n| Source | {source} |\n\n{lists}\n\n\
          The checks below run the file's own checks again and, for a mod, a trial run in the sandbox. \
          Reviewers: read the source and the checks' report before you approve.",
@@ -1085,7 +1085,7 @@ pub fn list(config: &Config, login: &str, user_id: u64, form: &Form) -> Result<S
     let owner = info["owner"]["login"].as_str().unwrap_or("?");
     let body = format!(
         "<!-- submitted-by: {login} -->\n🤖 Submitted through [{site}]({public}/mods/submit) by @{login}. The form opens the pull request with \
-         the registry's token: neither Ludovic nor a reviewer wrote it.\n\n\
+         the registry's token: neither the maintainer nor a reviewer wrote it.\n\n\
          | | |\n|---|---|\n| Project | `{id}` ({kind}, new) |\n| Repository | https://github.com/{repo} (owned by `{owner}`: {same}) |\n| Signed | {signed} |\n\n\
          **Reviewers: this is the only review.** Releases published in that repository later are listed after the registry's automatic checks, with no pull request. \
          Read the repository and its source, check that the submitter is allowed to speak for it, and that the page is accurate. \

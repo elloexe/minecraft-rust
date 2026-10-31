@@ -4,11 +4,11 @@
     nightly_set.py command     one `/nightly …` comment (nightly-command.yml): checks who asked, updates the set,
                                starts the build and answers in the thread
 
-A comment by Ludovic or by a login in .github/trusted-reviewers.txt, on any issue or pull request:
+A comment by the maintainer or by a login in .github/trusted-reviewers.txt, on any issue or pull request:
 
     /nightly 2640 2642     the set becomes these pull requests, merged onto main in this order; builds now
     /nightly add 2650      adds one, or takes its newest head again; builds now
-    /nightly remove 2640   drops one; builds now. Ludovic's remove also keeps reviewers from adding it back
+    /nightly remove 2640   drops one; builds now. the maintainer's remove also keeps reviewers from adding it back
     /nightly clear         empties the set: the Nightly is main alone again; builds now
     /nightly status        what the set holds
     /nightly dry-run 2640  builds main + these and signs with a throwaway key; publishes nothing, the set stays
@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-OWNER = "ludovic111"
+OWNER = "elloexe"
 REVIEWERS = ".github/trusted-reviewers.txt"
 CODEOWNERS = ".github/CODEOWNERS"
 # What CODEOWNERS guards today, refused even if the file moved: what builds, signs and checks releases.
@@ -128,17 +128,17 @@ def is_owner(login: str) -> bool:
 
 
 def authorize(login: str, reviewers: Reviewers) -> None:
-    """Ludovic always; a listed reviewer unless the list is paused; nobody else."""
+    """the maintainer always; a listed reviewer unless the list is paused; nobody else."""
     if is_owner(login):
         return
     if login.lower() not in reviewers.logins:
-        raise Refused(f"Only Ludovic and the trusted reviewers listed in `{REVIEWERS}` can pick the Nightly.")
+        raise Refused(f"Only the maintainer and the trusted reviewers listed in `{REVIEWERS}` can pick the Nightly.")
     if reviewers.paused:
-        raise Refused(f"`/nightly` is paused: Ludovic stopped it in `{REVIEWERS}`.")
+        raise Refused(f"`/nightly` is paused: the maintainer stopped it in `{REVIEWERS}`.")
 
 
 def guarded_patterns(codeowners: str) -> list[str]:
-    """The paths CODEOWNERS gives to Ludovic, plus ALWAYS_GUARDED."""
+    """The paths CODEOWNERS gives to the maintainer, plus ALWAYS_GUARDED."""
     found = [line.split()[0] for line in codeowners.splitlines() if line.strip().startswith("/")]
     return sorted(set(found + ALWAYS_GUARDED))
 
@@ -161,8 +161,8 @@ class PullRequest:
 
 
 def approvers(pr: PullRequest, head: str, team: set[str]) -> list[str]:
-    """Who approved `pr` at exactly `head`: a trusted reviewer, or Ludovic (his own review or his agents', which post
-    as ludovic111), never its author. A Nightly reaches every player (Ludovic, 2026-10-28): nothing goes in that the
+    """Who approved `pr` at exactly `head`: a trusted reviewer, or the maintainer (his own review or his agents', which post
+    as elloexe), never its author. A Nightly reaches every player (the maintainer, 2026-10-28): nothing goes in that the
     Team or the agents haven't reviewed, and a push after the review needs a new one."""
     ok = {t.lower() for t in team} | {OWNER}
     return sorted(login for login, sha in pr.approvals.items()
@@ -170,7 +170,7 @@ def approvers(pr: PullRequest, head: str, team: set[str]) -> list[str]:
 
 
 def check(pr: PullRequest | None, number: int, patterns: list[str], team: set[str] | None = None) -> str | None:
-    """Why `pr` can't go in a Nightly, or None. `team`: the trusted reviewers, whose approval (or Ludovic's) it needs
+    """Why `pr` can't go in a Nightly, or None. `team`: the trusted reviewers, whose approval (or the maintainer's) it needs
     at its head; None skips that, for a dry run, which publishes nothing."""
     if pr is None:
         return f"#{number} isn't a pull request here"
@@ -181,9 +181,9 @@ def check(pr: PullRequest | None, number: int, patterns: list[str], team: set[st
     bad = [f for f in pr.files if guarded(f, patterns)]
     if bad:
         more = f" and {len(bad) - 1} more" if len(bad) > 1 else ""
-        return f"#{number} changes `{bad[0]}`{more}, which only Ludovic merges (CODEOWNERS)"
+        return f"#{number} changes `{bad[0]}`{more}, which only the maintainer merges (CODEOWNERS)"
     if team is not None and not approvers(pr, pr.head, team):
-        return (f"#{number} has no approving review at its head {pr.head[:7]} from the Team or Ludovic's agents "
+        return (f"#{number} has no approving review at its head {pr.head[:7]} from the Team or the maintainer's agents "
                 "(not its author)")
     return None
 
@@ -223,7 +223,7 @@ def apply(state: dict, cmd: Command, login: str, now: str, lookup: Callable[[int
     blocked: list[int] = st.setdefault("blocked", [])
     owner = is_owner(login)
     if cmd.verb == "status":
-        extra = f"\nOnly Ludovic can add these back: {', '.join(f'#{n}' for n in blocked)}." if blocked else ""
+        extra = f"\nOnly the maintainer can add these back: {', '.join(f'#{n}' for n in blocked)}." if blocked else ""
         return Result(state, describe(prs) + extra, False)
     if cmd.verb == "clear":
         st["prs"] = []
@@ -236,7 +236,7 @@ def apply(state: dict, cmd: Command, login: str, now: str, lookup: Callable[[int
             st["blocked"] = blocked + [n for n in cmd.prs if n not in blocked]
     else:  # set, add, dry-run
         if not owner and (held := [n for n in cmd.prs if n in blocked]):
-            raise Refused(f"Ludovic took {', '.join(f'#{n}' for n in held)} out of the Nightly; only he can put "
+            raise Refused(f"the maintainer took {', '.join(f'#{n}' for n in held)} out of the Nightly; only he can put "
                           "it back.")
         problems, asked = [], []
         for n in cmd.prs:

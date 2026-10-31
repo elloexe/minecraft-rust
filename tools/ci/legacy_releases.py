@@ -25,7 +25,7 @@ HEADER = """\
 # Releases published before signing began, with their archives' SHA-256 as GitHub computed them at upload:
 # `<tag> <asset> <sha256>` per line, written by tools/ci/legacy_releases.py. The launcher and claudium-server
 # install these releases only with exactly these files (docs/security.md, "Signed updates"); every later release
-# is checked against its signed SHA256SUMS instead. Changing this file needs Ludovic's review (.github/CODEOWNERS).
+# is checked against its signed SHA256SUMS instead. Changing this file needs the maintainer's review (.github/CODEOWNERS).
 """
 
 

@@ -3,12 +3,12 @@
 Claudium signs players in with their Microsoft account in the launcher and joins online-mode
 (authenticated) servers like vanilla 26.3 does. The launcher plays only with an account that owns
 Minecraft: Java Edition ([the owner gate](#the-owner-gate)); offline names, LAN and offline-mode
-servers play behind it. This note is the design, the status of each part and what Ludovic has to
+servers play behind it. This note is the design, the status of each part and what the maintainer has to
 register.
 
-## What Ludovic registers (needs his accounts)
+## What the maintainer registers (needs his accounts)
 
-Nothing below can be done by an agent: the app registrations belong to Ludovic. A build without
+Nothing below can be done by an agent: the app registrations belong to the maintainer. A build without
 the client ID can't sign in, so its launcher can't start the game ("This build of the launcher has
 no Microsoft sign-in"); release builds have it.
 
@@ -68,7 +68,7 @@ All requests use HTTPS and JSON except the two OAuth calls (form-encoded):
 
 ## The owner gate
 
-Decided 2026-10-27 (Ludovic, after a modder's suggestion): like other launchers, Claudium's
+Decided 2026-10-27 (the maintainer, after a modder's suggestion): like other launchers, Claudium's
 launcher starts the game only while an account in it owns Java Edition. Offline play stays
 possible; the launcher just doesn't offer it on its own.
 

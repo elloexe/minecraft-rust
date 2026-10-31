@@ -1,13 +1,13 @@
 # Security
 
 How Claudium keeps its code and its downloads safe while most of the work is done by AI agents and releases go out
-by themselves, including when Ludovic isn't at his computer. In plain words: what someone could have done before,
-what stops them now, and what still needs Ludovic.
+by themselves, including when the maintainer isn't at his computer. In plain words: what someone could have done before,
+what stops them now, and what still needs the maintainer.
 
 ## Who does what
 
-- **Agents** (Claude sessions run by Ludovic) write most pull requests, review them, merge them and answer
-  reports. Everything an agent posts on GitHub says so ("Opened by Ludovic's AI agent").
+- **Agents** (Claude sessions run by the maintainer) write most pull requests, review them, merge them and answer
+  reports. Everything an agent posts on GitHub says so ("Opened by the maintainer's AI agent").
 - **Contributors** send pull requests from their forks like on any open-source project.
 - **Players** report bugs on Discord and GitHub. Kira, the Discord bot, files their reports as issues.
 - **Releases** are automatic: every merged change that players run ships within the hour.
@@ -15,7 +15,7 @@ what stops them now, and what still needs Ludovic.
 ## What could go wrong before (October 2026)
 
 1. **Instructions hidden in a report.** Someone could write "ignore your previous instructions and…" in a
-   Discord message or an issue. Agents read those reports while working with Ludovic's full GitHub account.
+   Discord message or an issue. Agents read those reports while working with the maintainer's full GitHub account.
 2. **A check that counted as passed without running.** Adding a label to a pull request started a second run of
    the checks in which `verify` was *skipped*, and GitHub counts a skipped required check as passed. Two pull
    requests merged before their real check had finished.
@@ -29,7 +29,7 @@ what stops them now, and what still needs Ludovic.
 ## Where things stand (19 October 2026)
 
 The next section describes the design once every part is in place. Some parts are live, some are waiting to merge,
-and some are waiting for Ludovic:
+and some are waiting for the maintainer:
 
 | Part | Today |
 | --- | --- |
@@ -38,10 +38,10 @@ and some are waiting for Ludovic:
 | Private vulnerability reporting | **Live** (see the end of this page). |
 | Signed checksums on releases | **Live** for new releases (#1011): the `release` environment holds the key, and its public half is in `release-keys.txt` (#1023). Releases from before then are unsigned. |
 | Launchers and servers checking signatures | **Not yet**: #1014 waits as a draft until a signed stable game release and a signed launcher release exist. Until then they trust GitHub's checksum, as before. |
-| Smoke test and release-blocker before publishing | **Live**: since 2026-10-23 every release is the latest at once (one channel, Ludovic's decision), so it is published only after its smoke test passed and while no `release-blocker` is open. The 6-hour beta of the old Alpha, then stable flow (#1012) is gone. |
+| Smoke test and release-blocker before publishing | **Live**: since 2026-10-23 every release is the latest at once (one channel, the maintainer's decision), so it is published only after its smoke test passed and while no `release-blocker` is open. The 6-hour beta of the old Alpha, then stable flow (#1012) is gone. |
 | Reports marked suspicious | **Partly**: the scan of Discord for agents does it. Kira's issues do it once its pull request merges. |
 | Code owners' review of the pipeline | **Not yet**: `.github/CODEOWNERS` and its protection (#1015) wait for the App, below. Until then pipeline changes merge like any other once `verify` passes. |
-| Agents on their own GitHub App | **Not yet**: prepared, waiting for Ludovic to create it. Agents still use his account. |
+| Agents on their own GitHub App | **Not yet**: prepared, waiting for the maintainer to create it. Agents still use his account. |
 | Mac mini releases from a clean checkout | **Waiting to merge** (#1024): see "What this doesn't solve". |
 
 ## What stops it now
@@ -65,16 +65,16 @@ and some are waiting for Ludovic:
   began: their checksums are built into the launcher and the server too. The private key exists only as
   a secret of GitHub's `release` environment, which only real releases from main can use. The job that signs runs
   nothing from the repository but a short script calling OpenSSL, so no pull request can read the key by changing
-  the code that gets built. Nobody, Ludovic included, ever needs to see it.
-- **The release machinery needs Ludovic.** The workflows, the release and signing tools, the update-checking code
+  the code that gets built. Nobody, the maintainer included, ever needs to see it.
+- **The release machinery needs the maintainer.** The workflows, the release and signing tools, the update-checking code
   and the installers are listed in `.github/CODEOWNERS`. Once main's protection requires code owners' reviews, a
-  change to any of them waits for Ludovic's approval. Everything else still merges as soon as its checks pass.
-- **Agents get their own, smaller identity** (prepared, switched on by Ludovic). The `claudium-agent` GitHub App
+  change to any of them waits for the maintainer's approval. Everything else still merges as soon as its checks pass.
+- **Agents get their own, smaller identity** (prepared, switched on by the maintainer). The `claudium-agent` GitHub App
   can read and write code, pull requests and issues, and read the checks. It cannot change settings, workflows,
   secrets or members, and its tokens last an hour. Once agents use it, their pull requests are the app's, and
-  Ludovic approves the rare pipeline change with one tap.
+  the maintainer approves the rare pipeline change with one tap.
 
-## What still needs Ludovic
+## What still needs the maintainer
 
 - **Approving pipeline changes** (rare): a pull request touching a file in `.github/CODEOWNERS`.
 - **Holding releases back or speeding one up**, from his phone if he likes. Label an issue `release-blocker` to
@@ -91,7 +91,7 @@ and some are waiting for Ludovic:
   is good. Against a bad change, the safety nets are the checks and harnesses, review, the release smoke test and
   the release-blocker label. Since the single channel there is no 6-hour beta: a change reaches every player
   within minutes of merging.
-- **Until agents switch to the App**, they still work with Ludovic's own account, so nothing technical tells his
+- **Until agents switch to the App**, they still work with the maintainer's own account, so nothing technical tells his
   actions from theirs. Code owners' reviews are switched on together with the App.
 - **The Mac mini** builds the macOS release and also runs pull requests' parity checks: a pull request from this
   repository runs its code there before review, and a fork's does once a maintainer adds `run-parity`. Code

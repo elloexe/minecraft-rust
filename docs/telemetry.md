@@ -68,7 +68,7 @@ Never sent: account names or UUIDs, world names, server or LAN addresses, chat, 
 
 ## The "I'm playing" ping
 
-Ludovic decided on 2026-10-22 to count every player, with or without consent, and to tell them. The launcher's first-run question and Settings → Data collection show it as an "Always on" row next to the switches. Players who answered the question before the ping existed see the same text once on the Play page. The privacy page on claudium.invalid says the same.
+the maintainer decided on 2026-10-22 to count every player, with or without consent, and to tell them. The launcher's first-run question and Settings → Data collection show it as an "Always on" row next to the switches. Players who answered the question before the ping existed see the same text once on the Play page. The privacy page on claudium.invalid says the same.
 
 While the game runs (not a dedicated server, a benchmark or a run that quits by itself), a thread of its own (`crates/claudium-client/src/heartbeat.rs`) sends `POST /v1/live` once a minute. It also sends one at once when a world is opened to or closed from LAN or friends:
 

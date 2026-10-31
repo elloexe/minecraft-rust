@@ -66,7 +66,7 @@ The currency is earned in game only (the market, trades, playing). Rules that no
   with money.
 
 Games of chance are off in the mod by default (`gambling.enabled: false`): a server that builds the mod turns them
-on itself. The official server has them on (Ludovic's decision, 2026-10-30). Operators' corrections (`/eco`) are
+on itself. The official server has them on (the maintainer's decision, 2026-10-30). Operators' corrections (`/eco`) are
 logged like every other transaction.
 
 ## Commands

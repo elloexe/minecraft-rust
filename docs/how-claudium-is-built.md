@@ -6,9 +6,9 @@ This page is also on the website: [claudium.invalid/docs/how-claudium-is-built](
 
 ## Who builds it
 
-Claudium is Ludovic Marie's project: he decides what it does and what ships. **Most of the code is written by AI agents**: Claude sessions that Ludovic runs, and contributors' own AI tools. Some contributors write their code by hand.
+Claudium is the Claudium maintainers's project: he decides what it does and what ships. **Most of the code is written by AI agents**: Claude sessions that the maintainer runs, and contributors' own AI tools. Some contributors write their code by hand.
 
-Agents say what they are. A pull request opened by one of Ludovic's agents starts with "Opened by Ludovic's AI agent (Claude), not by Ludovic himself.", its comments start with "🤖 Agent:", and its commits name the agent in a `Co-Authored-By` line.
+Agents say what they are. A pull request opened by one of the maintainer's agents starts with "Opened by the maintainer's AI agent (Claude), not by the maintainer himself.", its comments start with "🤖 Agent:", and its commits name the agent in a `Co-Authored-By` line.
 
 ## How changes are checked
 
@@ -16,13 +16,13 @@ Not every line is read by a person. Instead, every change is checked against the
 
 - **Harnesses.** A harness is a test that gives the same inputs to Claudium and to the real Minecraft 26.3, then compares the results. There are 326 of them (25 October 2026), from world generation to mobs, redstone and commands. The [status table](https://claudium.invalid/#parity) shows what they cover. Passing them all does not prove that nothing else differs.
 - **Checks on every pull request.** `verify` runs on GitHub's machines for every pull request and every change to main: formatting, lints with warnings treated as errors, the tests, and the check that no Minecraft files are committed. Main takes no change without it. `parity` runs the harnesses a change can affect, on a machine that holds a copy of Minecraft. For a pull request from a fork, it runs once a maintainer has read the change.
-- **Outside contributions are checked again.** Before a contributor's pull request merges, Ludovic's agents compare what it claims with vanilla's own code, review it line by line, rewrite the weak parts, and test it in single player, on a LAN and on a dedicated server where those apply.
+- **Outside contributions are checked again.** Before a contributor's pull request merges, the maintainer's agents compare what it claims with vanilla's own code, review it line by line, rewrite the weak parts, and test it in single player, on a LAN and on a dedicated server where those apply.
 - **Releases are tested first.** A release is published only after its smoke test passes (the game starts and draws a world) and while no issue is labelled `release-blocker`.
 
 ## Why it's safe to run
 
 - **Open source.** All of the code is public on [GitHub](https://github.com/elloexe/minecraft-rust), under the MIT licence.
-- **Built from the public code.** Releases are built by GitHub Actions, the build service of GitHub, from the public source. Linux and Windows are built on GitHub's machines, and macOS on Ludovic's Mac mini, which runs GitHub Actions jobs. Every build log is [public](https://github.com/elloexe/minecraft-rust/actions/workflows/release.yml).
+- **Built from the public code.** Releases are built by GitHub Actions, the build service of GitHub, from the public source. Linux and Windows are built on GitHub's machines, and macOS on the maintainer's Mac mini, which runs GitHub Actions jobs. Every build log is [public](https://github.com/elloexe/minecraft-rust/actions/workflows/release.yml).
 - **Signed checksums.** Every release has a `SHA256SUMS` file, a fingerprint of each download, and `SHA256SUMS.sig`, a signature of that list made with Claudium's release key, which only release builds from main can use. The launcher and `claudium-server update` check both before they install anything, and refuse a file that does not match. The very first server install with `install.sh` checks the fingerprint but not the signature.
 - **Not yet signed by Apple or Microsoft.** The macOS app is not notarized by Apple, because it is not signed with a paid Apple developer account, so macOS asks you to confirm the first time ([Install](https://claudium.invalid/docs/install#download-the-launcher) shows how). The Windows programs are not code-signed either, so Windows may warn you too.
 - **Mods are off by default, and reviewed.** A content mod is data and runs no code. A native mod is Rust code with your rights, not sandboxed: the launcher builds it only after a warning and your OK, in a game of its own, and the registry lists one only after a maintainer has read its source. See [Mods](mods.md) and [Native mods](native-mods.md).

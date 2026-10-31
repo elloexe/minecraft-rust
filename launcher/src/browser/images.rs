@@ -16,7 +16,7 @@ const HOSTS: [&str; 5] = [
     // Claudium's registry's icons (its GitHub Pages), and the mirror kept at the address it had
     // before the repositories moved to the elloexe organization.
     "https://elloexe.github.io/claudium-mods/",
-    "https://ludovic111.github.io/claudium-mods/",
+    "https://elloexe.github.io/claudium-mods/",
 ];
 /// The most an image may weigh before decoding.
 pub const MAX_DOWNLOAD: u64 = 8 << 20;

@@ -9,7 +9,7 @@ from tools import release_train as train
 NOW = dt.datetime(2026, 10, 15, 12, 0, tzinfo=dt.timezone.utc)
 
 
-def pr(number, title="Fix a thing", labels=(), paths=("crates/claudium-client/src/game.rs",), issues=(), author="ludovic111",
+def pr(number, title="Fix a thing", labels=(), paths=("crates/claudium-client/src/game.rs",), issues=(), author="elloexe",
        merged=dt.timedelta(hours=9)):
     return {"number": number, "title": title, "labels": list(labels), "paths": list(paths), "issues": list(issues),
             "author": author, "url": f"https://github.com/elloexe/minecraft-rust/pull/{number}", "merged_at": NOW - merged}

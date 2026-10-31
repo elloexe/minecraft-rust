@@ -2,7 +2,7 @@
 
 How a change gets from a pull request to players: the checks a pull request passes, how it merges, and the
 automatic releases that follow. Releases are automatic and frequent so the latest Claudium is always playable.
-Since 2026-10-28 Claudium ships only the **Nightly** (Ludovic's decision; the Team proposed it): the batch train builds
+Since 2026-10-28 Claudium ships only the **Nightly** (the maintainer's decision; the Team proposed it): the batch train builds
 a Nightly instead of a `vX.Y.Z` release, it is published once its smoke test passed and no `release-blocker` is open,
 and every launcher and `claudium-server update` install it ([Nightly only](#nightly-only)).
 
@@ -77,8 +77,8 @@ platform's libm, pass on the Mac mini since `claudium_core::jmath` computes what
 adds the `run-parity` label: that runs the job once, on the commit the pull request had then. To run it again
 after new pushes, remove the label and add it again.
 
-**Two runners.** The Mac mini has two runners for this repository, `ludovics-mac-mini`
-(`~/.actions-runners/claudium`, `CARGO_BUILD_JOBS=10`) and `ludovics-mac-mini-2` (`~/.actions-runners/claudium-2`,
+**Two runners.** The Mac mini has two runners for this repository, `owners-mac-mini`
+(`~/.actions-runners/claudium`, `CARGO_BUILD_JOBS=10`) and `owners-mac-mini-2` (`~/.actions-runners/claudium-2`,
 `CARGO_BUILD_JOBS=6`), with the same labels, so the 30-minute nightly audit or a long parity job never holds a
 release's macOS build back. Each keeps its own checkout, `target/` and Rust install; the second's
 `_work/claudium/shared-local` links to the first's, so they share the vanilla data, the preparations (one at a
@@ -121,12 +121,12 @@ ones only there.
 ## Merging
 
 Pull requests merge with a merge commit, by hand: never `gh pr merge --auto`. Branch protection on main
-requires `verify` for everyone, and Ludovic's review for the files `.github/CODEOWNERS` lists (what builds, signs
+requires `verify` for everyone, and the maintainer's review for the files `.github/CODEOWNERS` lists (what builds, signs
 and ships releases). Branches don't have to be up to date with main: main's own `checks` run catches the rare
 semantic conflict.
 
 **Who merges.** The Claudium Team (GitHub team `claudium-team`: kacpherek, levzzz5154, rdbtCVS, Online5277) and
-Ludovic. The orchestrator's agents prove only the risky pull requests (below), so a contributor's ordinary pull
+the maintainer. The orchestrator's agents prove only the risky pull requests (below), so a contributor's ordinary pull
 request doesn't wait for them.
 
 **An ordinary pull request merges on CI.** A Team member:
@@ -235,7 +235,7 @@ commits) since the commit the published Nightly was built on:
 
 ### Nightly only
 
-Ludovic decided on 2026-10-28 that Claudium ships only the Nightly. No `vX.Y.Z` game release is made any more:
+the maintainer decided on 2026-10-28 that Claudium ships only the Nightly. No `vX.Y.Z` game release is made any more:
 the last one stays GitHub's *latest*, so launchers and servers from before the switch (which don't read Nightlies)
 keep a working build until they update themselves. `.github/release-line.txt` still numbers the launcher's releases
 (`launcher@X.Y.Z`).
@@ -417,8 +417,8 @@ launcher and the website read: both then look the newest launcher tags up one by
 `checks` and `parity-main` passed, as a release does (or the `base` input), plus the pull requests the trusted
 reviewers picked, merged in their order; with none picked, that commit alone (`tools/ci/nightly.py pick`). No green
 commit (main's newest `checks` or `parity-main` run failed) builds nothing. A night with nothing new publishes nothing. Since the Nightly is the version every player installs, a pull request goes in only with an
-approving review at the exact head that is built, from a trusted reviewer or from Ludovic's account (his own or his
-agents' review), never its author's (Ludovic, 2026-10-28). A push after the review needs a new one: until then the
+approving review at the exact head that is built, from a trusted reviewer or from the maintainer's account (his own or his
+agents' review), never its author's (the maintainer, 2026-10-28). A push after the review needs a new one: until then the
 scheduled build keeps the approved head. `/nightly dry-run` needs no review: it publishes nothing.
 
 Every Nightly ships its exact source. Its notes name the commit; `claudium-source.tar.gz` on the release is that
@@ -430,7 +430,7 @@ commit's source to build them ([native-mods.md](native-mods.md)).
 ### Trusted reviewers
 
 One list, `.github/trusted-reviewers.txt`, governs two things for the people on it (kacpherek, rdbtCVS and
-Online5277 since 2026-10-27, levzzz5154 since 2026-10-28) and for Ludovic, with no repository role: `/nightly` (below) and triage by comment.
+Online5277 since 2026-10-27, levzzz5154 since 2026-10-28) and for the maintainer, with no repository role: `/nightly` (below) and triage by comment.
 
 ```text
 /close                    closes an issue as completed; a pull request is closed without merging
@@ -447,18 +447,18 @@ Online5277 since 2026-10-27, levzzz5154 since 2026-10-28) and for Ludovic, with 
   linking the comment that asked; a refusal answers too. Claims are their own workflow
   (`.github/workflows/claim-command.yml`, `tools/ci/claim_command.py`), open to everyone for their own claim.
 - **Refused.** Any label with `release` in its name (`release-now`, `release-blocker`, `skip-release`) and
-  `full-parity`; anything on Ludovic's own issues and pull requests; a merged pull request; a locked thread; more
+  `full-parity`; anything on the maintainer's own issues and pull requests; a merged pull request; a locked thread; more
   than 60 actions per reviewer in 24 hours (counted from the workflow's own comments).
 - **Safety.** Same as `/nightly`: main's copy of the workflow runs, no pull request's code is checked out or run,
   the comment reaches the script as env vars, and the token has `issues` and `pull-requests` write only.
-- **Ludovic stays in charge.** A one-line pull request removing a login from the list revokes it as soon as it merges
+- **the maintainer stays in charge.** A one-line pull request removing a login from the list revokes it as soon as it merges
   (the file is his under CODEOWNERS). A line `paused` stops `/nightly` and the triage commands for every reviewer;
   his own still work.
 
 ### Trusted reviewers pick the Nightly's pull requests
 
 The Nightly is where contributors test pull requests before the gate. The trusted reviewers listed in
-`.github/trusted-reviewers.txt` (kacpherek, rdbtCVS and Online5277 since 2026-10-27, levzzz5154 since 2026-10-28) and Ludovic pick them with a
+`.github/trusted-reviewers.txt` (kacpherek, rdbtCVS and Online5277 since 2026-10-27, levzzz5154 since 2026-10-28) and the maintainer pick them with a
 comment on any issue or pull request (`.github/workflows/nightly-command.yml`, `tools/ci/nightly_set.py`):
 
 ```text
@@ -482,16 +482,16 @@ comment on any issue or pull request (`.github/workflows/nightly-command.yml`, `
   Equal inputs give the same commit, so an unchanged set and main publish nothing new. On a conflict the build
   stops and answers which two pull requests conflict and where; a reviewer can then open an integration pull
   request from their fork that combines them, and pick that one instead.
-- **Old builds.** The scheduled run deletes the `nightly/build-*` branches older than 7 days (Ludovic,
+- **Old builds.** The scheduled run deletes the `nightly/build-*` branches older than 7 days (the maintainer,
   2026-10-27), and lists each in its summary. It never deletes the newest build, a build a published `nightly` or
   `nightly-<date>` release points to, or any other branch (`nightly.py prune-builds`).
-- **Refused.** A pull request that changes a path CODEOWNERS gives to Ludovic (`.github/`, `tools/ci/`, the
+- **Refused.** A pull request that changes a path CODEOWNERS gives to the maintainer (`.github/`, `tools/ci/`, the
   signing and update code, `launcher/src/backend.rs`, `launcher/links.json`…), more than 30 in a set, and more than
   12 builds a day (the scheduled one always runs; 6 until 2026-10-28).
 - **No repository role.** Reviewers need no permission on the repository: the list file and the workflow are the
   whole of it.
-- **Ludovic stays in charge.**
-  - Ludovic's `/nightly clear` or `/nightly remove` always applies. A pull request he removed can only come back
+- **the maintainer stays in charge.**
+  - the maintainer's `/nightly clear` or `/nightly remove` always applies. A pull request he removed can only come back
     when he adds it.
   - A one-line pull request removing a login from `.github/trusted-reviewers.txt` revokes it as soon as it merges
     (the file is his under CODEOWNERS).

@@ -899,7 +899,7 @@ pub fn prune(keep: &str) {
 mod tests {
     use super::*;
 
-    /// Ludovic's decision (2026-10-29): installing a native mod turns Native mods on, after a
+    /// the maintainer's decision (2026-10-29): installing a native mod turns Native mods on, after a
     /// notice shown once; players who never install one keep them off.
     #[test]
     fn installing_a_native_mod_turns_native_mods_on() {

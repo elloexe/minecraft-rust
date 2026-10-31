@@ -21,7 +21,7 @@
    "note": "ludodesktop, the maintainer's own machine: only while nobody uses it (tools/ci/runner_pause.py: screen locked or untouched for 15 min, no game; a paused desktop refuses workers and stops the running ones, whose harnesses then run here); 8 jobs at most, in the CI runner's environment and slice"
   },
   "playclaudium": {
-   "ssh": "ludovic@playclaudium",
+   "ssh": "owner@playclaudium",
    "root": ".actions-runners/claudium/parity-host",
    "shell": "systemd-run --user --scope --quiet --slice=claudium-ci.slice --unit=claudium-parity-worker-$$ taskset -c 0-3 bash -c",
    "setup": "test ! -e ~/.actions-runners/claudium/paused && set -a && . ~/.actions-runners/claudium/.env && set +a && export PATH=$(cat ~/.actions-runners/claudium/.path) && unset WAYLAND_DISPLAY && export DISPLAY=:$(cat ~/.actions-runners/claudium/display)",
