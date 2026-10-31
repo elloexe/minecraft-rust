@@ -80,11 +80,24 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 
 ### Notes
 
+- [docs/claudium/ideas.md](ideas.md) lists features worth building, each chosen
+  because the engine already has the hard part.
+
 - [docs/claudium/roadmap.md](roadmap.md) records what is already done upstream
   in mod porting and performance, what is genuinely open, and what each open
   item is blocked on. Read it before planning work in either area.
 
 ## Known gaps
+
+- **The launcher cannot start the game without an Azure app id.** `client_id()`
+  reads `HORIZON_MSA_CLIENT_ID` from the environment or the build; with none,
+  Play says so and refuses. Upstream bakes theirs in from a CI variable we do
+  not have. Register one (`docs/microsoft-account.md`) and set the repository
+  variable `CLAUDIUM_MSA_CLIENT_ID`, which `windows-exe.yml` passes to the
+  build.
+- **Online-mode servers need that sign-in too.** Until it is configured,
+  Claudium joins offline-mode and LAN servers only. A Claudium *server* hosts
+  vanilla 26.3 clients either way, online mode included.
 
 - **The launcher still installs upstream's game.** `backend::REPO` points at
   `horizon-rust/horizon`, so Play downloads Horizon's released builds. Pointing

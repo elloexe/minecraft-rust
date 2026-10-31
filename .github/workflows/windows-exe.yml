@@ -37,8 +37,15 @@ jobs:
           workspaces: launcher
           shared-key: launcher-windows
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Without an Azure app id the launcher can sign nobody in, and so cannot start the game:
+      # it says so on Play. Set the repository variable CLAUDIUM_MSA_CLIENT_ID to bake one in
+      # (Settings -> Secrets and variables -> Actions -> Variables). Players can also set
+      # HORIZON_MSA_CLIENT_ID in their own environment at run time, which wins over this.
+      # How to register the app: docs/microsoft-account.md.
       - name: Build
         working-directory: launcher
+        env:
+          HORIZON_MSA_CLIENT_ID: ${{ vars.CLAUDIUM_MSA_CLIENT_ID }}
         run: cargo build --release --locked --bin claudium-launcher
       - name: Collect
         shell: bash
