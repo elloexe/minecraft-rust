@@ -20,6 +20,16 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 /// The keychain service name every secret is stored under.
 pub const SERVICE: &str = "dev.claudium.launcher";
 const SCOPE: &str = "XboxLive.signin offline_access";
+/// The official Minecraft launcher's public client id. It is already approved for Minecraft
+/// sign-in and needs no Azure app registration, so Microsoft accounts work with no setup. It uses
+/// the legacy `login.live.com` authorization-code flow (not the modern device-code endpoint); a
+/// registered Azure app id (`CLAUDIUM_MSA_CLIENT_ID`) overrides it and uses device-code instead.
+pub const PUBLIC_LIVE_ID: &str = "00000000402b5328";
+const LIVE_BASE: &str = "https://login.live.com";
+/// The public id's registered redirect: Microsoft lands here with `?code=...` in the address bar
+/// after sign-in, which the player pastes back (a terminal/GPUI launcher has no embedded browser to
+/// read it automatically, as an Electron one would).
+const LIVE_REDIRECT: &str = "https://login.live.com/oauth20_desktop.srf";
 pub const NOT_CONFIGURED: &str =
     "This build of the launcher has no Microsoft sign-in (CLAUDIUM_MSA_CLIENT_ID), so it can't start the game.";
 /// What every Play says while no account in the launcher owns the game.
@@ -37,11 +47,61 @@ const RENEW_BEFORE: u64 = 3600;
 /// The configured Azure app, if any: the run-time variable wins over the build-time one, and an
 /// empty value means none.
 pub fn client_id() -> Option<String> {
-    std::env::var("CLAUDIUM_MSA_CLIENT_ID")
+    let configured = std::env::var("CLAUDIUM_MSA_CLIENT_ID")
         .ok()
         .or_else(|| option_env!("CLAUDIUM_MSA_CLIENT_ID").map(str::to_owned))
         .map(|id| id.trim().to_owned())
-        .filter(|id| !id.is_empty())
+        .filter(|id| !id.is_empty());
+    // With no Azure app configured, fall back to the public launcher id so sign-in works out of
+    // the box (the legacy login.live.com flow). A configured id still wins.
+    Some(configured.unwrap_or_else(|| PUBLIC_LIVE_ID.to_string()))
+}
+
+/// Whether `client_id` is the public/legacy kind that signs in through login.live.com's
+/// authorization-code flow (no Azure GUID dashes), rather than the modern device-code endpoint.
+pub fn is_live_id(client_id: &str) -> bool {
+    !client_id.contains('-')
+}
+
+/// The URL to open in a browser for the legacy flow. After signing in, the browser lands on
+/// `oauth20_desktop.srf` with `?code=...` in the address bar; [`code_from_redirect`] reads it.
+pub fn authorize_url(client_id: &str) -> String {
+    format!(
+        "{LIVE_BASE}/oauth20_authorize.srf?client_id={client_id}\
+         &response_type=code\
+         &redirect_uri=https%3A%2F%2Flogin.live.com%2Foauth20_desktop.srf\
+         &scope=XboxLive.signin+offline_access\
+         &prompt=select_account"
+    )
+}
+
+/// The `code` from a pasted redirect URL (`...?code=XXX&...`), or a bare code the player copied.
+pub fn code_from_redirect(input: &str) -> Option<String> {
+    let s = input.trim();
+    if let Some(after) = s.split("code=").nth(1) {
+        let code = after.split(['&', '#', ' ', '"']).next().unwrap_or("");
+        if !code.is_empty() {
+            return Some(code.to_string());
+        }
+    }
+    (!s.is_empty() && !s.contains(' ') && !s.starts_with("http")).then(|| s.to_string())
+}
+
+/// Trades the authorization code for Microsoft tokens (legacy login.live.com flow).
+pub fn exchange_code(client_id: &str, code: &str) -> Result<MsTokens, String> {
+    let url = format!("{LIVE_BASE}/oauth20_token.srf");
+    let (status, v) = send(
+        request_to("POST", &url),
+        Some(Body::Form(vec![
+            ("client_id", client_id),
+            ("code", code),
+            ("grant_type", "authorization_code"),
+            ("redirect_uri", LIVE_REDIRECT),
+            ("scope", SCOPE),
+        ])),
+        "Microsoft",
+    )?;
+    ms_tokens(status, &v)
 }
 
 /// Where the requests go: the real services, or a mock in tests.
@@ -264,8 +324,16 @@ pub fn wait_for_sign_in(
 }
 
 fn refresh_ms(ep: &Endpoints, client_id: &str, refresh: &str) -> Result<MsTokens, String> {
+    // The public id refreshes at login.live.com (the legacy flow it signed in through); a modern
+    // Azure id refreshes at the device-code token endpoint. The mock endpoint in tests is not a
+    // live id, so tests keep using `ep.microsoft`.
+    let url = if is_live_id(client_id) && !cfg!(test) {
+        format!("{LIVE_BASE}/oauth20_token.srf")
+    } else {
+        format!("{}/token", ep.microsoft)
+    };
     let (status, v) = send(
-        request_to("POST", &format!("{}/token", ep.microsoft)),
+        request_to("POST", &url),
         Some(Body::Form(vec![
             ("grant_type", "refresh_token"),
             ("client_id", client_id),

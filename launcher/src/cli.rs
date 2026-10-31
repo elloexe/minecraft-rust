@@ -1715,12 +1715,31 @@ fn account_command(action: AccountCmd, as_json: bool) -> Result<(), String> {
         AccountCmd::SignIn => {
             let client_id = account::client_id().ok_or(account::NOT_CONFIGURED)?;
             let ep = account::Endpoints::live();
-            let code = account::device_code(&ep, &client_id)?;
-            eprintln!(
-                "To sign in, open {} in a browser and enter the code {}",
-                code.verification_uri, code.user_code
-            );
-            let ms = account::wait_for_sign_in(&ep, &client_id, &code, &|| false)?;
+            let ms = if account::is_live_id(&client_id) {
+                // Public id: the legacy login.live.com browser flow. Open the URL, sign in, then
+                // paste the address bar (it ends with ?code=...). No embedded browser needed.
+                let url = account::authorize_url(&client_id);
+                eprintln!("Open this in your browser and sign in:\n\n  {url}\n");
+                eprintln!(
+                    "After signing in, the page's address bar will end with `?code=...`.\n\
+                     Copy that whole address and paste it here, then press Enter:"
+                );
+                let mut line = String::new();
+                std::io::stdin()
+                    .read_line(&mut line)
+                    .map_err(|e| e.to_string())?;
+                let code = account::code_from_redirect(&line)
+                    .ok_or("No sign-in code found in what you pasted.")?;
+                account::exchange_code(&client_id, &code)?
+            } else {
+                // A registered Azure app: the modern device-code flow.
+                let code = account::device_code(&ep, &client_id)?;
+                eprintln!(
+                    "To sign in, open {} in a browser and enter the code {}",
+                    code.verification_uri, code.user_code
+                );
+                account::wait_for_sign_in(&ep, &client_id, &code, &|| false)?
+            };
             let (signed_in, secrets) = account::finish_sign_in(&ep, ms)?;
             accounts.add(account::store(), signed_in.clone(), &secrets)?;
             accounts.save()?;

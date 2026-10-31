@@ -792,9 +792,10 @@ fn session_files_are_private_and_complete() {
 
 #[test]
 fn client_id_is_configuration() {
-    // The run-time variable overrides; empty means not configured.
+    // Empty (or unset) falls back to the public launcher id, so sign-in works with no setup.
     std::env::set_var("CLAUDIUM_MSA_CLIENT_ID", " ");
-    assert_eq!(client_id(), None);
+    assert_eq!(client_id().as_deref(), Some(PUBLIC_LIVE_ID));
+    // A configured Azure app id overrides it.
     std::env::set_var(
         "CLAUDIUM_MSA_CLIENT_ID",
         "00000000-1111-2222-3333-444444444444",
@@ -804,6 +805,25 @@ fn client_id_is_configuration() {
         Some("00000000-1111-2222-3333-444444444444")
     );
     std::env::remove_var("CLAUDIUM_MSA_CLIENT_ID");
+    // The public id uses the legacy login.live.com flow; a GUID uses device-code.
+    assert!(is_live_id(PUBLIC_LIVE_ID));
+    assert!(!is_live_id("00000000-1111-2222-3333-444444444444"));
+    // The redirect code is read from a pasted address bar or a bare code.
+    assert_eq!(
+        code_from_redirect("https://login.live.com/oauth20_desktop.srf?code=M.abc123&lc=1033")
+            .as_deref(),
+        Some("M.abc123")
+    );
+    assert_eq!(
+        code_from_redirect("  M.bare-code  ").as_deref(),
+        Some("M.bare-code")
+    );
+    assert_eq!(
+        code_from_redirect("https://login.live.com/oauth20_desktop.srf"),
+        None
+    );
+    assert!(authorize_url(PUBLIC_LIVE_ID).contains("oauth20_authorize.srf"));
+    assert!(authorize_url(PUBLIC_LIVE_ID).contains(PUBLIC_LIVE_ID));
 }
 
 #[test]
