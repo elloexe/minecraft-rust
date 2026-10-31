@@ -76,65 +76,33 @@ function signInWindow() {
 
 // ----- IPC: the renderer asks, the main process does -------------------------------------------
 
-ipcMain.handle('state', () => {
-  const cfg = game.loadConfig();
+const status = (s) => { if (win && !win.isDestroyed()) win.webContents.send('status', s); };
+
+ipcMain.handle('state', async () => {
+  let signedIn = false;
+  try { signedIn = await game.isSignedIn(); } catch { signedIn = false; }
   return {
-    account: cfg.account ? { name: cfg.account.name, uuid: cfg.account.uuid } : null,
-    gamePath: cfg.gamePath || null,
-    gameFound: !!game.findGame(cfg),
-    clientId: auth.clientId(),
+    signedIn,
+    engineFound: !!game.findLauncher(),
     usingPublicId: auth.clientId() === auth.DEFAULT_CLIENT_ID,
   };
 });
 
 ipcMain.handle('sign-in', async () => {
+  // The seamless part: an embedded window on Microsoft's own page captures the code.
   const code = await signInWindow();
-  const account = await auth.codeToAccount(code);
-  const cfg = game.loadConfig();
-  cfg.account = account;
-  game.saveConfig(cfg);
-  return { name: account.name, uuid: account.uuid };
-});
-
-ipcMain.handle('sign-out', () => {
-  const cfg = game.loadConfig();
-  delete cfg.account;
-  game.saveConfig(cfg);
+  // The proven Rust launcher exchanges it and stores the account.
+  await game.signInWithCode(code);
   return true;
 });
 
-ipcMain.handle('choose-game', async () => {
-  const res = await dialog.showOpenDialog(win, {
-    title: 'Choose the Claudium game executable',
-    properties: ['openFile'],
-    defaultPath: game.configDir(),
-  });
-  if (res.canceled || !res.filePaths[0]) return null;
-  const cfg = game.loadConfig();
-  cfg.gamePath = res.filePaths[0];
-  game.saveConfig(cfg);
-  return cfg.gamePath;
+ipcMain.handle('sign-out', async () => {
+  await game.signOut();
+  return true;
 });
 
 ipcMain.handle('play', async (_e, args) => {
-  const status = (s) => { if (win && !win.isDestroyed()) win.webContents.send('status', s); };
-  let cfg = game.loadConfig();
-  if (!cfg.account) throw new Error('Sign in with Microsoft first.');
-  // The game ships inside the installer; if it is not there (a dev build), fetch it once.
-  let gamePath = game.findGame(cfg);
-  if (!gamePath) {
-    gamePath = await game.downloadGame(status);
-    cfg = game.loadConfig();
-  }
-  // Refresh the Minecraft token if it is stale, so online servers accept it.
-  if (!cfg.account.expiresAt || Date.now() > cfg.account.expiresAt - 60_000) {
-    if (cfg.account.refresh) {
-      cfg.account = await auth.refresh(cfg.account.refresh);
-      game.saveConfig(cfg);
-    }
-  }
-  status('Starting Claudium…');
-  return game.play(gamePath, cfg.account, Array.isArray(args) ? args : []);
+  return game.play(status, Array.isArray(args) ? args : []);
 });
 
 app.whenReady().then(createWindow);

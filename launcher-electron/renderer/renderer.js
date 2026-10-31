@@ -1,6 +1,6 @@
 'use strict';
-// The page's behaviour. All real work (sign-in, launch) happens in the main process over the
-// `claudium` bridge from preload.js.
+// The page's behaviour. All real work (sign-in, prepare, launch) happens in the main process and
+// the bundled Rust launcher, over the `claudium` bridge from preload.js.
 const $ = (sel) => document.querySelector(sel);
 
 const els = {
@@ -11,13 +11,12 @@ const els = {
   play: $('#play'),
   status: $('#status'),
   folder: $('#folder'),
-  chooseGame: $('#choose-game'),
-  gamePath: $('#game-path'),
   signOut: $('#sign-out'),
   clientIdNote: $('#client-id-note'),
 };
 
-let state = { account: null, gameFound: false };
+let state = { signedIn: false, engineFound: false };
+let busy = false;
 
 function setStatus(text, kind = '') {
   els.status.textContent = text || '';
@@ -25,25 +24,23 @@ function setStatus(text, kind = '') {
 }
 
 function render() {
-  const signedIn = !!state.account;
-  if (signedIn) {
-    els.avatar.textContent = (state.account.name[0] || 'C').toUpperCase();
-    els.accountName.textContent = state.account.name;
+  if (state.signedIn) {
+    els.avatar.textContent = '✓';
+    els.accountName.textContent = 'Signed in';
     els.accountSub.textContent = 'Microsoft account';
   } else {
     els.avatar.textContent = 'C';
     els.accountName.textContent = 'Not signed in';
     els.accountSub.textContent = 'Click to sign in';
   }
-  els.gamePath.textContent = state.gamePath || 'Not set';
   els.clientIdNote.textContent = state.usingPublicId
     ? 'Using the public launcher app id (no setup needed).'
     : 'Using a configured Microsoft app id.';
 
-  // The Play button reflects what is missing.
-  els.play.disabled = !(signedIn && state.gameFound);
-  if (!signedIn) els.play.textContent = 'SIGN IN TO PLAY';
-  else if (!state.gameFound) els.play.textContent = 'SET GAME IN SETTINGS';
+  els.play.disabled = busy || !(state.signedIn && state.engineFound);
+  if (busy) els.play.textContent = 'WORKING…';
+  else if (!state.signedIn) els.play.textContent = 'SIGN IN TO PLAY';
+  else if (!state.engineFound) els.play.textContent = 'ENGINE MISSING';
   else els.play.textContent = 'PLAY';
 }
 
@@ -52,36 +49,30 @@ async function refresh() {
   render();
 }
 
-async function signIn() {
+els.account.addEventListener('click', async () => {
+  if (state.signedIn) { switchTab('settings'); return; }
   setStatus('Opening Microsoft sign-in…');
   try {
-    const account = await window.claudium.signIn();
-    setStatus(`Signed in as ${account.name}.`, 'ok');
+    await window.claudium.signIn();
+    setStatus('Signed in.', 'ok');
     await refresh();
   } catch (e) {
     setStatus(e.message || 'Sign-in failed.', 'error');
   }
-}
-
-els.account.addEventListener('click', () => {
-  if (state.account) switchTab('settings');
-  else signIn();
 });
 
 els.play.addEventListener('click', async () => {
-  setStatus('Starting Claudium…');
+  busy = true; render();
   try {
     await window.claudium.play([]);
-    setStatus('Claudium is starting.', 'ok');
+    setStatus('Claudium is running.', 'ok');
   } catch (e) {
     setStatus(e.message || 'Could not start the game.', 'error');
+  } finally {
+    busy = false; render();
   }
 });
 
-els.chooseGame.addEventListener('click', async () => {
-  const picked = await window.claudium.chooseGame();
-  if (picked) { setStatus('Game set.', 'ok'); await refresh(); }
-});
 els.folder.addEventListener('click', () => switchTab('settings'));
 els.signOut.addEventListener('click', async () => {
   await window.claudium.signOut();
@@ -89,14 +80,13 @@ els.signOut.addEventListener('click', async () => {
   await refresh();
 });
 
-// Tabs
 function switchTab(name) {
   document.querySelectorAll('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('hidden', t.dataset.tab !== name));
 }
 document.querySelectorAll('.nav-item').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-// Progress from the main process (downloading the game, starting it).
+// Progress from the main process and the Rust launcher (install, prepare, launch).
 window.claudium.onStatus((text) => setStatus(text));
 
 refresh();

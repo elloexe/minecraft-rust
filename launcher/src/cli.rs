@@ -102,9 +102,14 @@ enum ServersCmd {
 enum AccountCmd {
     /// The signed-in accounts and which one plays
     List,
-    /// Sign in with a Microsoft account in your browser (device code). Play needs one that owns
+    /// Sign in with a Microsoft account in your browser. Play needs one that owns
     /// Minecraft: Java Edition
-    SignIn,
+    SignIn {
+        /// A sign-in code already captured by a GUI (the Electron launcher's window), to
+        /// exchange without the interactive browser/paste step. For the public live id only.
+        #[arg(long)]
+        code: Option<String>,
+    },
     /// Sign out: the account's tokens leave the keychain
     SignOut {
         /// Its name or UUID
@@ -1712,10 +1717,13 @@ fn account_command(action: AccountCmd, as_json: bool) -> Result<(), String> {
                 }
             }
         }
-        AccountCmd::SignIn => {
+        AccountCmd::SignIn { code } => {
             let client_id = account::client_id().ok_or(account::NOT_CONFIGURED)?;
             let ep = account::Endpoints::live();
-            let ms = if account::is_live_id(&client_id) {
+            let ms = if let Some(code) = code {
+                // A GUI (the Electron window) already captured the code in its embedded browser.
+                account::exchange_code(&client_id, &code)?
+            } else if account::is_live_id(&client_id) {
                 // Public id: the legacy login.live.com browser flow. Open the URL, sign in, then
                 // paste the address bar (it ends with ?code=...). No embedded browser needed.
                 let url = account::authorize_url(&client_id);

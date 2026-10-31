@@ -1,5 +1,5 @@
 node_modules/
 dist/
 *.log
+bin/claudium-launcher*
 game/*.exe
-game/claudium-client

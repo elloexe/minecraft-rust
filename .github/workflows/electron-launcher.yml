@@ -22,8 +22,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 1) Build the Rust game that gets bundled into the installer.
-  game:
+  # 1) Build the Rust launcher engine (claudium-launcher) that gets bundled into the installer.
+  #    It owns the proven pipeline: the account store, installing/preparing the game, and launching.
+  engine:
     runs-on: windows-latest
     timeout-minutes: 180
     steps:
@@ -31,32 +32,34 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: game-windows
+          workspaces: launcher
+          shared-key: launcher-windows
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - name: Build the game
-        run: cargo build --release --locked -p claudium-client --bin claudium-client
+      - name: Build the engine
+        working-directory: launcher
+        run: cargo build --release --locked --bin claudium-launcher
       - name: Stage it
         shell: bash
         run: |
           mkdir -p staged
-          cp target/release/claudium-client.exe staged/claudium-client.exe
+          cp launcher/target/release/claudium-launcher.exe staged/claudium-launcher.exe
       - uses: actions/upload-artifact@v4
         with:
-          name: claudium-game-exe
-          path: staged/claudium-client.exe
+          name: claudium-engine-exe
+          path: staged/claudium-launcher.exe
           if-no-files-found: error
 
-  # 2) Build the installer with the game placed in launcher-electron/game (bundled by extraResources).
+  # 2) Build the installer with the engine placed in launcher-electron/bin (bundled by extraResources).
   installer:
-    needs: game
+    needs: engine
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: claudium-game-exe
-          path: launcher-electron/game
+          name: claudium-engine-exe
+          path: launcher-electron/bin
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

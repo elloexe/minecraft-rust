@@ -1,37 +1,32 @@
 'use strict';
-// Finding, fetching and launching the Claudium game (the Rust `claudium-client`), plus a tiny
-// JSON config. The game ships inside the installer (extraResources), so it is normally found
-// right next to the launcher with nothing to download; the download is a dev/fallback path.
+// Thin wrapper over the bundled Rust launcher (claudium-launcher), which owns the proven
+// pipeline: the account store, downloading/installing the game, preparing resources from the
+// player's Minecraft (jar + Java), and launching. The Electron side only adds the seamless
+// sign-in window (it captures the code and hands it to `account sign-in --code`) and the UI.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
-const EXE = process.platform === 'win32' ? 'claudium-client.exe' : 'claudium-client';
-const REPO = 'elloexe/minecraft-rust';
-const UA = 'claudium-launcher';
+const BIN = process.platform === 'win32' ? 'claudium-launcher.exe' : 'claudium-launcher';
 
-function configDir() {
+// A stable data home so the account and prepared files persist between runs.
+function dataHome() {
   const base = process.env.CLAUDIUM_LAUNCHER_HOME
     || (process.platform === 'win32'
-      ? path.join(process.env.APPDATA || os.homedir(), 'claudium-launcher')
-      : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'claudium-launcher'));
+      ? path.join(process.env.APPDATA || os.homedir(), 'Claudium')
+      : path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), 'claudium'));
   fs.mkdirSync(base, { recursive: true });
   return base;
 }
-function configPath() { return path.join(configDir(), 'launcher.json'); }
-function loadConfig() { try { return JSON.parse(fs.readFileSync(configPath(), 'utf8')); } catch { return {}; } }
-function saveConfig(cfg) { fs.writeFileSync(configPath(), JSON.stringify(cfg, null, 2), { mode: 0o600 }); }
 
-// Where the game binary might be: bundled in the installer (resources/game), a configured path,
-// next to the launcher, or in the launcher's config folder.
-function findGame(cfg = loadConfig()) {
+// Where the bundled Rust launcher is: in the installer's resources, or next to the app in dev.
+function findLauncher() {
   const candidates = [
-    cfg.gamePath,
-    process.resourcesPath && path.join(process.resourcesPath, 'game', EXE),
-    path.join(path.dirname(process.execPath), EXE),
-    path.join(path.dirname(process.execPath), 'game', EXE),
-    path.join(configDir(), EXE),
+    process.env.CLAUDIUM_LAUNCHER_BIN,
+    process.resourcesPath && path.join(process.resourcesPath, 'bin', BIN),
+    path.join(path.dirname(process.execPath), BIN),
+    path.join(__dirname, 'bin', BIN),
   ].filter(Boolean);
   for (const c of candidates) {
     try { if (fs.statSync(c).isFile()) return c; } catch { /* keep looking */ }
@@ -39,45 +34,62 @@ function findGame(cfg = loadConfig()) {
   return null;
 }
 
-// Fallback for a launcher built without the bundled game: download it from the latest release.
-async function downloadGame(onStatus) {
-  onStatus?.('Finding the latest game build…');
-  const rel = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-    headers: { 'User-Agent': UA, Accept: 'application/vnd.github+json' },
+// Run a claudium-launcher subcommand, streaming each output line to `onLine`. Resolves with the
+// exit code; rejects only if the binary can't be started.
+function run(args, onLine = () => {}) {
+  return new Promise((resolve, reject) => {
+    const bin = findLauncher();
+    if (!bin) return reject(new Error('The Claudium launcher engine is missing from this build.'));
+    const child = spawn(bin, args, {
+      env: { ...process.env, CLAUDIUM_LAUNCHER_HOME: dataHome() },
+    });
+    let out = '';
+    const feed = (buf) => {
+      out += buf.toString();
+      let nl;
+      while ((nl = out.indexOf('\n')) >= 0) {
+        const line = out.slice(0, nl).trimEnd();
+        out = out.slice(nl + 1);
+        if (line) onLine(line);
+      }
+    };
+    const tail = [];
+    child.stdout.on('data', (b) => { feed(b); tail.push(b.toString()); });
+    child.stderr.on('data', (b) => { feed(b); tail.push(b.toString()); });
+    child.on('error', reject);
+    child.on('close', (code) => resolve({ code, output: tail.join('').slice(-4000) }));
   });
-  if (!rel.ok) throw new Error('No game release found yet, and the game is not bundled. Build a release or set the game path in Settings.');
-  const data = await rel.json();
-  const asset = (data.assets || []).find((a) => a.name === 'Claudium.exe' || a.name === EXE);
-  if (!asset) throw new Error('The latest release has no game executable. Set the game path in Settings.');
-  onStatus?.('Downloading the game…');
-  const bin = await fetch(asset.browser_download_url, { headers: { 'User-Agent': UA } });
-  if (!bin.ok) throw new Error('Could not download the game.');
-  const dest = path.join(configDir(), EXE);
-  fs.writeFileSync(dest, Buffer.from(await bin.arrayBuffer()), { mode: 0o755 });
-  const cfg = loadConfig(); cfg.gamePath = dest; saveConfig(cfg);
-  onStatus?.('Game ready.');
-  return dest;
 }
 
-// Writes the session file the game reads once (auth.rs AuthSession::parse) and launches it.
-function play(gamePath, account, args = []) {
-  const cfg = loadConfig();
-  const sessionFile = path.join(configDir(), `session-${Date.now()}.json`);
-  fs.writeFileSync(sessionFile, JSON.stringify({
-    name: account.name,
-    uuid: account.uuid,
-    access_token: account.accessToken,
-    user_type: 'msa',
-    xuid: account.xuid || '',
-  }), { mode: 0o600 });
-  const child = spawn(gamePath, ['--session-file', sessionFile, ...args], {
-    cwd: cfg.gameDir || configDir(),
-    detached: true,
-    stdio: 'ignore',
-    env: { ...process.env },
-  });
-  child.unref();
-  return { pid: child.pid, game: gamePath };
+async function signInWithCode(code) {
+  const r = await run(['account', 'sign-in', '--code', code]);
+  if (r.code !== 0) throw new Error(r.output.trim() || 'Sign-in failed.');
 }
 
-module.exports = { loadConfig, saveConfig, findGame, downloadGame, play, configDir, EXE };
+async function signOut(onLine) {
+  // Sign out whoever is selected, if any (ignore "no account").
+  await run(['account', 'sign-out', '*'], onLine).catch(() => {});
+}
+
+// Whether an account is signed in, parsed from `account list`.
+async function isSignedIn() {
+  const r = await run(['account', 'list']);
+  // A signed-in account prints a line; none prints the NEEDS_OWNER hint.
+  return r.code === 0 && !/sign in/i.test(r.output) || /microsoft/i.test(r.output);
+}
+
+// Install the game if needed, prepare it from the player's Minecraft, then launch. Each step
+// streams its progress; the Rust launcher is idempotent, so re-running is cheap once done.
+async function play(onLine, extraArgs = []) {
+  onLine('Checking the game is installed…');
+  await run(['install', 'latest'], onLine);
+  onLine('Preparing the game from your Minecraft (first run can take a few minutes)…');
+  const prep = await run(['prepare'], onLine);
+  if (prep.code !== 0) throw new Error(prep.output.trim() || 'Could not prepare the game. Is Minecraft: Java Edition installed?');
+  onLine('Starting Claudium…');
+  const played = await run(['play', ...extraArgs], onLine);
+  if (played.code !== 0) throw new Error(played.output.trim() || 'The game did not start.');
+  return { ok: true };
+}
+
+module.exports = { findLauncher, run, signInWithCode, signOut, isSignedIn, play, dataHome };
