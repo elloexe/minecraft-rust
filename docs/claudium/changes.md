@@ -8,6 +8,11 @@ are ours.
 
 ### Launcher
 
+- Rebuilt the Play row as the Minecraft launcher's play bar: a full-width band
+  under the hero with its own fill and a rule along the top, the version picker
+  on the left, the one big green PLAY in the middle of the window and the
+  secondary actions on the right. PLAY is set in capitals and 320px wide.
+
 - Moved the account to the top of the sidebar, where the Minecraft launcher has
   it: face, name and how you are signed in, opening the same account menu. The
   top bar now carries nothing but the page tabs, and Settings moved to the foot

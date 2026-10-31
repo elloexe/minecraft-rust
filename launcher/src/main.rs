@@ -2615,7 +2615,6 @@ impl Launcher {
             .min_h(px(340.))
             .mx(px(-theme::PAGE_GUTTER))
             .px(px(theme::PAGE_GUTTER))
-            .pb(px(28.))
             .gap(px(24.))
             .overflow_hidden()
             .children(picture.into_iter().flatten())
@@ -2625,21 +2624,29 @@ impl Launcher {
                     .flex()
                     .items_end()
                     .gap(px(32.))
-                    .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .flex()
-                            .flex_col()
-                            .gap(px(28.))
-                            .child(hero)
-                            .child(actions)
-                            // The preparation's steps right under Play, where the player looks
-                            // after pressing it, not below the fold (#666).
-                            .children(steps),
-                    )
+                    .pb(px(24.))
+                    .child(div().flex_1().min_w_0().child(hero))
                     // Notes and friends are Horizon's.
                     .children(java.is_none().then(|| self.home_card(&tag, cx))),
+            )
+            // The play bar runs the full width under the hero, as the Minecraft launcher's does:
+            // it escapes the banner's gutter, carries its own fill and a rule along the top.
+            .child(
+                div()
+                    .relative()
+                    .flex()
+                    .flex_col()
+                    .gap(px(16.))
+                    .mx(px(-theme::PAGE_GUTTER))
+                    .px(px(theme::PAGE_GUTTER))
+                    .py(px(20.))
+                    .bg(plate::alpha(t.night.side, 0.92))
+                    .border_t_1()
+                    .border_color(plate::alpha(t.night.stroke, t.night.rule_alpha))
+                    .child(actions)
+                    // The preparation's steps right under Play, where the player looks
+                    // after pressing it, not below the fold (#666).
+                    .children(steps),
             );
         let mut page = div().flex().flex_col().gap(px(28.)).child(banner);
         if let Some(e) = self.prepare_error.clone() {

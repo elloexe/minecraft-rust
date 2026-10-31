@@ -180,14 +180,16 @@ impl Launcher {
                 }));
         }
         let mut play = action("play", Action::Main, &t)
-            .min_w(px(180.))
             .child(
                 div()
                     .relative()
                     .child(blocks::icon("play", 20., c(t.night.on_accent))),
             )
+            .min_w(px(320.))
             .child(label(
-                tr(if running { "Running" } else { "Play" }).to_string(),
+                // The Minecraft launcher sets its one big action in capitals. Scripts without
+                // letter case are unchanged by this.
+                tr(if running { "Running" } else { "Play" }).to_uppercase(),
             ));
         match play_press(ready, self.owner, self.preparing || running) {
             PlayPress::Nothing => play = disabled(play),
@@ -208,30 +210,41 @@ impl Launcher {
             }
         }
         let folder = self.selected_instance().map(|i| i.home.clone());
+        // The Minecraft launcher's play bar: the version on the left, the one big action in the
+        // middle of the window, and the rest to the right. The two sides are given the same
+        // basis so Play lands on the centre of the bar rather than the centre of what is left.
+        let side = || div().flex().flex_1().flex_basis(px(0.)).items_center();
         div()
             .flex()
-            .flex_wrap()
             .items_center()
-            .gap(px(10.))
-            .child(play)
-            // Horizon's versions don't apply to a Java instance.
-            .children((!java).then(|| self.picker(cx)))
+            .gap(px(16.))
             .child(
-                action("home-mods", Action::Quiet, &t)
-                    .child(label(tr("Mods").to_string()))
-                    .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                        this.go(Page::Mods);
-                        cx.notify();
+                side()
+                    // Horizon's versions don't apply to a Java instance.
+                    .children((!java).then(|| self.picker(cx))),
+            )
+            .child(div().flex().flex_none().justify_center().child(play))
+            .child(
+                side()
+                    .justify_end()
+                    .gap(px(8.))
+                    .child(
+                        action("home-mods", Action::Quiet, &t)
+                            .child(label(tr("Mods").to_string()))
+                            .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                                this.go(Page::Mods);
+                                cx.notify();
+                            })),
+                    )
+                    .children(folder.map(|home| {
+                        action("home-folder", Action::Quiet, &t)
+                            .child(label(tr("Folder").to_string()))
+                            .on_click(move |_, _, cx| {
+                                let _ = std::fs::create_dir_all(&home);
+                                cx.open_with_system(&home);
+                            })
                     })),
             )
-            .children(folder.map(|home| {
-                action("home-folder", Action::Quiet, &t)
-                    .child(label(tr("Folder").to_string()))
-                    .on_click(move |_, _, cx| {
-                        let _ = std::fs::create_dir_all(&home);
-                        cx.open_with_system(&home);
-                    })
-            }))
     }
 
     /// The card beside the hero, for a Horizon version: a line from a release's notes, and
