@@ -693,7 +693,12 @@ enum Cmd {
         installed: bool,
     },
     /// Download and install a release (a tag such as v2026.10.13, or "latest")
-    Install { tag: String },
+    Install {
+        tag: String,
+        /// Install from a local folder (the game bundled in the installer) instead of downloading
+        #[arg(long)]
+        from: Option<PathBuf>,
+    },
     /// Remove an installed version
     Remove { tag: String },
     /// Prepare a version's resources from your own Minecraft install, or from Mojang
@@ -1156,7 +1161,21 @@ fn execute(command: Cmd, as_json: bool) -> Result<(), String> {
                 println!("{:<15} {}  {}", r.tag, r.date, state);
             }
         }
-        Cmd::Install { tag } => {
+        Cmd::Install { tag, from: Some(dir) } => {
+            backend::install_from_dir(&tag, &dir)?;
+            if as_json {
+                json(
+                    serde_json::json!({ "installed": tag, "prepared": backend::is_prepared(&tag) }),
+                );
+            } else if backend::is_prepared(&tag) {
+                println!("Installed {tag} from the bundled game. It is prepared already.");
+            } else {
+                println!(
+                    "Installed {tag} from the bundled game. Prepare it next: claudium-launcher prepare --version {tag}"
+                );
+            }
+        }
+        Cmd::Install { tag, from: None } => {
             let label = format!("Installing {tag}");
             let tag = backend::install_tag(&tag, false, progress(label))?;
             if as_json {

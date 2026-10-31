@@ -34,6 +34,31 @@ function findLauncher() {
   return null;
 }
 
+// Where the bundled game folder is (the claudium-client binary + tools + research-lock.json),
+// shipped inside the installer's resources, or beside the app in dev.
+function findGameBundle() {
+  const candidates = [
+    process.env.CLAUDIUM_GAME_DIR,
+    process.resourcesPath && path.join(process.resourcesPath, 'game'),
+    path.join(path.dirname(process.execPath), 'game'),
+    path.join(__dirname, 'game'),
+  ].filter(Boolean);
+  const client = process.platform === 'win32' ? 'claudium-client.exe' : 'claudium-client';
+  for (const c of candidates) {
+    try { if (fs.statSync(path.join(c, client)).isFile()) return c; } catch { /* keep looking */ }
+  }
+  return null;
+}
+
+// The version tag to install the bundle under: the Minecraft version it targets, from its
+// research-lock.json, so the launcher shows "26.3". Falls back to "bundled".
+function bundleTag(gameDir) {
+  try {
+    const lock = JSON.parse(fs.readFileSync(path.join(gameDir, 'research-lock.json'), 'utf8'));
+    return (lock && lock.minecraft && lock.minecraft.version) || 'bundled';
+  } catch { return 'bundled'; }
+}
+
 // Run a claudium-launcher subcommand, streaming each output line to `onLine`. Resolves with the
 // exit code; rejects only if the binary can't be started.
 function run(args, onLine = () => {}) {
@@ -81,15 +106,22 @@ async function isSignedIn() {
 // Install the game if needed, prepare it from the player's Minecraft, then launch. Each step
 // streams its progress; the Rust launcher is idempotent, so re-running is cheap once done.
 async function play(onLine, extraArgs = []) {
-  onLine('Checking the game is installed…');
-  await run(['install', 'latest'], onLine);
+  const gameDir = findGameBundle();
+  if (!gameDir) throw new Error('The game is missing from this build (no bundled game folder).');
+  const tag = bundleTag(gameDir);
+
+  onLine('Setting up the game…');
+  const inst = await run(['install', tag, '--from', gameDir], onLine);
+  if (inst.code !== 0) throw new Error(inst.output.trim() || 'Could not set up the bundled game.');
+
   onLine('Preparing the game from your Minecraft (first run can take a few minutes)…');
-  const prep = await run(['prepare'], onLine);
-  if (prep.code !== 0) throw new Error(prep.output.trim() || 'Could not prepare the game. Is Minecraft: Java Edition installed?');
+  const prep = await run(['prepare', '--version', tag], onLine);
+  if (prep.code !== 0) throw new Error(prep.output.trim() || 'Could not prepare the game. Is Minecraft: Java Edition installed, and Java available?');
+
   onLine('Starting Claudium…');
-  const played = await run(['play', ...extraArgs], onLine);
+  const played = await run(['play', '--version', tag, ...extraArgs], onLine);
   if (played.code !== 0) throw new Error(played.output.trim() || 'The game did not start.');
   return { ok: true };
 }
 
-module.exports = { findLauncher, run, signInWithCode, signOut, isSignedIn, play, dataHome };
+module.exports = { findLauncher, findGameBundle, run, signInWithCode, signOut, isSignedIn, play, dataHome };

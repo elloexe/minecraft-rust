@@ -665,6 +665,50 @@ pub(crate) fn install_as(
     Ok(())
 }
 
+/// Installs the game from a local folder (the copy bundled inside the installer) as version `tag`,
+/// instead of downloading a release. This lets a private build play with no published release: the
+/// launcher ships the game beside itself. The folder is laid out like an unpacked archive — the
+/// `claudium-client` binary and its tools at the top. Idempotent: an already-installed version is
+/// kept (so its prepared resources survive), only the selection is ensured.
+pub fn install_from_dir(tag: &str, src: &Path) -> Result<(), String> {
+    if !src.join(CLIENT).exists() {
+        return Err(format!(
+            "The bundled game folder {} has no {CLIENT}",
+            src.display()
+        ));
+    }
+    let target = version_dir(tag);
+    if target.join(COMPLETE).exists() && target.join(CLIENT).exists() {
+        // Already installed: keep it (its prepared resources live here) and just ensure it is the
+        // selected version, so Play and Prepare default to it.
+        let mut settings = Settings::load();
+        if settings.selected.as_deref() != Some(tag) {
+            settings.selected = Some(tag.to_string());
+            settings.save();
+        }
+        return Ok(());
+    }
+    let root = versions_dir();
+    fs::create_dir_all(&root).map_err(|e| e.to_string())?;
+    let partial = root.join(format!(".{tag}.partial"));
+    let _ = fs::remove_dir_all(&partial);
+    copy_dir(src, &partial).map_err(|e| e.to_string())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = fs::set_permissions(partial.join(CLIENT), fs::Permissions::from_mode(0o755));
+    }
+    let _ = fs::remove_dir_all(&target);
+    fs::rename(&partial, &target).map_err(|e| e.to_string())?;
+    fs::write(target.join(COMPLETE), "").map_err(|e| e.to_string())?;
+    reuse_prepared(&root, tag);
+    complete_assets(tag);
+    let mut settings = Settings::load();
+    settings.selected = Some(tag.to_string());
+    settings.save();
+    Ok(())
+}
+
 pub fn remove(tag: &str) -> Result<(), String> {
     let dir = version_dir(tag);
     // The marker goes first: a version counted as installed until its folder is gone comes back

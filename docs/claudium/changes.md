@@ -140,3 +140,24 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 - The window icon is still Horizon's (`packaging/icons/horizon.ico`).
 - The look has not been seen running. It is checked by `cargo fmt`, clippy and
   the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.
+
+## Play the bundled game, no release needed (2026-10-31)
+
+The Electron launcher now installs the game from the copy bundled inside its own
+installer, instead of downloading a published release. This fixes "no version is
+installed yet" on a private fork that has no releases.
+
+- `backend::install_from_dir(tag, src)` copies a local game folder into the
+  launcher's `versions/<tag>` and marks it installed, the same end state as a
+  downloaded release (idempotent: an already-installed version keeps its prepared
+  resources). `claudium-launcher install <tag> --from <dir>` exposes it.
+- `launcher-electron/game.js` Play now: install from the bundled `game/` folder →
+  prepare from the player's own Minecraft → play. No network, no release.
+- `.github/workflows/electron-launcher.yml` builds the engine *and* the game
+  (`claudium-client`, `claudium-ctl`, `claudium-prepare` + `research-lock.json`)
+  on Windows, bundles both via electron-builder `extraResources`, and uploads a
+  single installer artifact (the confusing internal `claudium-engine-exe` is gone).
+
+Still needs, on the player's machine: Minecraft: Java Edition installed, and Java
+available for `prepare` (the bundle ships no precompiled exporters yet, so prepare
+needs a JDK). Untestable in CI/cloud: no GPU, no Minecraft.

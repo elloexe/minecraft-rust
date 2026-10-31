@@ -83,7 +83,7 @@ ipcMain.handle('state', async () => {
   try { signedIn = await game.isSignedIn(); } catch { signedIn = false; }
   return {
     signedIn,
-    engineFound: !!game.findLauncher(),
+    engineFound: !!game.findLauncher() && !!game.findGameBundle(),
     usingPublicId: auth.clientId() === auth.DEFAULT_CLIENT_ID,
   };
 });

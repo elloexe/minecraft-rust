@@ -1,7 +1,10 @@
 name: electron launcher
-# Builds a self-contained Windows installer (Claudium-Launcher-Setup.exe) with the Rust game
-# bundled inside it, so installing the launcher installs the game too — no manual setup, and it
-# works even when the repo is private (nothing to download at runtime).
+# Builds ONE self-contained Windows installer: Claudium-Launcher-Setup.exe. It bundles both the
+# Rust launcher engine (claudium-launcher, which owns sign-in/prepare/play) and the game itself
+# (claudium-client + tools), so installing the launcher installs the game — nothing is downloaded
+# at run time, and it works with the repo private. First Play installs the bundled game locally
+# (claudium-launcher install <ver> --from <bundled>) and prepares it from the player's own Minecraft.
+#
 # Set the repository variable CLAUDIUM_MSA_CLIENT_ID to override the default public sign-in id.
 on:
   push:
@@ -9,7 +12,9 @@ on:
     tags: ["v*"]
     paths:
       - "launcher-electron/**"
+      - "launcher/**"
       - "crates/**"
+      - "research-lock.json"
       - "Cargo.lock"
       - ".github/workflows/electron-launcher.yml"
   workflow_dispatch:
@@ -22,48 +27,52 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 1) Build the Rust launcher engine (claudium-launcher) that gets bundled into the installer.
-  #    It owns the proven pipeline: the account store, installing/preparing the game, and launching.
-  engine:
+  installer:
     runs-on: windows-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+
+      # The launcher engine is its own Cargo workspace; the game is the root workspace. Cache each.
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: launcher
           shared-key: launcher-windows
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: game-windows
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      # 1) The engine (claudium-launcher): sign-in, local install, prepare, play.
       - name: Build the engine
         working-directory: launcher
+        env:
+          CLAUDIUM_MSA_CLIENT_ID: ${{ vars.CLAUDIUM_MSA_CLIENT_ID }}
         run: cargo build --release --locked --bin claudium-launcher
-      - name: Stage it
+
+      # 2) The game (claudium-client) and its tools (claudium-ctl, claudium-prepare).
+      - name: Build the game
+        run: cargo build --release --locked -p claudium-client -p claudium-prepare --bins
+
+      # 3) Stage both into the Electron app so electron-builder bundles them as extraResources.
+      - name: Stage engine and game
         shell: bash
         run: |
-          mkdir -p staged
-          cp launcher/target/release/claudium-launcher.exe staged/claudium-launcher.exe
-      - uses: actions/upload-artifact@v4
-        with:
-          name: claudium-engine-exe
-          path: staged/claudium-launcher.exe
-          if-no-files-found: error
+          set -e
+          mkdir -p launcher-electron/bin launcher-electron/game
+          cp launcher/target/release/claudium-launcher.exe launcher-electron/bin/claudium-launcher.exe
+          cp target/release/claudium-client.exe  launcher-electron/game/claudium-client.exe
+          cp target/release/claudium-ctl.exe     launcher-electron/game/claudium-ctl.exe
+          cp target/release/claudium-prepare.exe launcher-electron/game/claudium-prepare.exe
+          cp research-lock.json                  launcher-electron/game/research-lock.json
+          ls -l launcher-electron/bin launcher-electron/game
 
-  # 2) Build the installer with the engine placed in launcher-electron/bin (bundled by extraResources).
-  installer:
-    needs: engine
-    runs-on: windows-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: claudium-engine-exe
-          path: launcher-electron/bin
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Install
+      - name: Install electron deps
         working-directory: launcher-electron
         run: npm install --no-audit --no-fund
       - name: Build installer
@@ -71,18 +80,21 @@ jobs:
         env:
           CLAUDIUM_MSA_CLIENT_ID: ${{ vars.CLAUDIUM_MSA_CLIENT_ID }}
         run: npm run dist:win
-      - name: Collect
+      - name: Collect the single installer
         shell: bash
         working-directory: launcher-electron
         run: |
           mkdir -p out
           cp dist/*.exe out/ 2>/dev/null || true
           ls -l out
+
+      # The ONLY user-facing download: the installer. No internal build chunks.
       - uses: actions/upload-artifact@v4
         with:
-          name: claudium-launcher-setup-windows
+          name: Claudium-Launcher-Setup
           path: launcher-electron/out/*.exe
           if-no-files-found: error
+
       - name: Attach to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
