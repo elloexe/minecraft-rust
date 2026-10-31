@@ -117,8 +117,15 @@ ipcMain.handle('choose-game', async () => {
 });
 
 ipcMain.handle('play', async (_e, args) => {
-  const cfg = game.loadConfig();
+  const status = (s) => { if (win && !win.isDestroyed()) win.webContents.send('status', s); };
+  let cfg = game.loadConfig();
   if (!cfg.account) throw new Error('Sign in with Microsoft first.');
+  // The game ships inside the installer; if it is not there (a dev build), fetch it once.
+  let gamePath = game.findGame(cfg);
+  if (!gamePath) {
+    gamePath = await game.downloadGame(status);
+    cfg = game.loadConfig();
+  }
   // Refresh the Minecraft token if it is stale, so online servers accept it.
   if (!cfg.account.expiresAt || Date.now() > cfg.account.expiresAt - 60_000) {
     if (cfg.account.refresh) {
@@ -126,7 +133,8 @@ ipcMain.handle('play', async (_e, args) => {
       game.saveConfig(cfg);
     }
   }
-  return game.play(cfg, cfg.account, Array.isArray(args) ? args : []);
+  status('Starting Claudium…');
+  return game.play(gamePath, cfg.account, Array.isArray(args) ? args : []);
 });
 
 app.whenReady().then(createWindow);

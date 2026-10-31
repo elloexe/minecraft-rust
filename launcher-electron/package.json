@@ -19,6 +19,7 @@
     "productName": "Claudium",
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["main.js", "auth.js", "game.js", "preload.js", "renderer/**/*", "package.json"],
+    "extraResources": [{ "from": "game", "to": "game", "filter": ["**/*"] }],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
       "icon": "build/icon.ico",

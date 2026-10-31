@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld('claudium', {
   signOut: () => ipcRenderer.invoke('sign-out'),
   chooseGame: () => ipcRenderer.invoke('choose-game'),
   play: (args) => ipcRenderer.invoke('play', args),
+  onStatus: (cb) => ipcRenderer.on('status', (_e, text) => cb(text)),
 });

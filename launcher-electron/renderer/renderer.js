@@ -96,4 +96,7 @@ function switchTab(name) {
 }
 document.querySelectorAll('.nav-item').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
+// Progress from the main process (downloading the game, starting it).
+window.claudium.onStatus((text) => setStatus(text));
+
 refresh();
