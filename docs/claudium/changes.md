@@ -161,3 +161,13 @@ installed yet" on a private fork that has no releases.
 Still needs, on the player's machine: Minecraft: Java Edition installed, and Java
 available for `prepare` (the bundle ships no precompiled exporters yet, so prepare
 needs a JDK). Untestable in CI/cloud: no GPU, no Minecraft.
+
+## Bundle a JDK so preparing needs no Java install (2026-10-31)
+
+First Play failed on a machine with no JDK: preparing the game compiles the
+exporters (needs `javac`) and runs data generators (needs a Java runtime), and
+the launcher's fallback — downloading Mojang's Java — ships only a runtime (no
+`javac`) and timed out besides. Now the Windows installer bundles a full Temurin
+JDK (the `java_major` research-lock.json pins), and `launcher-electron/game.js`
+sets `JAVA_HOME`/`PATH` to it on every engine call, so prepare just runs — no Java
+install, no Mojang download. Adds ~180 MB to the installer; fine for private use.

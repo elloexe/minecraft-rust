@@ -50,6 +50,22 @@ function findGameBundle() {
   return null;
 }
 
+// The Java JDK bundled in the installer, used to prepare resources (compile the exporters and run
+// the game's data generators) without the player installing Java. Returns the JDK home, or null.
+function findJdk() {
+  const candidates = [
+    process.env.CLAUDIUM_BUNDLED_JDK,
+    process.resourcesPath && path.join(process.resourcesPath, 'jdk'),
+    path.join(path.dirname(process.execPath), 'jdk'),
+    path.join(__dirname, 'jdk'),
+  ].filter(Boolean);
+  const javac = process.platform === 'win32' ? 'javac.exe' : 'javac';
+  for (const c of candidates) {
+    try { if (fs.statSync(path.join(c, 'bin', javac)).isFile()) return c; } catch { /* keep looking */ }
+  }
+  return null;
+}
+
 // The version tag to install the bundle under: the Minecraft version it targets, from its
 // research-lock.json, so the launcher shows "26.3". Falls back to "bundled".
 function bundleTag(gameDir) {
@@ -65,9 +81,16 @@ function run(args, onLine = () => {}) {
   return new Promise((resolve, reject) => {
     const bin = findLauncher();
     if (!bin) return reject(new Error('The Claudium launcher engine is missing from this build.'));
-    const child = spawn(bin, args, {
-      env: { ...process.env, CLAUDIUM_LAUNCHER_HOME: dataHome() },
-    });
+    const env = { ...process.env, CLAUDIUM_LAUNCHER_HOME: dataHome() };
+    // Give every engine call the bundled JDK, so preparing the game needs no Java install and no
+    // download of Mojang's runtime: JAVA_HOME for the engine, and its bin on PATH for javac.
+    const jdk = findJdk();
+    if (jdk) {
+      env.JAVA_HOME = jdk;
+      const sep = process.platform === 'win32' ? ';' : ':';
+      env.PATH = path.join(jdk, 'bin') + sep + (env.PATH || '');
+    }
+    const child = spawn(bin, args, { env });
     let out = '';
     const feed = (buf) => {
       out += buf.toString();

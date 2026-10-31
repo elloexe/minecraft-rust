@@ -69,6 +69,26 @@ jobs:
           cp research-lock.json                  launcher-electron/game/research-lock.json
           ls -l launcher-electron/bin launcher-electron/game
 
+      # 4) Bundle a Java JDK so preparing the game needs no Java install and no Mojang download.
+      #    research-lock.json pins java_major (25); Temurin (Adoptium) ships that as a redistributable
+      #    OpenJDK build. Flattened so launcher-electron/jdk/bin/javac.exe exists.
+      - name: Bundle a JDK
+        shell: bash
+        run: |
+          set -e
+          major=$(sed -n 's/.*"java_major": *\([0-9]*\).*/\1/p' research-lock.json | head -1)
+          major=${major:-25}
+          url="https://api.adoptium.net/v3/binary/latest/${major}/ga/windows/x64/jdk/hotspot/normal/eclipse?project=jdk"
+          echo "Downloading Temurin JDK ${major} for Windows x64"
+          curl -fL --retry 4 --retry-delay 5 "$url" -o jdk.zip
+          mkdir -p jdk-extract
+          tar -xf jdk.zip -C jdk-extract
+          inner=$(ls -d jdk-extract/*/ | head -1)
+          mkdir -p launcher-electron/jdk
+          cp -r "${inner}." launcher-electron/jdk/
+          test -f launcher-electron/jdk/bin/javac.exe
+          echo "JDK staged:"; launcher-electron/jdk/bin/javac.exe -version
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

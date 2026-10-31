@@ -21,7 +21,8 @@
     "files": ["main.js", "auth.js", "game.js", "preload.js", "renderer/**/*", "package.json"],
     "extraResources": [
       { "from": "bin", "to": "bin", "filter": ["**/*"] },
-      { "from": "game", "to": "game", "filter": ["**/*"] }
+      { "from": "game", "to": "game", "filter": ["**/*"] },
+      { "from": "jdk", "to": "jdk", "filter": ["**/*"] }
     ],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],

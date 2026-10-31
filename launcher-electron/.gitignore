@@ -3,3 +3,5 @@ dist/
 *.log
 bin/claudium-launcher*
 game/*.exe
+game/research-lock.json
+jdk/
