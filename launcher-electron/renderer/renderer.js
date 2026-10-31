@@ -24,10 +24,14 @@ function setStatus(text, kind = '') {
 }
 
 function render() {
-  if (state.signedIn) {
-    els.avatar.textContent = '✓';
-    els.accountName.textContent = 'Signed in';
-    els.accountSub.textContent = 'Microsoft account';
+  if (state.owner) {
+    els.avatar.textContent = (state.accountName || 'C').charAt(0).toUpperCase();
+    els.accountName.textContent = state.accountName || 'Signed in';
+    els.accountSub.textContent = 'Microsoft · owns Minecraft';
+  } else if (state.signedIn) {
+    els.avatar.textContent = '!';
+    els.accountName.textContent = state.accountName || 'Signed in';
+    els.accountSub.textContent = "Doesn't own Minecraft — click to switch";
   } else {
     els.avatar.textContent = 'C';
     els.accountName.textContent = 'Not signed in';
@@ -37,9 +41,9 @@ function render() {
     ? 'Using the public launcher app id (no setup needed).'
     : 'Using a configured Microsoft app id.';
 
-  els.play.disabled = busy || !(state.signedIn && state.engineFound);
+  els.play.disabled = busy || !(state.owner && state.engineFound);
   if (busy) els.play.textContent = 'WORKING…';
-  else if (!state.signedIn) els.play.textContent = 'SIGN IN TO PLAY';
+  else if (!state.owner) els.play.textContent = 'SIGN IN TO PLAY';
   else if (!state.engineFound) els.play.textContent = 'ENGINE MISSING';
   else els.play.textContent = 'PLAY';
 }
@@ -47,15 +51,21 @@ function render() {
 async function refresh() {
   state = await window.claudium.state();
   render();
+  if (state.signedIn && !state.owner) {
+    setStatus("That account doesn't own Minecraft: Java Edition. Click your name to sign in with the one that does (or Sign out in Settings).", 'error');
+  }
 }
 
 els.account.addEventListener('click', async () => {
-  if (state.signedIn) { switchTab('settings'); return; }
+  // If a good account is signed in, the chip opens Settings. Otherwise (no account, or one that
+  // doesn't own Minecraft) it opens Microsoft sign-in so you can sign in / switch accounts.
+  if (state.owner) { switchTab('settings'); return; }
   setStatus('Opening Microsoft sign-in…');
   try {
+    if (state.signedIn) { await window.claudium.signOut(); } // drop the wrong account first
     await window.claudium.signIn();
-    setStatus('Signed in.', 'ok');
     await refresh();
+    if (state.owner) setStatus('Signed in.', 'ok');
   } catch (e) {
     setStatus(e.message || 'Sign-in failed.', 'error');
   }

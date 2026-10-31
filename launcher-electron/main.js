@@ -79,10 +79,12 @@ function signInWindow() {
 const status = (s) => { if (win && !win.isDestroyed()) win.webContents.send('status', s); };
 
 ipcMain.handle('state', async () => {
-  let signedIn = false;
-  try { signedIn = await game.isSignedIn(); } catch { signedIn = false; }
+  let acct = { signedIn: false, owner: false, name: '' };
+  try { acct = await game.accountState(); } catch { /* keep defaults */ }
   return {
-    signedIn,
+    signedIn: acct.signedIn,
+    owner: acct.owner,
+    accountName: acct.name,
     engineFound: !!game.findLauncher() && !!game.findGameBundle(),
     usingPublicId: auth.clientId() === auth.DEFAULT_CLIENT_ID,
   };

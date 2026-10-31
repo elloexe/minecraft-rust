@@ -114,16 +114,37 @@ async function signInWithCode(code) {
   if (r.code !== 0) throw new Error(r.output.trim() || 'Sign-in failed.');
 }
 
-async function signOut(onLine) {
-  // Sign out whoever is selected, if any (ignore "no account").
-  await run(['account', 'sign-out', '*'], onLine).catch(() => {});
+// The real sign-in state, from the engine's JSON (the source of truth):
+//   { signedIn, owner (owns Minecraft), name, configured, uuids }
+async function accountState() {
+  const r = await run(['account', 'list', '--json']);
+  try {
+    const s = r.output.slice(r.output.indexOf('{'), r.output.lastIndexOf('}') + 1);
+    const d = JSON.parse(s);
+    const accts = Array.isArray(d.accounts) ? d.accounts : [];
+    const sel = accts.find((a) => a.selected) || accts[0] || null;
+    return {
+      signedIn: accts.length > 0,
+      owner: d.owner === true,
+      name: sel ? sel.name : '',
+      configured: d.sign_in_configured !== false,
+      uuids: accts.map((a) => a.uuid),
+    };
+  } catch {
+    return { signedIn: false, owner: false, name: '', configured: true, uuids: [] };
+  }
 }
 
-// Whether an account is signed in, parsed from `account list`.
 async function isSignedIn() {
-  const r = await run(['account', 'list']);
-  // A signed-in account prints a line; none prints the NEEDS_OWNER hint.
-  return r.code === 0 && !/sign in/i.test(r.output) || /microsoft/i.test(r.output);
+  return (await accountState()).signedIn;
+}
+
+// Sign out every signed-in account (by UUID — the engine needs a real name/UUID, not "*").
+async function signOut(onLine) {
+  const st = await accountState();
+  for (const uuid of st.uuids) {
+    await run(['account', 'sign-out', uuid], onLine).catch(() => {});
+  }
 }
 
 // Install the game if needed, prepare it from the player's Minecraft, then launch. Each step
@@ -147,4 +168,4 @@ async function play(onLine, extraArgs = []) {
   return { ok: true };
 }
 
-module.exports = { findLauncher, findGameBundle, run, signInWithCode, signOut, isSignedIn, play, dataHome };
+module.exports = { findLauncher, findGameBundle, run, signInWithCode, signOut, isSignedIn, accountState, play, dataHome };
