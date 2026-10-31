@@ -35,7 +35,6 @@ mod multiplayer_page;
 mod new_instance;
 mod owner_page;
 mod packs_page;
-mod partner;
 mod perf;
 mod plate;
 mod screenshots_page;
@@ -346,32 +345,6 @@ impl Launcher {
                 .timer(Duration::from_millis(80))
                 .await;
             if this.update(cx, |this, cx| this.drain(cx)).is_err() {
-                break;
-            }
-        })
-        .detach();
-        // Counts the time the sidebar's partner banner is on screen, until it may be hidden.
-        cx.spawn(async move |this, cx| loop {
-            cx.background_executor()
-                .timer(Duration::from_secs(10))
-                .await;
-            let counting = this.update(cx, |this, cx| {
-                let s = &mut this.settings;
-                if s.partner_hidden || s.partner_seen_secs >= partner::SEEN_BEFORE_HIDE {
-                    return false;
-                }
-                if this.page != Page::Servers {
-                    s.partner_seen_secs += 10;
-                    if s.partner_seen_secs % 60 == 0
-                        || s.partner_seen_secs >= partner::SEEN_BEFORE_HIDE
-                    {
-                        s.save();
-                        cx.notify();
-                    }
-                }
-                true
-            });
-            if !matches!(counting, Ok(true)) {
                 break;
             }
         })
@@ -1953,23 +1926,12 @@ impl Launcher {
     /// client-side decorations), the pages with their icons, then the account and Settings.
     /// The top bar over the pages: their tabs, then the account chip and Settings. No plate: the
     /// sky shows through, under a 1 px rule.
-    fn topbar(&mut self, cx: &mut Context<Self>) -> Div {
+    /// The player's account, as the Minecraft launcher shows it: their face, their name, and one
+    /// line saying how they are signed in. It sits at the top of the sidebar rather than in the
+    /// top bar, so it is the first thing on the window, and it opens the same account menu.
+    fn account_block(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let n = t.night;
-        let mut nav = div().flex().flex_none().items_center().gap(px(4.));
-        for (page, label, _) in Page::ALL {
-            if page == Page::Settings {
-                continue;
-            }
-            nav = nav.child(
-                shell::tab(format!("nav-{label}"), tr(label), self.page == page, &t).on_click(
-                    cx.listener(move |this, _: &ClickEvent, _, cx| {
-                        this.go(page);
-                        cx.notify();
-                    }),
-                ),
-            );
-        }
         // Only a signed-in account says "Microsoft account"; otherwise an offline name, or the
         // one the game made up. A signed-in one shows its face (its UUID's default skin).
         let (name, how) = self.who_plays();
@@ -1978,18 +1940,20 @@ impl Launcher {
             _ => None,
         };
         let picture = match face {
-            Some(uuid) => self.head(&uuid, 28.).into_any_element(),
+            Some(uuid) => self.head(&uuid, 32.).into_any_element(),
             None => div()
                 .flex()
                 .items_center()
                 .justify_center()
-                .size(px(28.))
+                .size(px(32.))
                 .bg(plate::alpha(n.card_hi, n.card_hi_alpha))
-                .child(blocks::icon("user", 16., shell::c(n.muted)))
+                .child(blocks::icon("user", 18., shell::c(n.muted)))
                 .into_any_element(),
         };
-        let account = shell::chip("account", &t)
-            .max_w(px(200.))
+        let chip = shell::chip("account", &t)
+            .w_full()
+            .h(px(52.))
+            .pl(px(8.))
             .child(div().relative().child(picture))
             .child(
                 div()
@@ -2023,21 +1987,32 @@ impl Launcher {
                 }
                 cx.notify();
             }));
-        let account = div()
+        div()
             .relative()
-            .child(account)
-            .children(self.account_menu(cx));
-        let settings = shell::icon_button(
-            "nav-Settings",
-            "sliders",
-            40.,
-            self.page == Page::Settings,
-            &t,
-        )
-        .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-            this.go(Page::Settings);
-            cx.notify();
-        }));
+            .mb(px(8.))
+            .child(chip)
+            .children(self.account_menu(cx))
+    }
+
+    fn topbar(&mut self, cx: &mut Context<Self>) -> Div {
+        let t = self.theme;
+        let n = t.night;
+        let mut nav = div().flex().flex_none().items_center().gap(px(4.));
+        for (page, label, _) in Page::ALL {
+            if page == Page::Settings {
+                continue;
+            }
+            nav = nav.child(
+                shell::tab(format!("nav-{label}"), tr(label), self.page == page, &t).on_click(
+                    cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.go(page);
+                        cx.notify();
+                    }),
+                ),
+            );
+        }
+        // The account and Settings live in the sidebar, as they do in the Minecraft launcher, so
+        // the top bar carries nothing but the page tabs.
         div()
             .flex()
             .flex_none()
@@ -2048,16 +2023,6 @@ impl Launcher {
             .border_b_1()
             .border_color(plate::alpha(n.stroke, n.rule_alpha))
             .child(nav)
-            .child(
-                div()
-                    .ml_auto()
-                    .flex()
-                    .flex_none()
-                    .items_center()
-                    .gap(px(8.))
-                    .child(account)
-                    .child(settings),
-            )
     }
 
     /// The sidebar, from the top of the window: the wordmark, Horizon and the imported modpacks,
@@ -2066,6 +2031,7 @@ impl Launcher {
         let t = self.theme;
         let n = t.night;
         self.load_packs();
+        let account = self.account_block(cx);
         let heading = |label: String| shell::heading(label, &t);
         let add = shell::icon_button("add-instance", "plus", 24., false, &t).on_click(cx.listener(
             |this, _: &ClickEvent, _, cx| {
@@ -2074,7 +2040,6 @@ impl Launcher {
             },
         ));
         let items = self.instance_items(heading, cx);
-        let mut rows = items.len();
         let list = div()
             .flex()
             .flex_col()
@@ -2090,8 +2055,6 @@ impl Launcher {
         if !servers.is_empty() {
             list = list.child(heading(tr("SERVERS").into()));
         }
-        rows += servers.len();
-        let headings = 1 + usize::from(!servers.is_empty());
         for e in servers {
             let up = self.servers.is_up(&e.dir);
             let open = self.page == Page::Servers && self.servers.open.as_ref() == Some(&e.dir);
@@ -2122,33 +2085,6 @@ impl Launcher {
                     })),
             );
         }
-        let link = |id: &'static str, label: &'static str, icon: &'static str, url: String| {
-            let id = SharedString::from(id);
-            track_hover(
-                div()
-                    .id(id.clone())
-                    .relative()
-                    .flex()
-                    .items_center()
-                    .gap(px(10.))
-                    .h(px(32.))
-                    .px(px(8.))
-                    .cursor_pointer()
-                    .child(hover_layer(&id, shell::c(n.card_hi).opacity(0.5), 0., 0.))
-                    .child(
-                        div()
-                            .relative()
-                            .child(blocks::icon(icon, 16., shell::c(n.muted))),
-                    )
-                    .child(
-                        shell::text(theme::night::UI, shell::c(n.ink_soft))
-                            .relative()
-                            .child(label),
-                    )
-                    .on_click(move |_, _, cx| cx.open_url(&url)),
-                id,
-            )
-        };
         let mut foot = div().mt_auto().flex().flex_col().gap(px(2.)).pt(px(12.));
         let update = |line: String| {
             plate::plate(&n)
@@ -2188,66 +2124,43 @@ impl Launcher {
             }
             _ => {}
         }
-        // Sculk's card above the links: seen without scrolling, on every page but Servers, which shows
-        // its wide banner. Tall where the sidebar has the height for it besides the wordmark, its rows
-        // (52 high each, under headings of 40) and the links, compact otherwise. After a while on
-        // screen a "Hide" beside its label puts it away for good.
-        if self.page != Page::Servers && !self.settings.partner_hidden {
-            let free = f32::from(window.viewport_size().height)
-                - theme::TOPBAR
-                - 40. * headings as f32
-                - 52. * rows as f32
-                - 110.;
-            let mut side = div().relative().mb(px(8.)).child(partner::card(
-                "partner-side",
-                theme::SIDEBAR - 20.,
-                free < partner::TALL_HEIGHT,
+        // Settings sits at the foot of the sidebar, where the Minecraft launcher has it. The
+        // community links that were here are upstream Horizon's, not ours.
+        {
+            let id = SharedString::from("nav-Settings");
+            let on = self.page == Page::Settings;
+            foot = foot.child(keyboard(
+                track_hover(
+                    div()
+                        .id(id.clone())
+                        .relative()
+                        .flex()
+                        .items_center()
+                        .gap(px(10.))
+                        .h(px(32.))
+                        .px(px(8.))
+                        .cursor_pointer()
+                        .child(hover_layer(&id, shell::c(n.card_hi).opacity(0.5), 0., 0.))
+                        .child(div().relative().child(blocks::icon(
+                            "sliders",
+                            16.,
+                            shell::c(if on { n.ink } else { n.muted }),
+                        )))
+                        .child(
+                            shell::text(
+                                theme::night::UI,
+                                shell::c(if on { n.ink } else { n.ink_soft }),
+                            )
+                            .relative()
+                            .child(tr("Settings")),
+                        )
+                        .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                            this.go(Page::Settings);
+                            cx.notify();
+                        })),
+                    id,
+                ),
                 &t,
-            ));
-            if self.settings.partner_seen_secs >= partner::SEEN_BEFORE_HIDE {
-                let hide = div()
-                    .id("partner-hide")
-                    .absolute()
-                    .top(px(0.))
-                    .right(px(0.))
-                    .cursor_pointer()
-                    .child(
-                        text(theme::MICRO)
-                            .text_color(t.muted)
-                            .hover(move |s| s.text_color(t.ink))
-                            .child(tr("HIDE")),
-                    )
-                    .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                        this.settings.partner_hidden = true;
-                        this.settings.save();
-                        cx.notify();
-                    }));
-                side = side.child(keyboard(hide, &t));
-            }
-            foot = foot.child(side);
-        }
-        if !self.links.sponsor.is_empty() {
-            foot = foot.child(link(
-                "sponsor",
-                tr("Sponsor"),
-                "heart",
-                self.links.sponsor.clone(),
-            ));
-        }
-        if !self.links.discord.is_empty() {
-            foot = foot.child(link(
-                "discord",
-                "Discord",
-                "message",
-                self.links.discord.clone(),
-            ));
-        }
-        if !self.links.website.is_empty() {
-            foot = foot.child(link(
-                "website",
-                tr("Website"),
-                "globe",
-                self.links.website.clone(),
             ));
         }
         foot = foot.child(
@@ -2288,6 +2201,7 @@ impl Launcher {
             .pb(px(12.))
             .overflow_y_scroll()
             .children(brand)
+            .child(account)
             .child(list)
             .child(foot)
     }

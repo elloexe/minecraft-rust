@@ -8,6 +8,15 @@ are ours.
 
 ### Launcher
 
+- Moved the account to the top of the sidebar, where the Minecraft launcher has
+  it: face, name and how you are signed in, opening the same account menu. The
+  top bar now carries nothing but the page tabs, and Settings moved to the foot
+  of the sidebar.
+- Removed upstream's sponsor advertising: the sidebar card, the Servers page
+  banner, the timer that counted how long it had been on screen, `partner.rs`,
+  its three images and its strings in all seven languages. Horizon's own
+  community links (Sponsor, Discord, Website) went with them.
+
 - Repainted the launcher in the Minecraft launcher's colours: near-black sidebar,
   dark neutral page, Minecraft green for the one main action, white text at three
   weights (`horizon-theme`'s `night::VANILLA` and `VANILLA_LIGHT`). White on the

@@ -3030,11 +3030,12 @@ pub struct Settings {
     /// one now (the owner gate's screen).
     #[serde(default)]
     pub owner_notice_seen: bool,
-    /// Seconds the sidebar's partner banner has been on screen, over every start, up to
-    /// `partner::SEEN_BEFORE_HIDE`: only then can the player hide it.
+    /// Unused since Claudium dropped upstream's sponsor banner; kept so an existing
+    /// settings file still round-trips.
     #[serde(default)]
     pub partner_seen_secs: u64,
-    /// The player hid the sidebar's partner banner. The Servers page keeps its own.
+    /// Unused since Claudium dropped upstream's sponsor banner; kept so an existing
+    /// settings file still round-trips.
     #[serde(default)]
     pub partner_hidden: bool,
     /// What the window does while the game runs. Stays by default.
