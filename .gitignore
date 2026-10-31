@@ -34,3 +34,7 @@
 
 # Release-only compiled original exporter bundle.
 /exporters/
+
+# Local Microsoft client ID (never commit)
+scripts/client-id.txt
+client-id.txt
