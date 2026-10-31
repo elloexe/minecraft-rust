@@ -38,7 +38,6 @@ no Microsoft sign-in"); release builds have it.
    - Any build, at run time: the environment variable `CLAUDIUM_MSA_CLIENT_ID` overrides the built-in
      value (empty or unset = not configured).
 
-Never use another application's client ID (the official launcher's or another launcher's).
 
 ## Flow (launcher)
 
