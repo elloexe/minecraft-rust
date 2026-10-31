@@ -8,6 +8,16 @@ are ours.
 
 ### Launcher
 
+- Renamed the shipped binary to `claudium-launcher` and the window, title bar
+  and sidebar wordmark to Claudium. The Cargo package keeps upstream's name so
+  the library target stays `horizon_launcher`, which the whole crate imports by
+  that path; only the binary is renamed.
+- Added `.github/workflows/launcher-exe.yml`: builds `claudium-launcher.exe` on
+  a Windows runner and uploads it as an artifact, attaching it to the release on
+  a `launcher-v*` tag. GPUI draws through DirectX on Windows and the icon is
+  embedded by a Windows-only build script, so this cannot be cross-compiled from
+  Linux.
+
 - Rebuilt the Play row as the Minecraft launcher's play bar: a full-width band
   under the hero with its own fill and a rule along the top, the version picker
   on the left, the one big green PLAY in the middle of the window and the
@@ -42,6 +52,13 @@ are ours.
   world generation, Java Edition protocol client, egui launcher). It is still on
   the `main` branch if anything there is worth recovering.
 
-## Planned
+## Known gaps
 
-- Our own launcher, replacing upstream's `launcher/`.
+- **The launcher still installs upstream's game.** `backend::REPO` points at
+  `horizon-rust/horizon`, so Play downloads Horizon's released builds. Pointing
+  it at this repository needs us to publish game builds of our own; upstream's
+  release workflows were removed because they need their signing keys and their
+  self-hosted macOS runner.
+- The window icon is still Horizon's (`packaging/icons/horizon.ico`).
+- The look has not been seen running. It is checked by `cargo fmt`, clippy and
+  the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.

@@ -2187,7 +2187,7 @@ impl Launcher {
                 .child(
                     shell::text(theme::night::TITLE, shell::c(n.ink))
                         .font_family(theme::DISPLAY_FONT)
-                        .child("Horizon"),
+                        .child("Claudium"),
                 )
         });
         shell::sidebar_plate(&t)

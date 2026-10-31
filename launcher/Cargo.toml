@@ -3,7 +3,13 @@ name = "horizon-launcher"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "Downloads, prepares and starts Horizon builds"
+description = "Claudium's launcher: downloads, prepares and starts the game"
+
+# The package keeps upstream's name so the library target stays `horizon_launcher`, which the
+# whole crate imports by that path. Only the shipped binary is renamed.
+[[bin]]
+name = "claudium-launcher"
+path = "src/main.rs"
 
 [workspace]
 
