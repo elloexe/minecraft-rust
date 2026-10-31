@@ -2,6 +2,7 @@
 """Reject local game artifacts even when somebody uses git add -f."""
 
 import argparse
+import re
 from pathlib import PurePosixPath
 import subprocess
 import sys
@@ -16,9 +17,12 @@ def prohibited(path):
     # Original JDK-only tools are an exact allowlist; recovered game Java stays private.
     if path in ORIGINAL_JDK_TOOLS:
         return False
-    # Original Claudium mod sources may also be tracked.
-    if parsed.suffix == ".java" and path.startswith(("mods/claudium/src/", "mods/claudium-lab/src/")):
-        return not ("/dev/claudiumlab/" in path)
+    # Our own Java test/bench oracles may be tracked. They live in a `dev.<name>lab`
+    # package under a mod's `src/` tree. Match by shape, not by name: the package was
+    # renamed with the rebrand and `--history` still scans commits that hold the old
+    # name, so a name-based allowlist would reject our own immutable history.
+    if parsed.suffix == ".java" and parsed.parts[:1] == ("mods",) and "/src/" in path:
+        return not re.search(r"/dev/\w+lab/", path)
     return bool(parsed.parts and parsed.parts[0] in PRIVATE_ROOTS) or parsed.suffix.lower() in PRIVATE_EXTENSIONS
 
 
