@@ -113,7 +113,7 @@ impl FlatTerrain {
         .any(|f| f == "minecraft:void_start_platform")
         {
             FeatureBlocks::from_registry(registry)
-                .inspect_err(|e| log::warn!("Horizon: no void_start_platform: {e}"))
+                .inspect_err(|e| log::warn!("Claudium: no void_start_platform: {e}"))
                 .ok()
         } else {
             None
@@ -299,7 +299,7 @@ impl ChunkGenerator for FlatTerrain {
                 origin,
                 blocks,
             ) {
-                log::warn!("Horizon: placing void_start_platform failed: {e}");
+                log::warn!("Claudium: placing void_start_platform failed: {e}");
             }
         }
         for s in &mut chunk.sections {

@@ -408,7 +408,7 @@ const MAPPINGS: [(&str, Option<KeyCode>); 9] = [
     ("key.use", None),
 ];
 
-/// The hook points. Each does nothing in Horizon.
+/// The hook points. Each does nothing in Claudium.
 impl Game<'_> {
     /// Once a frame, in a world or not, after Horizon's extras.
     pub(super) fn native_frame(&mut self, elapsed: Duration) {
@@ -1636,7 +1636,7 @@ mod tests {
         let hooks = catalog["hooks"].as_array().unwrap();
         let source = include_str!("native_hooks.rs");
         let section = source
-            .split("/// The hook points. Each does nothing in Horizon.")
+            .split("/// The hook points. Each does nothing in Claudium.")
             .nth(1)
             .unwrap()
             .split("/// Helpers for native mods")

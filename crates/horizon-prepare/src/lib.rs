@@ -505,7 +505,7 @@ fn prepare_impl(options: &Options, log: Log, compile_only: bool) -> Result<PathB
     }
     steps(&run, &lock, &oracle, options.minecraft_dir.as_deref())?;
     log(&format!(
-        "Prepared Horizon native-client resources: {}",
+        "Prepared Claudium native-client resources: {}",
         resources.display()
     ));
     Ok(resources)

@@ -138,7 +138,7 @@ fn load_loot(root: &Path, overlay: &horizon_world::loot::PackOverlay) -> LoadedL
     let data = match LootData::load(root, overlay) {
         Ok(data) => Some(Arc::new(data)),
         Err(e) => {
-            log::warn!("Horizon: loot tables unavailable, structure containers stay empty: {e}");
+            log::warn!("Claudium: loot tables unavailable, structure containers stay empty: {e}");
             None
         }
     };

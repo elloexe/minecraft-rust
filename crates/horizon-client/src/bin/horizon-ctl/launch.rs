@@ -21,7 +21,7 @@ const CLIENT: &str = "horizon-client";
 pub fn launcher_home() -> PathBuf {
     match std::env::var_os("HORIZON_LAUNCHER_HOME").filter(|h| !h.is_empty()) {
         Some(h) => PathBuf::from(h),
-        None => data_dir().join("horizon-launcher"),
+        None => data_dir().join("claudium-launcher"),
     }
 }
 /// `v2026.10.13.1` gives [2026, 10, 13, 1]; a pre-release suffix is ignored.
@@ -118,7 +118,7 @@ pub fn find(
         }
         None => tags.first().cloned().ok_or_else(|| {
             format!(
-                "no Horizon found: no horizon-client beside horizon-ctl and no version installed by the launcher in {}. Install one with the launcher (horizon-launcher install latest) or pass --game PATH.",
+                "no Claudium found: no horizon-client beside horizon-ctl and no version installed by the launcher in {}. Install one with the launcher (horizon-launcher install latest) or pass --game PATH.",
                 versions.display()
             )
         })?,
@@ -332,7 +332,7 @@ mod tests {
         assert!(
             find(None, None, None, &home)
                 .unwrap_err()
-                .contains("no Horizon found")
+                .contains("no Claudium found")
         );
         fake_version(&home.join("versions"), "v2026.10.13", false);
         assert!(

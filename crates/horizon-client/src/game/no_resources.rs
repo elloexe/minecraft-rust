@@ -71,7 +71,7 @@ impl Missing {
         match renderer.render(&loading_frame(&batch)) {
             Ok(true) => return,
             Ok(false) => {}
-            Err(e) => log::warn!("Horizon: frame failed: {e}"),
+            Err(e) => log::warn!("Claudium: frame failed: {e}"),
         }
         // The frame was not shown (the first one often isn't): the glyphs it
         // rasterized never reached the atlas, so draw them again next frame.
@@ -97,7 +97,7 @@ impl ApplicationHandler for Missing {
             return;
         }
         let attributes = Window::default_attributes()
-            .with_title("Horizon")
+            .with_title("Claudium")
             .with_window_icon(horizon_client::window::icon())
             .with_inner_size(winit::dpi::LogicalSize::new(1040.0, 700.0));
         let made = event_loop

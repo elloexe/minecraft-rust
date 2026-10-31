@@ -276,7 +276,7 @@ pub fn release(tag: Option<&str>) -> Result<Release, String> {
 /// The archive for this computer in a release's JSON, with the SHA-256 the release's SHA256SUMS
 /// gives for it, once its signature checks with one of `keys` (docs/security.md). A release from
 /// before signing gets the SHA-256 pinned for it (legacy-releases.txt); any other release that
-/// isn't signed, or not by Horizon's key, is refused.
+/// isn't signed, or not by Claudium's key, is refused.
 fn pick(
     release: &Value,
     fetch: impl Fn(&str) -> Result<Vec<u8>, String>,
@@ -353,7 +353,7 @@ fn pick(
     })
 }
 
-/// Where a release tag stands among Horizon's releases (docs/versioning.md). Releases before 0.2 were
+/// Where a release tag stands among Claudium's releases (docs/versioning.md). Releases before 0.2 were
 /// tagged `vYYYY.MM.DD[.N]` (any `v` and numbers: `Dated`), compared number by number; from 0.2 they are
 /// `vMAJOR.MINOR.PATCH[-PRE]` (`Semver`), and every one of those is newer than every dated one, so
 /// v0.2.0 follows v2026.10.19.15. A pre-release (`v0.3.0-rc.1`) comes before its release, as in semver.
@@ -645,7 +645,7 @@ pub fn command(dir: &Path, args: &[String]) -> Result<(), String> {
             if check {
                 if update_available(&release.tag, &current) {
                     println!(
-                        "Horizon {} is out; this server runs {current}. `horizon-server update` installs it.",
+                        "Claudium {} is out; this server runs {current}. `horizon-server update` installs it.",
                         release.tag
                     );
                 } else {
@@ -660,7 +660,10 @@ pub fn command(dir: &Path, args: &[String]) -> Result<(), String> {
                 println!("Already on the newest release ({current}).");
                 return Ok(());
             }
-            println!("Downloading Horizon {} ({})...", release.tag, release.asset);
+            println!(
+                "Downloading Claudium {} ({})...",
+                release.tag, release.asset
+            );
             let archive = download(&install, &release)?;
             (release.tag, archive, true)
         }

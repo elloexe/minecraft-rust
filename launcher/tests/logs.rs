@@ -3,7 +3,7 @@ use std::path::Path;
 use std::process::Command;
 
 fn logs(home: &Path, args: &[&str]) -> (bool, String, String) {
-    let out = Command::new(env!("CARGO_BIN_EXE_horizon-launcher"))
+    let out = Command::new(env!("CARGO_BIN_EXE_claudium-launcher"))
         .arg("logs")
         .args(args)
         .env("HORIZON_HOME", home)

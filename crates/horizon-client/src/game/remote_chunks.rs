@@ -219,7 +219,7 @@ impl ChunkDecoder {
                 }
             });
         if let Err(e) = spawned {
-            log::warn!("Horizon: no chunk decoder thread ({e}); chunks decode in the frame");
+            log::warn!("Claudium: no chunk decoder thread ({e}); chunks decode in the frame");
         }
         Self { jobs, done }
     }
@@ -277,7 +277,7 @@ impl Game<'_> {
         let chunk = match column {
             Ok(chunk) => chunk,
             Err(e) => {
-                log::warn!("Horizon: chunk {} {}: {e}", p.x, p.z);
+                log::warn!("Claudium: chunk {} {}: {e}", p.x, p.z);
                 return;
             }
         };
@@ -318,7 +318,7 @@ impl Game<'_> {
                 continue;
             };
             if let Err(e) = format.replace_biomes(Arc::make_mut(chunk), data) {
-                log::warn!("Horizon: biomes of chunk {x} {z}: {e}");
+                log::warn!("Claudium: biomes of chunk {x} {z}: {e}");
             }
         }
         for data in &p.chunks {

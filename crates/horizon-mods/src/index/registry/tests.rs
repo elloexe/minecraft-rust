@@ -27,7 +27,7 @@ kind = "mod"
 name = "Coordinates HUD"
 summary = "Your coordinates, facing and the time of day in a corner of the screen."
 description = "`/where` puts them in chat, `/coords` hides or shows the panel."
-authors = ["Horizon"]
+authors = ["Claudium"]
 owners = ["ludovic111"]
 license = "MIT"
 source = "https://github.com/horizon-rust/horizon/tree/main/crates/horizon-mod-sdk/examples/coords-hud"
@@ -49,7 +49,7 @@ const COZY: &str = r#"id = "cozy"
 kind = "modpack"
 name = "Cozy"
 summary = "Coordinates and a calm render distance."
-authors = ["Horizon"]
+authors = ["Claudium"]
 owners = ["ludovic111"]
 license = "MIT"
 source = "https://github.com/horizon-rust/horizon-mods"
@@ -66,7 +66,7 @@ const GLOW: &str = r#"id = "glow"
 kind = "shader"
 name = "Soft Glow"
 summary = "A post-processing pass over the world."
-authors = ["Horizon"]
+authors = ["Claudium"]
 owners = ["ludovic111"]
 license = "MIT"
 source = "https://github.com/horizon-rust/horizon-mods"

@@ -125,7 +125,7 @@ pub struct Hdr {
 impl Hdr {
     pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, output: Output) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Horizon HDR"),
+            label: Some("Claudium HDR"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../hdr.wgsl").into()),
         });
         let texture = |binding| wgpu::BindGroupLayoutEntry {
@@ -139,7 +139,7 @@ impl Hdr {
             count: None,
         };
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Horizon HDR bindings"),
+            label: Some("Claudium HDR bindings"),
             entries: &[
                 texture(0),
                 texture(1),
@@ -156,13 +156,13 @@ impl Hdr {
             ],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Horizon HDR"),
+            label: Some("Claudium HDR"),
             bind_group_layouts: &[Some(&layout)],
             ..Default::default()
         });
         let pipeline_for = |format| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Horizon HDR"),
+                label: Some("Claudium HDR"),
                 layout: Some(&pipeline_layout),
                 vertex: wgpu::VertexState {
                     module: &shader,
@@ -214,7 +214,7 @@ impl Hdr {
                 cache: None,
             })
         };
-        let clear_alpha = alpha_pass("Horizon HDR UI mask", None);
+        let clear_alpha = alpha_pass("Claudium HDR UI mask", None);
         // Alpha times the blend constant (1/255): the hand's 1 becomes 1/255, the world's 0
         // stays 0.
         let scale_alpha = wgpu::BlendComponent {
@@ -223,7 +223,7 @@ impl Hdr {
             operation: wgpu::BlendOperation::Add,
         };
         let hand_mark = alpha_pass(
-            "Horizon HDR hand mark",
+            "Claudium HDR hand mark",
             Some(wgpu::BlendState {
                 color: scale_alpha,
                 alpha: scale_alpha,
@@ -231,7 +231,7 @@ impl Hdr {
         );
         let params = || {
             device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("Horizon HDR parameters"),
+                label: Some("Claudium HDR parameters"),
                 size: 80,
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
@@ -277,13 +277,13 @@ impl Hdr {
                 })
             };
             let frame = texture(
-                "Horizon HDR frame",
+                "Claudium HDR frame",
                 wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             );
-            let world = texture("Horizon HDR world", wgpu::TextureUsages::COPY_DST);
+            let world = texture("Claudium HDR world", wgpu::TextureUsages::COPY_DST);
             let view = |t: &wgpu::Texture| t.create_view(&Default::default());
             let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("Horizon HDR bindings"),
+                label: Some("Claudium HDR bindings"),
                 layout: &self.layout,
                 entries: &[
                     wgpu::BindGroupEntry {
@@ -333,7 +333,7 @@ impl Hdr {
             },
         })];
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Horizon HDR UI mask"),
+            label: Some("Claudium HDR UI mask"),
             color_attachments: &attachments,
             ..Default::default()
         });
@@ -359,7 +359,7 @@ impl Hdr {
             },
         })];
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Horizon HDR hand mark"),
+            label: Some("Claudium HDR hand mark"),
             color_attachments: &attachments,
             ..Default::default()
         });
@@ -404,7 +404,7 @@ impl Hdr {
     ) -> Option<wgpu::Texture> {
         let t = self.targets.as_ref()?;
         let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Horizon HDR screenshot"),
+            label: Some("Claudium HDR screenshot"),
             size: t.frame.size(),
             mip_level_count: 1,
             sample_count: 1,
@@ -415,7 +415,7 @@ impl Hdr {
         });
         let view = |t: &wgpu::Texture| t.create_view(&Default::default());
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Horizon HDR screenshot bindings"),
+            label: Some("Claudium HDR screenshot bindings"),
             layout: &self.layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -479,7 +479,7 @@ impl Hdr {
             },
         })];
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Horizon HDR"),
+            label: Some("Claudium HDR"),
             color_attachments: &attachments,
             ..Default::default()
         });

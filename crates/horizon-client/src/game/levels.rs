@@ -437,7 +437,7 @@ impl Game<'_> {
         {
             let cpu = cpu.map_or_else(String::new, |c| format!(", cpu {c:.1} ms"));
             log::info!(
-                "Horizon: slow tick {wall:.1} ms{cpu} ({} mobs): {}",
+                "Claudium: slow tick {wall:.1} ms{cpu} ({} mobs): {}",
                 self.mobs.len(),
                 horizon_client::spans::describe(&spans)
             );

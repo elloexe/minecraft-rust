@@ -51,7 +51,7 @@ fn launcher_assets(
     let checksum = crate::hex(&<sha1::Sha1 as sha1::Digest>::digest(&bytes));
     if checksum != sha1 && !lock.asset_index_accepted(&checksum) {
         log(&format!(
-            "{} is an asset index Horizon does not know yet (sha1 {checksum}); Mojang may have \
+            "{} is an asset index Claudium does not know yet (sha1 {checksum}); Mojang may have \
              republished it. Using it: every file is still checked against its own SHA-1.",
             index.display()
         ));
@@ -392,7 +392,7 @@ mod tests {
     const FIRST_PACK: usize = 6;
     const FIRST_FACE: usize = 8;
 
-    /// A Horizon folder and an official launcher directory holding version `9.9` with
+    /// A Claudium folder and an official launcher directory holding version `9.9` with
     /// sounds, a language file, Unifont, the built-in packs and the full title panorama in its
     /// asset store.
     struct Fixture {

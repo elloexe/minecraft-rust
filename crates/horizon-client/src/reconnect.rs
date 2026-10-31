@@ -164,7 +164,7 @@ mod tests {
             "unknown server reasons are not retried"
         );
         assert!(!allowed(
-            "This server is in online mode. Horizon only joins offline-mode servers.",
+            "This server is in online mode. Claudium only joins offline-mode servers.",
             true
         ));
         assert!(!allowed("Kicked for spamming", false));

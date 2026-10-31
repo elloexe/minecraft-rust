@@ -814,8 +814,8 @@ fn login_and_configure(
             data: {
                 let mut w = horizon_protocol::buf::Writer::new();
                 // MinecraftServer.getServerModName: "vanilla" there; a modded
-                // server names itself, and Horizon's says "horizon", as its client does.
-                w.string("horizon");
+                // server names itself, and ours says "claudium", as its client does.
+                w.string(horizon_protocol::BRAND);
                 w.data
             },
         }),
@@ -864,13 +864,13 @@ fn login_and_configure(
     };
     // horizon-clients-only: the brand the client sent ("vanilla" when it sent
     // none) must be Horizon's.
-    if shared.config.horizon_clients_only && brand != "horizon" {
+    if shared.config.horizon_clients_only && !horizon_protocol::is_native_brand(&brand) {
         let text = super::HORIZON_CLIENTS_ONLY_REASON;
         let reason = horizon_world::nbt::Tag::String(horizon_world::nbt::JavaString::from(text));
         let _ = send(c, cfg::Clientbound::Disconnect(cfg::Disconnect { reason }));
         if let Some(log) = &shared.config.log {
             let line = format!(
-                "Disconnecting {name}: its client is \"{brand}\", not Horizon (horizon-clients-only)"
+                "Disconnecting {name}: its client is \"{brand}\", not Claudium (horizon-clients-only)"
             );
             (log.write)("Server thread", "INFO", &line);
         }
@@ -879,7 +879,7 @@ fn login_and_configure(
     }
     // A Horizon client hears that this server runs its mods' quiet commands
     // (horizon_protocol::quiet); a vanilla one is told nothing.
-    if brand == "horizon" {
+    if horizon_protocol::is_native_brand(&brand) {
         send(
             c,
             cfg::Clientbound::CustomPayload(cfg::CustomPayload {
@@ -888,7 +888,7 @@ fn login_and_configure(
             }),
         )?;
     }
-    if brand == "horizon"
+    if horizon_protocol::is_native_brand(&brand)
         && let Some(hash) = sync.content_identity
     {
         send(

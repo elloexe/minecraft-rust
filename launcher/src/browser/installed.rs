@@ -131,19 +131,19 @@ fn add(
         return Err(format!("{}'s dependencies go too deep.", project.title));
     }
     if let Support::No(why) = project.support() {
-        return Err(format!("{} doesn't run in Horizon: {why}", project.title));
+        return Err(format!("{} doesn't run in Claudium: {why}", project.title));
     }
     let versions = source.versions(&project)?;
     let Some(version) = pick(project.kind, &versions, everything).cloned() else {
         return Err(match versions.iter().find_map(|v| v.blocked.clone()) {
             Some(why) => format!("{} can't be installed from here: {why}", project.title),
-            None => format!("{} has no version Horizon runs.", project.title),
+            None => format!("{} has no version Claudium runs.", project.title),
         });
     };
     for id in &version.required {
         let needed = source.project(id).map_err(|_| {
             format!(
-                "{} needs {id} on {}, which isn't a pack Horizon loads (a Java mod?).",
+                "{} needs {id} on {}, which isn't a pack Claudium loads (a Java mod?).",
                 project.title,
                 source.id().label()
             )
@@ -323,12 +323,12 @@ pub struct DataPackInstall {
     pub pack: crate::datapacks::DataPack,
     /// Its version's number.
     pub number: String,
-    /// What of it runs in Horizon.
+    /// What of it runs in Claudium.
     pub coverage: crate::datapacks::Coverage,
 }
 
 /// Downloads a project's data pack (checksum checked) into the world folder `world`, under a
-/// free name. Refused when nothing in it runs in Horizon yet. It isn't recorded with the
+/// free name. Refused when nothing in it runs in Claudium yet. It isn't recorded with the
 /// browser's installs: the world's data pack list (Home, `worlds datapack-list`) has it.
 pub fn install_datapack(
     source: &dyn Source,
@@ -363,8 +363,8 @@ pub fn install_datapack(
         let coverage = crate::datapacks::coverage(&zip)?;
         if coverage.read.is_empty() {
             return Err(format!(
-                "{} would change nothing in Horizon yet: it has no functions, predicates or item \
-                 modifiers, and Horizon doesn't read its {} yet.",
+                "{} would change nothing in Claudium yet: it has no functions, predicates or item \
+                 modifiers, and Claudium doesn't read its {} yet.",
                 project.title,
                 coverage.not_read()
             ));

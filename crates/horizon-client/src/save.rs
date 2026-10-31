@@ -254,7 +254,7 @@ pub fn downgraded_from(world: &Path) -> Option<String> {
     }
     Some(saved_version_name(version))
 }
-/// Move a world saved by an older Horizon build (pre-26.3 layout with a
+/// Move a world saved by an older Claudium build (pre-26.3 layout with a
 /// DataVersion that keeps vanilla from upgrading it) into the 26.3 layout.
 pub fn migrate_legacy(world: &Path) -> Result<()> {
     for (old, dimension) in [
@@ -663,7 +663,7 @@ pub fn decode_banner(tag: &Tag) -> crate::containers::Banner {
     }
 }
 /// A loaded container with a loot table and no items yet, rolled as
-/// generation rolls it (Horizon does not unpack on first open).
+/// generation rolls it (Claudium does not unpack on first open).
 fn roll_loaded_loot(
     chunk: &Chunk,
     biomes: &Biomes,
@@ -1343,7 +1343,7 @@ pub fn encode_with(
                 Some(tag) => Some((start.name.as_str().into(), tag)),
                 None => {
                     log::warn!(
-                        "Horizon: structure start {} not saved: one of its pieces cannot be",
+                        "Claudium: structure start {} not saved: one of its pieces cannot be",
                         start.name
                     );
                     None
@@ -1968,7 +1968,7 @@ fn resolve_poi(
         return Some(record.clone());
     };
     let old = read_region_record(root, cache, "poi", x, z).unwrap_or_else(|e| {
-        log::warn!("Horizon: could not read the poi record of chunk {x} {z}: {e}");
+        log::warn!("Claudium: could not read the poi record of chunk {x} {z}: {e}");
         None
     });
     let tag = match (encode_poi(chunk, tables), old) {
@@ -2128,7 +2128,7 @@ impl SaveDir {
             return Ok(());
         }
         let mut data = compound_or_empty(read_saved_data(&self.root, "chunk_tickets"));
-        // Preserve persistent tickets Horizon does not simulate.
+        // Preserve persistent tickets Claudium does not simulate.
         let mut tickets = match data.get("tickets") {
             Some(Tag::List(tickets)) => tickets
                 .iter()
@@ -2338,7 +2338,7 @@ impl SaveDir {
                     let result = write_region_records(&root, cache, folder, &records);
                     if let Err(e) = &result {
                         let message = format!("failed to write {folder} files: {e}");
-                        log::warn!("Horizon: {message}");
+                        log::warn!("Claudium: {message}");
                         *outstanding.error.lock().unwrap() = Some(message);
                     }
                     // Keep failed snapshots readable; never report them as durable.
@@ -3099,7 +3099,7 @@ pub struct Level {
     /// The vehicle the player rides, by UUID (`ServerPlayer.saveParentVehicle`'s
     /// "RootVehicle"), so the ride comes back on the next login.
     pub root_vehicle: Option<[i32; 4]>,
-    /// The player compound as loaded, for fields Horizon does not model
+    /// The player compound as loaded, for fields Claudium does not model
     /// (ender chest, effects, abilities, recipe book, attributes, ...).
     pub player_extra: Option<Tag>,
 }
@@ -3389,13 +3389,13 @@ impl Level {
             _ => Vec::new(),
         };
         // ServerPlayer.saveParentVehicle: the vehicle the player rides, by
-        // UUID. Horizon keeps the vehicle in the world, so the file names it
+        // UUID. Claudium keeps the vehicle in the world, so the file names it
         // instead of holding a second copy of it.
         self.root_vehicle = p
             .get("RootVehicle")
             .and_then(|r| uuid_from_tag(r.get("Attach")));
     }
-    /// The player compound: the loaded one with Horizon's state written over it.
+    /// The player compound: the loaded one with Claudium's state written over it.
     pub fn player_tag(&self) -> Tag {
         let mut p = compound_or_empty(self.player_extra.clone());
         // Keys rewritten from scratch.
@@ -3603,7 +3603,7 @@ impl Level {
             }
         }
         // ServerPlayer.saveParentVehicle: the vehicle the player rides, by
-        // UUID. Horizon keeps the vehicle in the world, so the file names it
+        // UUID. Claudium keeps the vehicle in the world, so the file names it
         // instead of holding a second copy of it.
         if let Some(vehicle) = self.root_vehicle
             && p.get("RootVehicle").is_none()
@@ -3626,7 +3626,7 @@ impl Level {
             .is_some_and(|d| d.get("Player").is_some() || d.get("WorldGenSettings").is_some());
         let mut data = compound_or_empty(existing);
         if let Tag::Compound(map) = &mut data {
-            // Pre-26.3 keys now stored elsewhere (a legacy Horizon level.dat).
+            // Pre-26.3 keys now stored elsewhere (a legacy Claudium level.dat).
             for key in [
                 "Player",
                 "WorldGenSettings",
@@ -4310,7 +4310,7 @@ impl<G: ChunkGenerator> ChunkGenerator for Persistent<G> {
             .save
             .save_protos(&saved, self.registry.registry, &self.biomes)
         {
-            log::warn!("Horizon: failed to save proto chunks: {e}");
+            log::warn!("Claudium: failed to save proto chunks: {e}");
         }
     }
     fn save_finished(&self, mut chunk: Chunk) {
@@ -4324,7 +4324,7 @@ impl<G: ChunkGenerator> ChunkGenerator for Persistent<G> {
             .save_later(&[Arc::new(chunk)], self.registry.registry, &self.biomes)
             .and_then(|_| self.save.save_entities_later(vec![(key, entities)]));
         if let Err(e) = saved {
-            log::warn!("Horizon: failed to save chunk {} {}: {e}", key.0, key.1);
+            log::warn!("Claudium: failed to save chunk {} {}: {e}", key.0, key.1);
         }
     }
     fn decorates(&self) -> bool {

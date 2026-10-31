@@ -520,7 +520,7 @@ pub fn offline_cape() -> Option<&'static [u8]> {
             .and_then(|bytes| crate::hud::decode_bytes(&bytes).map_err(|e| e.to_string()))
             .and_then(|(w, h, rgba)| process_cape(w, h, &rgba).ok_or("not an image".into()));
         image
-            .inspect_err(|e| eprintln!("Horizon: no offline cape ({}): {e}", path.display()))
+            .inspect_err(|e| eprintln!("Claudium: no offline cape ({}): {e}", path.display()))
             .ok()
     })
     .as_deref()
@@ -536,7 +536,7 @@ pub fn offline_skin() -> Option<&'static (Vec<u8>, bool)> {
         let path = std::env::var_os("HORIZON_OFFLINE_SKIN").filter(|p| !p.is_empty())?;
         let model = std::env::var("HORIZON_OFFLINE_SKIN_MODEL").unwrap_or_default();
         read_offline_skin(std::path::Path::new(&path), &model)
-            .inspect_err(|e| eprintln!("Horizon: no offline skin ({}): {e}", path.display()))
+            .inspect_err(|e| eprintln!("Claudium: no offline skin ({}): {e}", path.display()))
             .ok()
     })
     .as_ref()

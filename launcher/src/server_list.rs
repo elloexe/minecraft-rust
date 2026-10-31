@@ -10,11 +10,6 @@ use std::fs;
 use std::path::Path;
 
 const FILE: &str = "servers.dat";
-/// Horizon's official survival server, named and placed as the game lists it.
-pub const OFFICIAL: (&str, &str) = ("Horizon Official", "horizon.bunchy7s.dev");
-/// Beside servers.dat once the official server was offered, so a player who removes it never
-/// gets it back. The game writes the same file.
-const OFFICIAL_MARKER: &str = "horizon_official_server.txt";
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Server {
@@ -53,15 +48,6 @@ fn entry(name: &str, ip: &str) -> Compound {
     ]
     .into_iter()
     .collect()
-}
-
-/// An address as the game connects to it: any case, 25565 when no port is given.
-fn same_address(a: &str, b: &str) -> bool {
-    let norm = |ip: &str| {
-        let ip = ip.trim().to_ascii_lowercase();
-        ip.strip_suffix(":25565").map(str::to_owned).unwrap_or(ip)
-    };
-    norm(a) == norm(b)
 }
 
 impl List {
@@ -170,22 +156,6 @@ impl List {
             .and_then(|()| fs::rename(&new, &current));
         written.map_err(|e| format!("Could not save the server list: {e}"))
     }
-}
-
-/// Puts the official server first in the list in `home`, once: not again after the player removes
-/// it, and not when the list already has its address. A list that can't be read is left alone.
-pub fn add_official(home: &Path) -> Result<(), String> {
-    let marker = home.join(OFFICIAL_MARKER);
-    if marker.exists() {
-        return Ok(());
-    }
-    let (name, address) = OFFICIAL;
-    let mut list = List::read(home).ok_or("The server list can't be read.")?;
-    if !list.servers().iter().any(|s| same_address(&s.ip, address)) {
-        list.entries.insert(0, entry(name, address));
-        list.save(home)?;
-    }
-    fs::write(marker, format!("{address}\n")).map_err(|e| e.to_string())
 }
 
 /// The shown server a command names: its position from 1, its name (any case) or its address.

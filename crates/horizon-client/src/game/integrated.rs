@@ -145,7 +145,7 @@ impl Integrated {
 impl Drop for Integrated {
     fn drop(&mut self) {
         if let Err(error) = self.halt() {
-            log::error!("Horizon: integrated server shutdown: {error}");
+            log::error!("Claudium: integrated server shutdown: {error}");
         }
     }
 }
@@ -300,7 +300,7 @@ impl Game<'_> {
                     &ready_tx,
                 );
                 if let Err(e) = result {
-                    log::error!("Horizon: integrated server: {e}");
+                    log::error!("Claudium: integrated server: {e}");
                     *server_flags.failure.lock().unwrap() = Some(e.to_string());
                     let _ = ready_tx.send(Err(e.to_string()));
                 }
@@ -772,7 +772,7 @@ impl Game<'_> {
         match pending {
             Publish::Open(listener, settings) => {
                 if let Err(e) = host.hub.lan.listen_on(listener, true) {
-                    log::error!("Horizon: Open to LAN: {e}");
+                    log::error!("Claudium: Open to LAN: {e}");
                 }
                 host.settings = settings;
                 host.hub.config.force_game_mode = settings.force_game_mode;

@@ -334,7 +334,7 @@ mod tests {
             deflated,
         )
         .unwrap();
-        w.write_all(b"Also try Horizon!").unwrap();
+        w.write_all(b"Also try Claudium!").unwrap();
         w.finish().unwrap().into_inner()
     }
 
@@ -359,7 +359,7 @@ mod tests {
         assert_eq!(
             zip.read("Pack-main/assets/minecraft/texts/splashes.txt")
                 .unwrap(),
-            b"Also try Horizon!"
+            b"Also try Claudium!"
         );
     }
 

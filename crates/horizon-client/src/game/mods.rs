@@ -60,14 +60,14 @@ pub(super) fn content_root(
                 id: m.id.clone(),
                 content,
             }),
-            Err(e) => log::warn!("Horizon: mod {} content not loaded: {e}", m.id),
+            Err(e) => log::warn!("Claudium: mod {} content not loaded: {e}", m.id),
         }
     }
     match mod_content::resource_root(root, &mods, &here.join(".horizon-cache")) {
         Ok(out) => {
             if out != root {
                 log::info!(
-                    "Horizon: content from {} mod(s) in {}",
+                    "Claudium: content from {} mod(s) in {}",
                     mods.len(),
                     out.display()
                 );
@@ -75,7 +75,7 @@ pub(super) fn content_root(
             out
         }
         Err(e) => {
-            log::warn!("Horizon: content mods not loaded: {e}");
+            log::warn!("Claudium: content mods not loaded: {e}");
             root.to_owned()
         }
     }
@@ -147,7 +147,7 @@ impl Game<'_> {
             return;
         }
         self.system_message(Text::literal(format!(
-            "Horizon mods are native now: {names} stopped running until they have a native version. The launcher's Mods page has the native ones."
+            "Claudium mods are native now: {names} stopped running until they have a native version. The launcher's Mods page has the native ones."
         )));
         let _ = std::fs::write(&seen, "");
     }

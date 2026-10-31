@@ -1,5 +1,5 @@
 // The Horizon server panel (docs/server.md, section 6). It polls the control API once a second through
-// the panel's session; every change is a POST with the X-Horizon header. Text from the server is only
+// the panel's session; every change is a POST with the X-Claudium header. Text from the server is only
 // ever set with textContent.
 "use strict";
 
@@ -18,7 +18,7 @@ async function api(method, path, body) {
     response = await fetch(path, {
       method,
       credentials: "same-origin",
-      headers: { "X-Horizon": "1", "Content-Type": "application/json" },
+      headers: { "X-Claudium": "1", "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (e) {

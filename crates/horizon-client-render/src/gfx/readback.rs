@@ -33,7 +33,7 @@ impl Readback {
             .is_none_or(|t| t.size() != surface.size() || t.format() != format)
         {
             self.texture = Some(device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("Horizon screenshot frame"),
+                label: Some("Claudium screenshot frame"),
                 size: surface.size(),
                 mip_level_count: 1,
                 sample_count: 1,

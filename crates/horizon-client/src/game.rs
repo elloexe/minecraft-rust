@@ -396,7 +396,7 @@ struct Options {
 /// the in-frame world is unmaintained, gets no fixes and will be removed soon.
 fn warn_in_frame_deprecated(what: &str) {
     eprintln!(
-        "Horizon: DEPRECATED: {what} runs single player's world in the window, a path that is no longer supported, \
+        "Claudium: DEPRECATED: {what} runs single player's world in the window, a path that is no longer supported, \
          gets no fixes and will be removed soon. Do not use it: single player runs on its server thread by default."
     );
 }
@@ -440,7 +440,7 @@ impl Options {
                 horizon_client::auth::set_current(session);
             }
             Ok(None) => {}
-            Err(e) => eprintln!("Horizon: not signed in: {e}"),
+            Err(e) => eprintln!("Claudium: not signed in: {e}"),
         }
         if let Some(dir) = o.game_dir.take() {
             // Paths given on the command line stay relative to where the game was started.
@@ -527,7 +527,7 @@ impl Options {
             match arg.as_str() {
                 "--help" | "-h" => {
                     println!(
-                        "Horizon — Minecraft Java Edition {} in Rust\n\n  --resources PATH        Prepared resources (horizon-prepare)\n  --render-distance N     Chunks, 2..128 (default 12)\n  --world NAME            World folder under saves/ (default \"New World\")\n  --seed N                World seed for new worlds (default 0)\n  --width N, --height N   Window size (default 1280 x 720)\n  --creative              Creative mode (default survival)\n  --test-terrain          Simple test terrain instead of vanilla generation\n  --frames N              Exit after N frames (testing)\n  --world-frames N        Exit after N frames drawn in the world (testing)\n  --smoke-report PATH     Write a JSON report on exit\n  --benchmark SCENARIO    Run a benchmark (standard, village, forest, ocean, mountain), write its report to benchmarks/ and quit\n  --control               Accept horizon-ctl commands on a local socket\n  --control-socket PATH   Control socket path (default $XDG_RUNTIME_DIR/horizon-control.sock)\n  --server HOST[:PORT]    Join a multiplayer server (offline mode) at start\n  --quickPlaySingleplayer WORLD  Open this world of saves/ at start, only if it exists (vanilla's)\n  --quickPlayMultiplayer HOST[:PORT]  The same as --server (vanilla's name)\n  --name NAME             Player name for multiplayer (default: generated once, kept in horizon-player.txt)\n  --session-file PATH     Signed-in account from the launcher (read once, then deleted)\n  --session-stdin         The same account as JSON on standard input\n  --game-dir DIR          Game folder: saves, options.txt, packs, mods (default: the working directory)\n  --home DIR              Logs and crash reports (default $HORIZON_HOME, else the platform data folder)\n  --fullscreen            Open the window fullscreen\n  --launch-api            Print the Launch API version and options as JSON (docs/api/launch.md)\n  --dev-mod PATH          A content mod (.hmod or folder) to develop: always on\n  --in-frame              DEPRECATED, do not use: unsupported, will be removed soon (also --no-server-thread)\n  --pregen                Add Horizon's /pregen command (docs/pregeneration.md)\n\nControls: mouse look, WASD move, Space jump, Left Shift sneak, Left Ctrl sprint,\nleft click break, right click place/use, 1-9/scroll hotbar, E inventory,\nQ drop, F3 debug, Esc pause.",
+                        "Claudium — Minecraft Java Edition {} in Rust\n\n  --resources PATH        Prepared resources (horizon-prepare)\n  --render-distance N     Chunks, 2..128 (default 12)\n  --world NAME            World folder under saves/ (default \"New World\")\n  --seed N                World seed for new worlds (default 0)\n  --width N, --height N   Window size (default 1280 x 720)\n  --creative              Creative mode (default survival)\n  --test-terrain          Simple test terrain instead of vanilla generation\n  --frames N              Exit after N frames (testing)\n  --world-frames N        Exit after N frames drawn in the world (testing)\n  --smoke-report PATH     Write a JSON report on exit\n  --benchmark SCENARIO    Run a benchmark (standard, village, forest, ocean, mountain), write its report to benchmarks/ and quit\n  --control               Accept horizon-ctl commands on a local socket\n  --control-socket PATH   Control socket path (default $XDG_RUNTIME_DIR/horizon-control.sock)\n  --server HOST[:PORT]    Join a multiplayer server (offline mode) at start\n  --quickPlaySingleplayer WORLD  Open this world of saves/ at start, only if it exists (vanilla's)\n  --quickPlayMultiplayer HOST[:PORT]  The same as --server (vanilla's name)\n  --name NAME             Player name for multiplayer (default: generated once, kept in horizon-player.txt)\n  --session-file PATH     Signed-in account from the launcher (read once, then deleted)\n  --session-stdin         The same account as JSON on standard input\n  --game-dir DIR          Game folder: saves, options.txt, packs, mods (default: the working directory)\n  --home DIR              Logs and crash reports (default $HORIZON_HOME, else the platform data folder)\n  --fullscreen            Open the window fullscreen\n  --launch-api            Print the Launch API version and options as JSON (docs/api/launch.md)\n  --dev-mod PATH          A content mod (.hmod or folder) to develop: always on\n  --in-frame              DEPRECATED, do not use: unsupported, will be removed soon (also --no-server-thread)\n  --pregen                Add Claudium's /pregen command (docs/pregeneration.md)\n\nControls: mouse look, WASD move, Space jump, Left Shift sneak, Left Ctrl sprint,\nleft click break, right click place/use, 1-9/scroll hotbar, E inventory,\nQ drop, F3 debug, Esc pause.",
                         horizon_core::VANILLA_VERSION
                     );
                     return Ok(None);
@@ -9957,7 +9957,7 @@ impl Game<'_> {
             let world = std::env::current_dir()?.join("saves").join(folder);
             let packs = create.map_or(&[][..], |o| &o.data_packs[..]);
             if let Err(e) = horizon_client::datapack::install(dir, &world, packs) {
-                log::warn!("Horizon: data packs for {folder}: {e}");
+                log::warn!("Claudium: data packs for {folder}: {e}");
             }
             let _ = std::fs::remove_dir_all(dir);
         }
@@ -13652,7 +13652,7 @@ impl Game<'_> {
     }
     fn update_world(&mut self) {
         if let Err(e) = self.poll_remote() {
-            log::warn!("Horizon: {e}");
+            log::warn!("Claudium: {e}");
         }
         self.prepare_lod();
         if self.lod.is_some() {
@@ -13725,7 +13725,7 @@ impl Game<'_> {
                     .save_later(&modified, self.pack.assets.registry, self.res.biomes())
             })
         {
-            log::warn!("Horizon: failed to save unloaded chunks: {e}");
+            log::warn!("Claudium: failed to save unloaded chunks: {e}");
         }
         let (far_distance, far_reduced) = self.far_terrain_choice();
         if let Some(renderer) = self.renderer.as_mut() {
@@ -13841,12 +13841,12 @@ impl ApplicationHandler for Game<'_> {
         let size = self.options.window_size.map(f64::from);
         self.fullscreen = horizon_client::window::FullscreenState::new(fullscreen);
         let attributes = Window::default_attributes()
-            .with_title("Horizon")
+            .with_title("Claudium")
             .with_window_icon(horizon_client::window::icon());
-        // Wayland names the window by its app id, which the horizon.desktop entry matches.
+        // Wayland names the window by its app id, which the claudium.desktop entry matches.
         #[cfg(target_os = "linux")]
         let attributes = winit::platform::wayland::WindowAttributesExtWayland::with_name(
-            attributes, "horizon", "horizon",
+            attributes, "claudium", "claudium",
         );
         // `--offscreen` renders into a texture: its window would only show white.
         let window = match event_loop.create_window(
@@ -14771,7 +14771,7 @@ impl ApplicationHandler for Game<'_> {
                                     format!(", cpu {:.1} ms", (end - start).as_secs_f32() * 1000.0)
                                 });
                             log::info!(
-                                "Horizon: slow frame {cpu:.1} ms{worked} ({steps} ticks): {}",
+                                "Claudium: slow frame {cpu:.1} ms{worked} ({steps} ticks): {}",
                                 horizon_client::spans::describe(&spans)
                             );
                         }
@@ -14837,7 +14837,7 @@ impl ApplicationHandler for Game<'_> {
                     // (`tick_world_icon`): a failure tries again a second
                     // later, as `tryTakeScreenshotIfNeeded` does.
                     if !consumed && let Some(Err(error)) = finished {
-                        log::warn!("Horizon: couldn't save the world icon: {error}");
+                        log::warn!("Claudium: couldn't save the world icon: {error}");
                     }
                     if rendered {
                         self.frame_stats.record(elapsed.as_secs_f32() * 1000.0);
@@ -14845,7 +14845,7 @@ impl ApplicationHandler for Game<'_> {
                         if self.frames == 0 {
                             // The launcher times Play to this line (launcher/src/perf.rs).
                             log::info!(
-                                "Horizon: first frame after {} ms",
+                                "Claudium: first frame after {} ms",
                                 self.started.elapsed().as_millis()
                             );
                         }
@@ -14970,7 +14970,7 @@ impl ApplicationHandler for Game<'_> {
     fn exiting(&mut self, _event_loop: &ActiveEventLoop) {
         self.pad_close_output();
         if let Err(e) = self.save_for_exit() {
-            log::warn!("Horizon: failed to save the world on exit: {e}");
+            log::warn!("Claudium: failed to save the world on exit: {e}");
         }
         self.finish_perf();
     }
@@ -15548,7 +15548,7 @@ impl Game<'_> {
             ));
         }
         self.pending_entry = Some(entry);
-        log::info!("Horizon: world entry waiting for world resources");
+        log::info!("Claudium: world entry waiting for world resources");
         Ok(true)
     }
 
@@ -15663,14 +15663,14 @@ impl Game<'_> {
         let items = match Items::load(root, self.pack.assets.registry, self.res.facts(), &overlay) {
             Ok(items) => items,
             Err(e) => {
-                log::warn!("Horizon: the world's data packs are not applied: {e}");
+                log::warn!("Claudium: the world's data packs are not applied: {e}");
                 return None;
             }
         };
         let recipes = match Recipes::load(root, &items, &overlay) {
             Ok(recipes) => recipes,
             Err(e) => {
-                log::warn!("Horizon: the world's data packs are not applied: {e}");
+                log::warn!("Claudium: the world's data packs are not applied: {e}");
                 return None;
             }
         };
@@ -15700,7 +15700,7 @@ impl Game<'_> {
                         host.hub.reload_resources(sync);
                     }
                 }
-                Err(e) => log::warn!("Horizon: the players are not sent the reloaded data: {e}"),
+                Err(e) => log::warn!("Claudium: the players are not sent the reloaded data: {e}"),
             }
         }
         let overlay = pack_files(&self.world_tables);
@@ -15714,7 +15714,7 @@ impl Game<'_> {
     fn join_world_rest(&mut self) -> Result<()> {
         if self.rest_loader.is_some() {
             let waited = Instant::now();
-            log::info!("Horizon: waiting for world resources");
+            log::info!("Claudium: waiting for world resources");
             while self.rest_loader.is_some() {
                 self.poll_world_rest()?;
                 if self.rest_loader.is_some() {
@@ -15722,7 +15722,7 @@ impl Game<'_> {
                 }
             }
             log::info!(
-                "Horizon: world resources joined after {} ms",
+                "Claudium: world resources joined after {} ms",
                 waited.elapsed().as_millis()
             );
         }
@@ -15848,7 +15848,9 @@ fn load_resources(
         // Minecraft.rollbackResourcePacks: the packs' textures don't fit, start
         // with the game's own resources.
         Err(e) if root != vanilla_root => {
-            log::warn!("Horizon: resource packs failed to load ({e}); using the default resources");
+            log::warn!(
+                "Claudium: resource packs failed to load ({e}); using the default resources"
+            );
             pack_error = Some(e.to_string());
             root = vanilla_root.to_path_buf();
             None
@@ -15859,7 +15861,7 @@ fn load_resources(
         if menu {
             horizon_client::telemetry::mark_ui_ready();
             log::info!(
-                "Horizon: UI bundle ready after {} ms",
+                "Claudium: UI bundle ready after {} ms",
                 started.elapsed().as_millis()
             );
             publish(ui, &root);
@@ -15885,7 +15887,9 @@ fn load_resources(
         // Minecraft.rollbackResourcePacks: the packs break loading, start
         // with the game's own resources.
         Err(e) if root != vanilla_root => {
-            log::warn!("Horizon: resource packs failed to load ({e}); using the default resources");
+            log::warn!(
+                "Claudium: resource packs failed to load ({e}); using the default resources"
+            );
             pack_error = Some(e.to_string());
             root = vanilla_root.to_path_buf();
             let assets = Assets::load(vanilla_root)?;
@@ -15907,7 +15911,7 @@ fn load_resources(
         if menu {
             horizon_client::telemetry::mark_ui_ready();
             log::info!(
-                "Horizon: UI bundle ready after {} ms",
+                "Claudium: UI bundle ready after {} ms",
                 started.elapsed().as_millis()
             );
             publish(ui, &root);
@@ -15985,7 +15989,7 @@ fn load_resources(
     if menu {
         horizon_client::telemetry::mark_core_ready();
         log::info!(
-            "Horizon: core-ready after {} ms",
+            "Claudium: core-ready after {} ms",
             started.elapsed().as_millis()
         );
     }
@@ -15996,7 +16000,7 @@ fn load_resources(
     let renderer_cpu = menu.then(|| prepare_renderer_textures(&pack));
     if menu {
         log::info!(
-            "Horizon: handoff CPU resources prepared on worker in {} ms",
+            "Claudium: handoff CPU resources prepared on worker in {} ms",
             prepared_at.elapsed().as_millis()
         );
     }
@@ -16029,7 +16033,7 @@ fn load_resources(
                 progress.set(9);
                 horizon_client::telemetry::mark_rest_ready();
                 log::info!(
-                    "Horizon: rest-ready after {} ms",
+                    "Claudium: rest-ready after {} ms",
                     started.elapsed().as_millis()
                 );
                 Ok(())
@@ -16096,7 +16100,7 @@ fn load_world_rest(
     let recipes = Recipes::load(root, &items, &horizon_world::loot::PackOverlay::NONE)?;
     let transformers = horizon_client::block_transform::Transformers::load(root, assets.registry)?;
     log::info!(
-        "Horizon: resources loaded in {:.1}s; {} block states, {} items, {} biomes; {} worker threads",
+        "Claudium: resources loaded in {:.1}s; {} block states, {} items, {} biomes; {} worker threads",
         started.elapsed().as_secs_f32(),
         facts.states.len(),
         items.items.len(),
@@ -16557,12 +16561,12 @@ impl Loading {
             .map(f64::from);
         self.fullscreen = horizon_client::window::FullscreenState::new(fullscreen);
         let attributes = Window::default_attributes()
-            .with_title("Horizon")
+            .with_title("Claudium")
             .with_window_icon(horizon_client::window::icon());
-        // Wayland names the window by its app id, which the horizon.desktop entry matches.
+        // Wayland names the window by its app id, which the claudium.desktop entry matches.
         #[cfg(target_os = "linux")]
         let attributes = winit::platform::wayland::WindowAttributesExtWayland::with_name(
-            attributes, "horizon", "horizon",
+            attributes, "claudium", "claudium",
         );
         // `--offscreen` renders into a texture: its window would only show white.
         let window = match event_loop.create_window(
@@ -16611,7 +16615,7 @@ impl Loading {
     /// and title panorama.
     fn set_ui(&mut self, gui: UiResources, root: PathBuf) {
         log::info!(
-            "Horizon: loading the title artwork after {} ms",
+            "Claudium: loading the title artwork after {} ms",
             self.started.elapsed().as_millis()
         );
         self.menu.set_root(root, &self.settings);
@@ -16686,13 +16690,13 @@ impl Loading {
                     self.menu.perf.title_shown()
                 }
                 Ok(_) => {}
-                Err(e) => log::warn!("Horizon: loading screen frame failed: {e}"),
+                Err(e) => log::warn!("Claudium: loading screen frame failed: {e}"),
             }
         }
         if !self.shown {
             self.shown = true;
             log::info!(
-                "Horizon: loading screen shown after {} ms",
+                "Claudium: loading screen shown after {} ms",
                 self.started.elapsed().as_millis()
             );
         }
@@ -16721,7 +16725,7 @@ impl Loading {
             self.settings.horizon.api,
         )?;
         log::info!(
-            "Horizon: world renderer ready after {} ms",
+            "Claudium: world renderer ready after {} ms",
             self.started.elapsed().as_millis()
         );
         let renderer_ms = renderer_at.elapsed().as_millis();
@@ -16762,7 +16766,7 @@ impl Loading {
         game.apply_settings();
         game.previous = Instant::now();
         log::info!(
-            "Horizon: startup handoff {} ms (renderer {} ms, start_game {} ms)",
+            "Claudium: startup handoff {} ms (renderer {} ms, start_game {} ms)",
             handoff_at.elapsed().as_millis(),
             renderer_ms,
             game_ms
@@ -16856,8 +16860,8 @@ fn missing_resources(root: &std::path::Path) -> Option<String> {
     }
     let shown = std::path::absolute(root).unwrap_or_else(|_| root.to_path_buf());
     Some(format!(
-        "Horizon's prepared game files are missing: no horizon-resources.json in {}\n\
-         Horizon is started from its launcher: download it at {} (Download). It needs your \
+        "Claudium's prepared game files are missing: no horizon-resources.json in {}\n\
+         Claudium is started from its launcher: download it at {} (Download). It needs your \
          own Minecraft: Java Edition; the launcher signs you in and prepares the game files.\n\
          Developers: horizon-prepare --prepare, or pass --resources <folder>",
         shown.display(),
@@ -16955,7 +16959,7 @@ pub fn run() -> Result<()> {
         // launcher: a window says where to get it. Scripts and servers get
         // the error.
         if !options.offscreen && !synchronous_startup(&options) {
-            log::error!("Horizon: {error}");
+            log::error!("Claudium: {error}");
             let settings = Settings::load(&std::env::current_dir()?.join("options.txt"));
             return no_resources::show(&vanilla_root, &settings);
         }
@@ -16967,13 +16971,9 @@ pub fn run() -> Result<()> {
     // horizon-ctl drives: those start in a source checkout and wrote the list there.
     if !options.offscreen && !synchronous_startup(&options) {
         horizon_client::heartbeat::start();
-        if let Err(e) = horizon_client::multiplayer::add_official_server(&std::env::current_dir()?)
-        {
-            log::warn!("could not add the official server to servers.dat: {e}");
-        }
     }
     let early_settings = Settings::load(&std::env::current_dir()?.join("options.txt"));
-    // "Playing Horizon" on Discord: never for a server; an automated run only talks to a test's fake Discord.
+    // "Playing Claudium" on Discord: never for a server; an automated run only talks to a test's fake Discord.
     if options.dedicated.is_none() {
         let automated = options.benchmark.is_some()
             || options.offscreen
@@ -16990,7 +16990,7 @@ pub fn run() -> Result<()> {
     let mut pack_error = None;
     options.resources = packs::startup_root(&vanilla_root, &early_settings.resource_packs, &[])
         .unwrap_or_else(|e| {
-            log::warn!("Horizon: resource packs not applied: {e}");
+            log::warn!("Claudium: resource packs not applied: {e}");
             pack_error = Some(e.to_string());
             vanilla_root.clone()
         });

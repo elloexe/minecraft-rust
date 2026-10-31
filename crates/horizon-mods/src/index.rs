@@ -224,7 +224,7 @@ impl Index {
         let head: Head = serde_json::from_str(text).map_err(|e| format!("not a mod index: {e}"))?;
         if head.schema > SCHEMA {
             return Err(format!(
-                "the mod index is schema {}; this build reads {SCHEMA}: update Horizon",
+                "the mod index is schema {}; this build reads {SCHEMA}: update Claudium",
                 head.schema
             ));
         }
@@ -484,7 +484,7 @@ pub fn check_file(
     };
     if matches!(project.kind, Kind::Other(_)) {
         return Err(format!(
-            "this Horizon can't install a {} yet",
+            "this Claudium can't install a {} yet",
             project.kind.name()
         ));
     }
@@ -610,7 +610,7 @@ pub fn inspect(kind: &Kind, path: &Path) -> Result<Facts, String> {
                 ..Facts::default()
             })
         }
-        Kind::Other(name) => Err(format!("this Horizon can't read a {name} yet")),
+        Kind::Other(name) => Err(format!("this Claudium can't read a {name} yet")),
     }
 }
 

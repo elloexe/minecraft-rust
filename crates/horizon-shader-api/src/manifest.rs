@@ -135,13 +135,13 @@ impl Manifest {
         let err = |e: String| format!("{MANIFEST}: {e}");
         if raw.schema != SCHEMA {
             return Err(err(format!(
-                "schema {}; this Horizon reads {SCHEMA}",
+                "schema {}; this Claudium reads {SCHEMA}",
                 raw.schema
             )));
         }
         if raw.api != API {
             return Err(err(format!(
-                "written for shader API {}; this Horizon serves {API}",
+                "written for shader API {}; this Claudium serves {API}",
                 raw.api
             )));
         }

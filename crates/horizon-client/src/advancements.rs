@@ -123,7 +123,7 @@ impl Tree {
                 Ok(v) => {
                     json.insert(id.to_owned(), v);
                 }
-                Err(e) => log::warn!("Horizon: pack advancement {id} not loaded: {e}"),
+                Err(e) => log::warn!("Claudium: pack advancement {id} not loaded: {e}"),
             }
         }
         for (id, v) in json {

@@ -183,7 +183,7 @@ impl VanillaTerrain {
         let generator = OverworldGenerator::for_world(data, seed, preset, dimension, structures)?;
         if let Some((asked, kept)) = generator.noise_clamped() {
             log::warn!(
-                "Horizon: {dimension}'s noise settings reach y {}..{}, past its build height; \
+                "Claudium: {dimension}'s noise settings reach y {}..{}, past its build height; \
                  only y {}..{} generates",
                 asked.min_y,
                 asked.min_y + asked.height,
@@ -194,12 +194,12 @@ impl VanillaTerrain {
         let unsupported = generator.unsupported_features();
         if !unsupported.is_empty() {
             log::warn!(
-                "Horizon: {} placed features cannot run and will be skipped",
+                "Claudium: {} placed features cannot run and will be skipped",
                 unsupported.len()
             );
             if !dir.join("blocks/block-properties.nbt").exists() {
                 log::warn!(
-                    "Horizon: the worldgen bundle lacks the block behavior exports (worldgen/blocks/*.nbt); \
+                    "Claudium: the worldgen bundle lacks the block behavior exports (worldgen/blocks/*.nbt); \
                      prepare again (the launcher, or horizon-prepare --prepare) to add them"
                 );
             }
@@ -500,9 +500,9 @@ pub fn shared_data_with(
     }
     let started = std::time::Instant::now();
     let data = GeneratorData::load_with(dir, registry, overrides)?;
-    log::info!("Horizon: worldgen data loaded in {:?}", started.elapsed());
+    log::info!("Claudium: worldgen data loaded in {:?}", started.elapsed());
     for warning in data.warnings() {
-        log::warn!("Horizon: data pack worldgen: {warning}");
+        log::warn!("Claudium: data pack worldgen: {warning}");
     }
     if !overrides.is_empty()
         && cache.iter().filter(|e| !e.1.is_empty()).count() >= SHARED_WITH_PACKS
@@ -555,7 +555,7 @@ impl ChunkGenerator for VanillaTerrain {
         match worker.generate_proto(ChunkPos::new(x, z)) {
             Ok(chunk) => Box::new(VanillaProto::Ready(Box::new(chunk))),
             Err(e) => {
-                log::warn!("Horizon: generating chunk {x} {z} failed: {e}");
+                log::warn!("Claudium: generating chunk {x} {z} failed: {e}");
                 Box::new(VanillaProto::Failed(x, z))
             }
         }
@@ -586,7 +586,7 @@ impl ChunkGenerator for VanillaTerrain {
                 Err(_) => unreachable!(),
             };
             if let Err(e) = worker.decorate(&mut array) {
-                log::warn!("Horizon: decorating chunk failed: {e}");
+                log::warn!("Claudium: decorating chunk failed: {e}");
             }
             for (slot, chunk) in region.iter_mut().zip(array) {
                 *slot = Box::new(VanillaProto::Ready(Box::new(chunk)));
@@ -741,7 +741,7 @@ impl ChunkGenerator for VanillaTerrain {
         let (block_entities, rolled_loot) =
             crate::structure_blocks::block_entities(&chunk, self.loot.as_deref());
         out.block_entities = block_entities;
-        // The block entities Horizon does not model (decorated pots with their
+        // The block entities Claudium does not model (decorated pots with their
         // sherds and loot table) stay as placed, like a
         // loaded chunk's.
         let mut unmodelled: Vec<Tag> = chunk

@@ -163,7 +163,7 @@ pub(super) struct Draw {
     pub quads: u32,
     /// The kind of program that draws it (`ENTITY`, `BLOCK`, `TRANSLUCENT`, `PARTICLE`).
     pub program: usize,
-    /// The pack's gbuffers program draws it (else Horizon does).
+    /// The pack's gbuffers program draws it (else Claudium does).
     pub pack: bool,
     /// The pack's shadow program draws it into the shadow map too.
     pub shadow: bool,
@@ -308,7 +308,7 @@ impl PackEntities {
 
     /// Splits `entities` between the pack, which draws the runs of `spans` its programs cover
     /// (`drawn`: whether it has `gbuffers_entities`, `gbuffers_block` or their fallbacks), and
-    /// Horizon, which draws the rest (`rest`). Uploads the pack's part, and the runs its shadow
+    /// Claudium, which draws the rest (`rest`). Uploads the pack's part, and the runs its shadow
     /// programs draw (`shadow`). Runs hidden from the camera only ever cast shadows.
     #[allow(clippy::too_many_arguments)]
     pub fn prepare(
@@ -405,7 +405,7 @@ pub(super) fn quad_indices(device: &wgpu::Device, quads: u32) -> wgpu::Buffer {
 }
 
 /// Whether a run holds only geometry a gbuffers program can draw from the shared atlas: no
-/// celestial body, cloud, beam, End portal, crack or energy swirl (overlay codes Horizon's entity
+/// celestial body, cloud, beam, End portal, crack or energy swirl (overlay codes Claudium's entity
 /// shader draws in its own way; entity.wgsl).
 fn plain(run: &[Vertex]) -> bool {
     run.iter()
@@ -421,7 +421,7 @@ pub const PARTICLE: usize = 3;
 pub const PROGRAMS: usize = 4;
 
 /// Which program draws `span`'s run, given which of them (or their fallbacks) the pack has;
-/// `None`: Horizon draws it.
+/// `None`: Claudium draws it.
 #[cfg(test)]
 fn drawn_by_pack(span: &EntitySpan, drawn: [bool; PROGRAMS]) -> Option<usize> {
     program_of(span).filter(|&p| drawn[p])

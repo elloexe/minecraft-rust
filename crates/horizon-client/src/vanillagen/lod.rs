@@ -74,7 +74,7 @@ impl Builder {
                 ) {
                     Ok(generator) => generator,
                     Err(error) => {
-                        log::warn!("Horizon: far decoration unavailable: {error}");
+                        log::warn!("Claudium: far decoration unavailable: {error}");
                         worker.stop.store(true, Ordering::Relaxed);
                         return;
                     }
@@ -113,7 +113,7 @@ impl Builder {
                         Ok(_) => {}
                         Err(error) => {
                             log::warn!(
-                                "Horizon: far decoration failed at {} {}: {error}",
+                                "Claudium: far decoration failed at {} {}: {error}",
                                 key.0,
                                 key.1
                             );
@@ -416,7 +416,7 @@ impl LodSampler for VanillaLodSampler {
             {
                 Ok(samples) => samples,
                 Err(error) => {
-                    log::warn!("Horizon: direct far sampling failed: {error}");
+                    log::warn!("Claudium: direct far sampling failed: {error}");
                     return vec![Column::default(); side * side];
                 }
             };

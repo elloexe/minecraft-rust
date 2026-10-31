@@ -175,11 +175,11 @@ impl Capability {
     /// The capability a component import needs, `Ok(None)` for one every
     /// mod has; `Err` for an import Horizon does not offer.
     pub fn of_import(name: &str) -> Result<Option<Capability>, String> {
-        let unknown = || format!("imports {name}, which Horizon does not offer");
+        let unknown = || format!("imports {name}, which Claudium does not offer");
         let rest = name.strip_prefix("horizon:mods/").ok_or_else(unknown)?;
         let (interface, version) = rest.split_once('@').ok_or_else(unknown)?;
         if !version.starts_with("0.1.") {
-            return Err(format!("needs API {version}; this Horizon runs {API}"));
+            return Err(format!("needs API {version}; this Claudium runs {API}"));
         }
         if interface == "log" {
             return Ok(None);
@@ -231,7 +231,7 @@ impl Manifest {
         }
         if !APIS.contains(&m.api.as_str()) {
             return Err(format!(
-                "built for API {}; this Horizon runs {}",
+                "built for API {}; this Claudium runs {}",
                 m.api,
                 APIS.join(" and ")
             ));

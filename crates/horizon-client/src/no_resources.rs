@@ -7,11 +7,11 @@ use crate::ui_theme::{self, Face, Ui, color};
 /// The launcher's download page.
 pub const DOWNLOAD_URL: &str = "https://playhorizon.dev";
 
-const TITLE: &str = "Start Horizon from the launcher";
+const TITLE: &str = "Start Claudium from the launcher";
 const PARAGRAPHS: [&str; 3] = [
-    "This is the game the Horizon launcher installs and starts. On its own it has none of \
+    "This is the game the Claudium launcher installs and starts. On its own it has none of \
      Minecraft's files, so it can't start.",
-    "Horizon needs your own copy of Minecraft: Java Edition. The launcher signs you in and \
+    "Claudium needs your own copy of Minecraft: Java Edition. The launcher signs you in and \
      prepares the game files from it.",
     "Download the launcher at playhorizon.dev, then press Play there.",
 ];

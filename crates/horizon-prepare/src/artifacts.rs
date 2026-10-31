@@ -11,12 +11,12 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 const LAUNCHER_HINT: &str =
-    "Horizon does not download the game: play {version} once in the launcher you play \
-Minecraft Java Edition with so it downloads the game's files, then rerun. Horizon reads the \
+    "Claudium does not download the game: play {version} once in the launcher you play \
+Minecraft Java Edition with so it downloads the game's files, then rerun. Claudium reads the \
 official launcher's folder, ATLauncher's and the CurseForge app's; for Prism Launcher, MultiMC, \
-the Modrinth App or GDLauncher, prepare from the Horizon launcher, which finds their files. If your launcher keeps \
+the Modrinth App or GDLauncher, prepare from the Claudium launcher, which finds their files. If your launcher keeps \
 them in another folder, pass --minecraft-dir or set HORIZON_MINECRAFT_DIR.";
-const SERVER_HINT: &str = "Horizon does not download the game: download the {version} server jar yourself (minecraft.net/download/server \
+const SERVER_HINT: &str = "Claudium does not download the game: download the {version} server jar yourself (minecraft.net/download/server \
 while {version} is the current release, otherwise the downloads.server.url in your launcher's \
 versions/{version}/{version}.json), then pass --server-jar PATH or set HORIZON_SERVER_JAR.";
 
@@ -148,7 +148,7 @@ impl GameFiles {
     pub(crate) fn hint(&self, version: &str) -> String {
         let mut text = hint(LAUNCHER_HINT, version);
         if !self.searched.is_empty() {
-            text += &format!(" Horizon looked for {version} in:");
+            text += &format!(" Claudium looked for {version} in:");
             for (launcher, folder) in &self.searched {
                 text += &format!("\n  {} ({launcher})", folder.display());
             }
@@ -191,7 +191,7 @@ fn layouts(folder: &Path, version: &str) -> [GameFiles; 2] {
 /// packages and Flatpak start it in.
 fn launcher_folders() -> Vec<(&'static str, PathBuf)> {
     let mut folders = vec![("the official launcher", minecraft_dir(None))];
-    // The same folders as the Horizon launcher's (launcher/src/sources.rs `known_folders`).
+    // The same folders as the Claudium launcher's (launcher/src/sources.rs `known_folders`).
     let atlauncher: Vec<PathBuf> = if cfg!(target_os = "macos") {
         let app = Path::new("Applications/ATLauncher.app/Contents/Java");
         vec![
@@ -315,9 +315,9 @@ pub(crate) fn import_manifest(lock: &Lock, files: &GameFiles) -> Result<Value, S
             let pinned = lock.pin("manifest_sha1")?;
             if !(destination.exists() && lock.manifest_accepted(&digest(&destination, "sha1")?)) {
                 return Err(format!(
-                    "{} is not a {version} version file Horizon knows (sha1 {checksum}): your \
+                    "{} is not a {version} version file Claudium knows (sha1 {checksum}): your \
                      launcher may have rewritten it, or Mojang republished it. Prepare from the \
-                     Horizon launcher, which downloads Mojang's own, or save \
+                     Claudium launcher, which downloads Mojang's own, or save \
                      https://piston-meta.mojang.com/v1/packages/{pinned}/{version}.json as {} \
                      and prepare again.",
                     source.display(),
@@ -1451,7 +1451,7 @@ mod tests {
             "Missing {}",
             empty.join("versions/9.9/9.9.json").display()
         )));
-        assert!(error.contains("Horizon looked for 9.9 in:"), "{error}");
+        assert!(error.contains("Claudium looked for 9.9 in:"), "{error}");
         assert!(error.contains(&format!("\n  {} (the folder chosen)", empty.display())));
         assert!(error.contains(&format!(
             "\n  {} (the launcher above it)",

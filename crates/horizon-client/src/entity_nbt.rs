@@ -3184,7 +3184,7 @@ mod axolotl_nbt_tests {
         load_bucket_data(&mut restored, &legacy);
         assert_eq!(
             restored.extra.variant, 2,
-            "component wins over old Horizon data"
+            "component wins over old Claudium data"
         );
 
         crate::mobs::animal_brain::set_hunting_cooldown(&mut m, 0);

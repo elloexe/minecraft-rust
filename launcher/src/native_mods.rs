@@ -126,7 +126,7 @@ pub struct Bundle {
     pub id: String,
     pub version: String,
     pub dir: PathBuf,
-    /// The Horizon commit it builds on (`[compatibility] horizon_revision`, or its `.hnmod`'s).
+    /// The Claudium commit it builds on (`[compatibility] horizon_revision`, or its `.hnmod`'s).
     pub horizon: Option<String>,
     /// The horizon-mixins commit it was tested with (its `.hnmod`'s).
     pub mixins: Option<String>,
@@ -177,7 +177,7 @@ pub(crate) fn bundle_in(dir: &Path) -> Result<Option<Bundle>, String> {
     let found = bundle(&dir.join("mixins").join(&id), field("mixins"))?;
     match (&found.horizon, field("horizon")) {
         (Some(pinned), Some(native)) if *pinned != native => Err(format!(
-            "{id}: {NATIVE_MANIFEST} pins Horizon {native}, its {MANIFEST} {pinned}."
+            "{id}: {NATIVE_MANIFEST} pins Claudium {native}, its {MANIFEST} {pinned}."
         )),
         (_, native) => Ok(Some(Bundle {
             horizon: found.horizon.clone().or(native),
@@ -302,11 +302,11 @@ fn committed(repo: &str, revision: &str) -> Result<String, String> {
         .ok_or_else(|| format!("GitHub doesn't know {repo} commit {revision}."))
 }
 
-/// How [`build`] starts its error when mods pin other Horizon revisions than the one it would
+/// How [`build`] starts its error when mods pin other Claudium revisions than the one it would
 /// use and the player hasn't agreed to try (`anyway`); the rest lists them.
-pub const MISMATCH: &str = "Made for other Horizon versions: ";
+pub const MISMATCH: &str = "Made for other Claudium versions: ";
 
-/// Each pinned mod whose Horizon revision isn't `revision`, as `id → pin`, and the build's.
+/// Each pinned mod whose Claudium revision isn't `revision`, as `id → pin`, and the build's.
 fn mismatch(mods: &[Bundle], revision: &str) -> Option<String> {
     let list: Vec<String> = mods
         .iter()
@@ -324,7 +324,7 @@ fn mismatch(mods: &[Bundle], revision: &str) -> Option<String> {
     })
 }
 
-/// Where Horizon declares its native hook points' version, and the line that does.
+/// Where Claudium declares its native hook points' version, and the line that does.
 const HOOKS_FILE: &str = "crates/horizon-client/src/game/native_hooks.rs";
 const HOOKS_LINE: &str = "pub(crate) const NATIVE_HOOKS_API: u32 = ";
 
@@ -334,7 +334,7 @@ fn hooks_in(source: &str) -> Option<u32> {
     line.trim_end().strip_suffix(';')?.parse().ok()
 }
 
-/// The native hook points' version of Horizon at `revision`, from GitHub (None: it has none).
+/// The native hook points' version of Claudium at `revision`, from GitHub (None: it has none).
 fn hooks_at(revision: &str) -> Option<u32> {
     let url = format!(
         "https://raw.githubusercontent.com/{}/{revision}/{HOOKS_FILE}",
@@ -364,7 +364,7 @@ fn with_hooks(
     let tested: Vec<Bundle> = hooked.iter().map(|b| (*b).clone()).collect();
     let fallback = agreed(
         &tested,
-        "Horizon",
+        "Claudium",
         |b| b.horizon.as_ref(),
         || Err(String::new()),
     );
@@ -378,7 +378,7 @@ fn with_hooks(
         .map(|b| format!("{} (hook points v{})", b.id, b.hooks.unwrap_or_default()))
         .collect();
     Err(format!(
-        "Horizon {} doesn't have the native hook points these mods use: {}. Update Horizon or the mods.",
+        "Claudium {} doesn't have the native hook points these mods use: {}. Update Claudium or the mods.",
         &pinned[..pinned.len().min(7)],
         list.join(", ")
     ))
@@ -399,7 +399,7 @@ fn repin(bundle: &Bundle, revision: &str) -> Result<(), String> {
     fs::write(&path, text).map_err(|e| format!("{}: {e}", path.display()))
 }
 
-/// Whether Horizon's source at `source` has the `mods` feature (the WebAssembly mods' runtime,
+/// Whether Claudium's source at `source` has the `mods` feature (the WebAssembly mods' runtime,
 /// gone from later revisions).
 fn has_mods_feature(source: &Path) -> bool {
     let path = source.join("crates/horizon-client/Cargo.toml");
@@ -408,7 +408,7 @@ fn has_mods_feature(source: &Path) -> bool {
     value.get("features").and_then(|f| f.get("mods")).is_some()
 }
 
-/// The Horizon commit `version` (an installed release or Nightly) was built from, from GitHub.
+/// The Claudium commit `version` (an installed release or Nightly) was built from, from GitHub.
 pub fn revision_of(version: &str) -> Result<String, String> {
     let reference = match version.strip_prefix("nightly-") {
         // nightly-2026-10-28-0c02067: the commit is its last word.
@@ -453,7 +453,7 @@ fn files(dir: &Path) -> Result<Vec<(String, PathBuf)>, String> {
     Ok(out)
 }
 
-/// The installed version `bundles` built on Horizon `revision` with horizon-mixins `mixins`
+/// The installed version `bundles` built on Claudium `revision` with horizon-mixins `mixins`
 /// become: `native-<7 digits of the revision>-<12 hex digits>`.
 pub fn version_for(revision: &str, mixins: &str, bundles: &[Bundle]) -> Result<String, String> {
     let mut hash = Sha256::new();
@@ -502,7 +502,7 @@ impl Step {
             ),
             Self::Tool => "Building horizon-mixins (once)".into(),
             Self::Source(revision) => {
-                format!("Downloading Horizon's source at {}", &revision[..7])
+                format!("Downloading Claudium's source at {}", &revision[..7])
             }
             Self::Mixins => "Applying the mixins".into(),
             Self::Compile(n, name) => format!("Compiling the game: {n} crates, now {name}"),
@@ -593,7 +593,7 @@ fn apply(rust: &Toolchain, tool: &Path, source: &Path, mods: &Path, out: &Path) 
     cmd
 }
 
-/// Horizon's source at commit `revision`: GitHub's archive of it, unpacked once, with the commit in
+/// Claudium's source at commit `revision`: GitHub's archive of it, unpacked once, with the commit in
 /// `.horizon-revision` (bundles pin it). A Nightly's commit stays downloadable after the Nightly
 /// is gone: its `nightly-source/…` tag keeps it (docs/release-flow.md). Links are left out:
 /// horizon-mixins refuses them, and none is needed to build.
@@ -662,7 +662,7 @@ fn sync(from: &Path, to: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// Builds `folder`'s mods on the Horizon revision they pin (else `base`'s, the installed version
+/// Builds `folder`'s mods on the Claudium revision they pin (else `base`'s, the installed version
 /// whose game files the build reuses) and points `instance` at the build: the instance the mods
 /// were installed in, else (None, or the game's own home) the Native mods instance. Returns the
 /// build's version; a build already made is used again. Mods pinning different revisions build on
@@ -698,7 +698,7 @@ pub fn build(
     let free = pins.iter().all(|b| b.horizon.is_none());
     let pinned = newest(
         &pins,
-        "Horizon",
+        "Claudium",
         |b| b.horizon.as_ref(),
         || revision_of(base),
         None,
@@ -718,7 +718,7 @@ pub fn build(
     // Said with a failure: a mod made for another revision may not apply or compile on this one.
     let blame = |e: String| {
         match &other {
-        Some(list) => format!("{e}\n\nSome mods were made for other Horizon versions ({list}), which may be why. Install versions made for the same Nightly."),
+        Some(list) => format!("{e}\n\nSome mods were made for other Claudium versions ({list}), which may be why. Install versions made for the same Nightly."),
         None => e,
     }
     };
@@ -812,7 +812,7 @@ fn install(
         if [
             backend::CLIENT,
             ".installed",
-            "Horizon.app",
+            "Claudium.app",
             "native-mods.json",
         ]
         .iter()
@@ -1152,17 +1152,17 @@ mod tests {
             pinned("b", None),
             pinned("c", Some(A)),
         ];
-        assert_eq!(agreed(&same, "Horizon", get, never).unwrap(), A);
+        assert_eq!(agreed(&same, "Claudium", get, never).unwrap(), A);
         let none = [pinned("a", None)];
-        assert_eq!(agreed(&none, "Horizon", get, || Ok(B.into())).unwrap(), B);
+        assert_eq!(agreed(&none, "Claudium", get, || Ok(B.into())).unwrap(), B);
         let split = [pinned("veinminer", Some(A)), pinned("minimap", Some(B))];
-        let err = agreed(&split, "Horizon", get, never).unwrap_err();
+        let err = agreed(&split, "Claudium", get, never).unwrap_err();
         assert!(
             err.contains("veinminer → aaaaaaa") && err.contains("minimap → bbbbbbb"),
             "{err}"
         );
         let bad = [pinned("a", Some("nightly"))];
-        assert!(agreed(&bad, "Horizon", get, never).is_err());
+        assert!(agreed(&bad, "Claudium", get, never).is_err());
     }
 
     #[test]
@@ -1198,7 +1198,7 @@ mod tests {
             pinned("zoom", None, None),
         ];
         assert_eq!(
-            newest(&split, "Horizon", horizon, never, None, date).unwrap(),
+            newest(&split, "Claudium", horizon, never, None, date).unwrap(),
             B
         );
         // horizon-mixins: never older than a pin, and the launcher's own when it is newer.
@@ -1215,11 +1215,11 @@ mod tests {
         let no_date = |_: &str| -> Result<String, String> { panic!("no date needed") };
         let same = [pinned("a", Some(A), None), pinned("b", Some(A), None)];
         assert_eq!(
-            newest(&same, "Horizon", horizon, never, None, no_date).unwrap(),
+            newest(&same, "Claudium", horizon, never, None, no_date).unwrap(),
             A
         );
         let offline = |_: &str| -> Result<String, String> { Err("offline".into()) };
-        let err = newest(&split, "Horizon", horizon, never, None, offline).unwrap_err();
+        let err = newest(&split, "Claudium", horizon, never, None, offline).unwrap_err();
         assert!(err.contains("offline"), "{err}");
         // What the player is shown: each mod made for another revision, and the build's.
         assert_eq!(
@@ -1355,10 +1355,10 @@ mod tests {
 
     #[test]
     fn tool_errors_read_in_one_line() {
-        let err = "{\n  \"code\": \"E_REVISION\",\n  \"message\": \"requires exact Horizon revision a\",\n  \"file\": \"m.toml\"\n}";
+        let err = "{\n  \"code\": \"E_REVISION\",\n  \"message\": \"requires exact Claudium revision a\",\n  \"file\": \"m.toml\"\n}";
         assert_eq!(
             diagnostic(err).as_deref(),
-            Some("E_REVISION: requires exact Horizon revision a (m.toml)")
+            Some("E_REVISION: requires exact Claudium revision a (m.toml)")
         );
     }
 }

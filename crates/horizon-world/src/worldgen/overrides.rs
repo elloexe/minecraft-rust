@@ -205,7 +205,7 @@ impl WorldgenOverrides {
         let mut warnings: Vec<String> = left_out
             .iter()
             .map(|id| {
-                format!("biome {id} is new: Horizon cannot add biomes yet, so it is left out")
+                format!("biome {id} is new: Claudium cannot add biomes yet, so it is left out")
             })
             .collect();
         if left_out.is_empty() {

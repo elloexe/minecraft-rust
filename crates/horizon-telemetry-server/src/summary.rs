@@ -70,7 +70,7 @@ pub fn rejection(report: &Value) -> Option<&'static str> {
         return Some("not a game run");
     }
     if game(&report["app"]).is_none() {
-        return Some("not Horizon or plain vanilla");
+        return Some("not Claudium or plain vanilla");
     }
     let c = &report["conditions"];
     let scenario = c.get("scenario").and_then(Value::as_str).unwrap_or("");

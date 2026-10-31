@@ -324,7 +324,7 @@ impl Game<'_> {
                 entry.accept_textures = setting;
             }
             if let Err(e) = servers::save(&file, &list) {
-                log::warn!("Horizon: could not save {}: {e}", file.display());
+                log::warn!("Claudium: could not save {}: {e}", file.display());
             }
         }
         Ok(())
@@ -378,7 +378,7 @@ impl Game<'_> {
             match download::Queue::open(dir) {
                 Ok(queue) => state.queue = Some(queue),
                 Err(e) => {
-                    log::error!("Horizon: failed to open the download queue: {e}");
+                    log::error!("Claudium: failed to open the download queue: {e}");
                     // Every request failed, as the notifier would hear it.
                     let (progress, events) = std::sync::mpsc::channel();
                     for _ in &requests {
@@ -416,13 +416,13 @@ impl Game<'_> {
             .map(|(id, path)| packs::server_pack(*id, path))
             .collect();
         let Some(server) = server else {
-            log::warn!("Horizon: invalid pack metadata in a server pack, ignoring all");
+            log::warn!("Claudium: invalid pack metadata in a server pack, ignoring all");
             self.finish_pack_reload(false);
             return;
         };
         self.server_packs.active = server;
         if let Err(e) = self.spawn_pack_reload(ReloadKind::Server) {
-            log::error!("Horizon: could not start the pack reload worker: {e}");
+            log::error!("Claudium: could not start the pack reload worker: {e}");
             self.finish_pack_reload(false);
         }
     }

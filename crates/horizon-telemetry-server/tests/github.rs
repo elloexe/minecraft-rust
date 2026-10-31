@@ -30,7 +30,7 @@ fn a_report_reads_as_the_template() {
     assert!(
         issue
             .body
-            .contains("> **Horizon version:** not given\n> **OS, CPU, GPU:** Windows 11, RX 6600")
+            .contains("> **Claudium version:** not given\n> **OS, CPU, GPU:** Windows 11, RX 6600")
     );
     assert!(
         issue

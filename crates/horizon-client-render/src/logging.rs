@@ -61,7 +61,7 @@ pub fn game_home() -> PathBuf {
     }
     match std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
         Some(h) => PathBuf::from(h),
-        None => data_dir().join("horizon"),
+        None => data_dir().join("claudium"),
     }
 }
 
@@ -254,7 +254,7 @@ impl Writer {
                         {
                             let _ = writeln!(
                                 stderr.lock(),
-                                "Horizon: could not roll over the log: {e}"
+                                "Claudium: could not roll over the log: {e}"
                             );
                         }
                         self.date = date;
@@ -373,14 +373,14 @@ pub fn init(home: &Path, main_thread: &'static str) {
         Ok(Some(latest)) => Some(latest),
         Ok(None) => {
             eprintln!(
-                "Horizon: another game is writing {}; this one logs to the terminal only",
+                "Claudium: another game is writing {}; this one logs to the terminal only",
                 dir.join("latest.log").display()
             );
             None
         }
         Err(e) => {
             eprintln!(
-                "Horizon: could not open {}: {e}",
+                "Claudium: could not open {}: {e}",
                 dir.join("latest.log").display()
             );
             None
@@ -397,7 +397,7 @@ pub fn init(home: &Path, main_thread: &'static str) {
             .name("Log writer".into())
             .spawn(move || writer.run(receive))
         {
-            eprintln!("Horizon: could not start the log writer: {e}");
+            eprintln!("Claudium: could not start the log writer: {e}");
         }
         Logger {
             out,

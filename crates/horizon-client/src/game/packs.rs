@@ -40,7 +40,7 @@ pub fn open_folder(dir: &Path) {
         "xdg-open"
     };
     if let Err(e) = std::process::Command::new(program).arg(dir).spawn() {
-        log::warn!("Horizon: could not open {}: {e}", dir.display());
+        log::warn!("Claudium: could not open {}: {e}", dir.display());
     }
 }
 /// `Util.getPlatform().openUri`: the system browser on the link.
@@ -50,7 +50,7 @@ pub fn open_uri(uri: &str) {
     // without interpolating its query string into a command interpreter.
     #[cfg(windows)]
     if let Err(error) = open::that_detached(uri) {
-        log::warn!("Horizon: could not open URI {uri}: {error}");
+        log::warn!("Claudium: could not open URI {uri}: {error}");
     }
     #[cfg(not(windows))]
     open_folder(Path::new(uri));
@@ -158,7 +158,7 @@ impl Game<'_> {
     }
     /// `reloadResourcePacks`' failure: the pack screen again, with the error.
     fn selection_reload_failed(&mut self, error: &str) {
-        log::warn!("Horizon: resource reload failed: {error}");
+        log::warn!("Claudium: resource reload failed: {error}");
         if self.screen != super::Screen::Options {
             self.open_options_at(
                 self.title.is_some(),
@@ -219,7 +219,7 @@ impl Game<'_> {
             }
             ReloadKind::Server => {
                 if let Err(e) = &result {
-                    log::warn!("Horizon: server resource pack reload failed: {e}");
+                    log::warn!("Claudium: server resource pack reload failed: {e}");
                 }
                 self.finish_pack_reload(result.is_ok());
             }

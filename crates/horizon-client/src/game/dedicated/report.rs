@@ -207,10 +207,10 @@ impl Game<'_> {
             });
             match write_report(Path::new("reports"), &report, &text) {
                 Ok(path) => log::info!(
-                    "Horizon: performance report written to {}\n{text}",
+                    "Claudium: performance report written to {}\n{text}",
                     path.display()
                 ),
-                Err(e) => log::error!("Horizon: could not write the performance report: {e}"),
+                Err(e) => log::error!("Claudium: could not write the performance report: {e}"),
             }
         });
     }

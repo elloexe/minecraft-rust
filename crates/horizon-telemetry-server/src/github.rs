@@ -82,7 +82,7 @@ pub fn issue(fields: &Map<String, Value>) -> Issue {
         format!("**What I did:**\n{}", field("did")),
         format!("**What happened:**\n{}", field("happened")),
         format!("**What I expected:**\n{}", field("expected")),
-        format!("**Horizon version:** {}", field("version")),
+        format!("**Claudium version:** {}", field("version")),
         format!("**OS, CPU, GPU:** {}", field("system")),
     ]
     .join("\n");

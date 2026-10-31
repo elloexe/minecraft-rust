@@ -951,7 +951,7 @@ impl Game<'_> {
                 None => self.options_key(key.expect("a key"), None),
             };
             if let Err(e) = result {
-                log::warn!("Horizon: on-screen keyboard: {e}");
+                log::warn!("Claudium: on-screen keyboard: {e}");
             }
         } else if self.title.is_some() {
             match key {

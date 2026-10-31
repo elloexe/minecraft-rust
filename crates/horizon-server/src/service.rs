@@ -75,7 +75,7 @@ pub fn systemd_unit(program: &Path, dir: &Path, user: Option<&str>) -> String {
     };
     format!(
         "[Unit]
-Description=Horizon server in {dir}
+Description=Claudium server in {dir}
 Documentation=https://github.com/horizon-rust/horizon/blob/main/docs/server.md
 Wants=network-online.target
 After=network-online.target

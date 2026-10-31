@@ -29,7 +29,7 @@ fn reads_every_key_of_schema_1() {
         ),
         ("sample_pack", "Sample Pack", "1.0.0", "0.1")
     );
-    assert_eq!(m.authors, ["Horizon"]);
+    assert_eq!(m.authors, ["Claudium"]);
     assert_eq!(m.license.as_deref(), Some("MIT"));
     assert_eq!(m.sky.as_ref().unwrap().file, "sky.wgsl");
     assert_eq!(

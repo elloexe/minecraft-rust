@@ -40,7 +40,7 @@ fn vanilla_sky() -> String {
 /// The sky shader for the pack's sky stage `source`.
 fn shader_source(source: &str) -> String {
     format!(
-        "{source}\n// Horizon's sky (terrain.wgsl)\n{}{PACK_ENTRY}",
+        "{source}\n// Claudium's sky (terrain.wgsl)\n{}{PACK_ENTRY}",
         vanilla_sky()
     )
 }

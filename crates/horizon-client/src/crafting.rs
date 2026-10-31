@@ -1237,7 +1237,7 @@ impl Recipes {
             let v: Value = match serde_json::from_slice(&bytes) {
                 Ok(v) => v,
                 Err(e) => {
-                    log::warn!("Horizon: recipe {name} not loaded: {e}");
+                    log::warn!("Claudium: recipe {name} not loaded: {e}");
                     continue;
                 }
             };

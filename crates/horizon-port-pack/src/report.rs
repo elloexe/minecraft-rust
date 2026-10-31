@@ -98,10 +98,10 @@ fn not_yet(tier: &str) -> &'static str {
 
 fn not_needed(class: &str) -> &'static str {
     match class {
-        "library" => "library: its API maps to Horizon's mod API and SDK",
-        "performance" => "performance mod: Horizon's engine is the replacement",
+        "library" => "library: its API maps to Claudium's mod API and SDK",
+        "performance" => "performance mod: Claudium's engine is the replacement",
         "other" => "pack tooling or an engine feature, folded into the pipeline or the engine",
-        "client-ui" => "built into Horizon",
+        "client-ui" => "built into Claudium",
         _ => "nothing to port",
     }
 }

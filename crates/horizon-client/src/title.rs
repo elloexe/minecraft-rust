@@ -1398,7 +1398,7 @@ impl Title {
                         ];
                     }
                 }
-                let version = format!("Horizon {} (Rust)", horizon_core::VANILLA_VERSION);
+                let version = format!("Claudium {} (Rust)", horizon_core::VANILLA_VERSION);
                 batch.text(atlas, &version, 2.0, h - 10.0, u32::MAX, true);
                 // A nightly names its build in the top-left corner, the one spot no button reaches at any GUI
                 // scale, so screenshots and reports say which build they come from.
@@ -2212,7 +2212,7 @@ impl Title {
                     match crate::datapack::temp_folder() {
                         Ok(dir) => options.pack_dir = Some(dir),
                         Err(e) => {
-                            log::warn!("Horizon: no folder for data packs: {e}");
+                            log::warn!("Claudium: no folder for data packs: {e}");
                             return Action::None;
                         }
                     }

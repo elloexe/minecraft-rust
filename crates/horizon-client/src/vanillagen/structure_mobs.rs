@@ -234,7 +234,7 @@ impl StructureMobFinalizer {
             .get_or_init(|| {
                 let data = load(&self.root);
                 if data.is_none() {
-                    log::error!("Horizon: no mob data, structure mobs are finalized when loaded");
+                    log::error!("Claudium: no mob data, structure mobs are finalized when loaded");
                 }
                 data
             })
@@ -294,7 +294,9 @@ impl StructureMobFinalizer {
         } else if let Some(r) = any.downcast_mut::<XoroshiroRandom>() {
             run(&mut level, r, difficulty, &spawn, &mut m, reason, group)
         } else {
-            log::error!("Horizon: unknown region random, structure mobs are finalized when loaded");
+            log::error!(
+                "Claudium: unknown region random, structure mobs are finalized when loaded"
+            );
             return None;
         };
         let mut mobs = vec![(m, raw)];

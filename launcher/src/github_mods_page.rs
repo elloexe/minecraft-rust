@@ -317,7 +317,7 @@ impl Launcher {
             .p(px(16.))
             .text_size(px(theme::UI.px))
             .text_color(t.ink)
-            .child(caps("Not reviewed by the Horizon registry").text_color(t.danger))
+            .child(caps("Not reviewed by the Claudium registry").text_color(t.danger))
             .child(what)
             .child(
                 "Native mods run with full access to this computer. Read the source before you install it.",

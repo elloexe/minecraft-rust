@@ -715,7 +715,7 @@ impl Loading {
             if let Some(loader) = loaded.rest_loader.take()
                 && let Err(error) = loader.finish()
             {
-                log::warn!("Horizon: replaced resource generation failed: {error}");
+                log::warn!("Claudium: replaced resource generation failed: {error}");
             }
         }
         self.loaded = None;

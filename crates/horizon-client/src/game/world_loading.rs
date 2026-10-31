@@ -275,7 +275,7 @@ pub(super) fn preload_world_data(
                 });
             match spawned {
                 Ok(thread) => *preload = Preload::Started { thread, left: None },
-                Err(e) => log::warn!("Horizon: world data preload: {e}"),
+                Err(e) => log::warn!("Claudium: world data preload: {e}"),
             }
         }
         Preload::Idle => {}
@@ -288,7 +288,7 @@ pub(super) fn preload_world_data(
                 super::lan::forget_sync_data();
                 horizon_threads::release_free_memory();
                 *preload = Preload::Idle;
-                log::info!("Horizon: preloaded world data dropped, no world opened");
+                log::info!("Claudium: preloaded world data dropped, no world opened");
             }
         }
     }
@@ -319,7 +319,7 @@ pub(super) fn preload_server_loot(resources: &std::path::Path) {
             );
         });
     if let Err(e) = spawned {
-        log::warn!("Horizon: loot preload: {e}");
+        log::warn!("Claudium: loot preload: {e}");
     }
 }
 
@@ -338,7 +338,7 @@ fn world_worldgen_overrides(
     let (overrides, warnings) =
         horizon_client::datapack::worldgen_overrides(&enabled, |b| biomes.contains(b));
     for warning in warnings {
-        log::warn!("Horizon: data pack worldgen: {warning}");
+        log::warn!("Claudium: data pack worldgen: {warning}");
     }
     overrides
 }
@@ -375,7 +375,7 @@ pub(super) fn level_shapes(
         match shape {
             Some(shape) => *shapes.get_mut(level) = shape,
             None => log::warn!(
-                "Horizon: data pack worldgen: the dimension type of {level} is not one the \
+                "Claudium: data pack worldgen: the dimension type of {level} is not one the \
                  game accepts; the level keeps the vanilla build height"
             ),
         }

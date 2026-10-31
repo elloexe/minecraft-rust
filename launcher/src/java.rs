@@ -132,7 +132,7 @@ fn runtime(home: PathBuf, source: Source) -> Option<Runtime> {
     found.java().is_file().then_some(found)
 }
 
-/// Mojang's runtimes Horizon downloaded.
+/// Mojang's runtimes Claudium downloaded.
 pub fn runtimes_dir() -> PathBuf {
     backend::data_dir().join("minecraft").join("runtime")
 }

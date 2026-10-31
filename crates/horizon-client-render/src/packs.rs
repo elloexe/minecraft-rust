@@ -588,7 +588,7 @@ fn build_overlay_uncached(
                             match z.read(inner) {
                                 Ok(bytes) => fs::write(&target, bytes)?,
                                 Err(e) => log::warn!(
-                                    "Horizon: skipping unreadable pack entry {inner}: {e}"
+                                    "Claudium: skipping unreadable pack entry {inner}: {e}"
                                 ),
                             }
                         }

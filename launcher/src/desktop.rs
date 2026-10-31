@@ -1,7 +1,7 @@
 //! Linux: the launcher puts itself in the applications menu. It writes
-//! `applications/horizon-launcher.desktop` (pointing at wherever the binary is now) and Horizon's
+//! `applications/claudium-launcher.desktop` (pointing at wherever the binary is now) and Horizon's
 //! icon into the `hicolor` theme, under `$XDG_DATA_HOME` (`~/.local/share` by default), so no root
-//! is needed; `horizon.desktop` (hidden from menus) gives the game's window its icon on Wayland.
+//! is needed; `claudium.desktop` (hidden from menus) gives the game's window its icon on Wayland.
 //! A release build writes it when it starts only if there is no entry yet or the one there starts
 //! a program that is gone ([`repair`]), so a development or test build never takes over a working
 //! entry. Turning the Settings switch on (or `horizon-launcher desktop-entry`) points it at this
@@ -16,45 +16,45 @@ use std::path::{Path, PathBuf};
 const ICONS: [(&str, &[u8]); 9] = [
     (
         "16x16",
-        include_bytes!("../../packaging/icons/hicolor/16x16/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/16x16/apps/claudium.png"),
     ),
     (
         "24x24",
-        include_bytes!("../../packaging/icons/hicolor/24x24/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/24x24/apps/claudium.png"),
     ),
     (
         "32x32",
-        include_bytes!("../../packaging/icons/hicolor/32x32/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/32x32/apps/claudium.png"),
     ),
     (
         "48x48",
-        include_bytes!("../../packaging/icons/hicolor/48x48/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/48x48/apps/claudium.png"),
     ),
     (
         "64x64",
-        include_bytes!("../../packaging/icons/hicolor/64x64/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/64x64/apps/claudium.png"),
     ),
     (
         "128x128",
-        include_bytes!("../../packaging/icons/hicolor/128x128/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/128x128/apps/claudium.png"),
     ),
     (
         "256x256",
-        include_bytes!("../../packaging/icons/hicolor/256x256/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/256x256/apps/claudium.png"),
     ),
     (
         "512x512",
-        include_bytes!("../../packaging/icons/hicolor/512x512/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/512x512/apps/claudium.png"),
     ),
     (
         "scalable",
-        include_bytes!("../../packaging/icons/hicolor/scalable/apps/horizon.svg"),
+        include_bytes!("../../packaging/icons/hicolor/scalable/apps/claudium.svg"),
     ),
 ];
 
-const LAUNCHER_ENTRY: &str = "horizon-launcher.desktop";
-const GAME_ENTRY: &str = "horizon.desktop";
-const GAME_ENTRY_TEXT: &str = include_str!("../../packaging/linux/horizon.desktop");
+const LAUNCHER_ENTRY: &str = "claudium-launcher.desktop";
+const GAME_ENTRY: &str = "claudium.desktop";
+const GAME_ENTRY_TEXT: &str = include_str!("../../packaging/linux/claudium.desktop");
 
 /// `$XDG_DATA_HOME`, or `~/.local/share` when it is unset or not absolute (as the spec says).
 pub fn data_home() -> Option<PathBuf> {
@@ -82,15 +82,15 @@ pub fn launcher_entry(exe: &Path) -> String {
     format!(
         "[Desktop Entry]\n\
          Type=Application\n\
-         Name=Horizon\n\
+         Name=Claudium\n\
          GenericName=Game launcher\n\
-         Comment=Install, prepare and play Horizon, Minecraft: Java Edition {minecraft} rewritten in Rust\n\
+         Comment=Install, prepare and play Claudium, Minecraft: Java Edition {minecraft} rewritten in Rust\n\
          Exec={}\n\
          TryExec={}\n\
-         Icon=horizon\n\
+         Icon=claudium\n\
          Terminal=false\n\
          Categories=Game;\n\
-         StartupWMClass=horizon-launcher\n",
+         StartupWMClass=claudium-launcher\n",
         quote(exe),
         exe.display(),
         minecraft = horizon_core::VANILLA_VERSION,
@@ -111,9 +111,9 @@ fn files(data: &Path, exe: &Path) -> Vec<(PathBuf, Vec<u8>)> {
     ];
     for (size, bytes) in ICONS {
         let name = if size == "scalable" {
-            "horizon.svg"
+            "claudium.svg"
         } else {
-            "horizon.png"
+            "claudium.png"
         };
         out.push((
             data.join("icons/hicolor")
@@ -254,10 +254,10 @@ mod tests {
 
     #[test]
     fn exec_paths_are_quoted() {
-        let entry = launcher_entry(Path::new("/home/a b/Horizon \"x\"/horizon-launcher"));
-        assert!(entry.contains("Exec=\"/home/a b/Horizon \\\"x\\\"/horizon-launcher\"\n"));
-        assert!(entry.contains("TryExec=/home/a b/Horizon \"x\"/horizon-launcher\n"));
-        assert!(entry.contains("Icon=horizon\n"));
+        let entry = launcher_entry(Path::new("/home/a b/Claudium \"x\"/horizon-launcher"));
+        assert!(entry.contains("Exec=\"/home/a b/Claudium \\\"x\\\"/horizon-launcher\"\n"));
+        assert!(entry.contains("TryExec=/home/a b/Claudium \"x\"/horizon-launcher\n"));
+        assert!(entry.contains("Icon=claudium\n"));
     }
 
     #[test]
@@ -266,10 +266,10 @@ mod tests {
         let _ = fs::remove_dir_all(&data);
         assert!(install_in(&data, Path::new("/opt/a/horizon-launcher")).unwrap());
         assert!(!install_in(&data, Path::new("/opt/a/horizon-launcher")).unwrap());
-        let png = data.join("icons/hicolor/48x48/apps/horizon.png");
+        let png = data.join("icons/hicolor/48x48/apps/claudium.png");
         assert!(fs::read(&png).unwrap().starts_with(b"\x89PNG"));
         assert!(data
-            .join("icons/hicolor/scalable/apps/horizon.svg")
+            .join("icons/hicolor/scalable/apps/claudium.svg")
             .exists());
         assert!(install_in(&data, Path::new("/opt/b/horizon-launcher")).unwrap());
         let entry = fs::read_to_string(data.join("applications").join(LAUNCHER_ENTRY)).unwrap();
@@ -298,7 +298,7 @@ mod tests {
         // Only the main group counts: an action's Exec is not the launcher.
         let action = "[Desktop Action play]\nExec=/a\n[Desktop Entry]\nExec=/b --x\n";
         assert_eq!(entry_target(action).as_deref(), Some("/b"));
-        assert_eq!(entry_target("[Desktop Entry]\nName=Horizon\n"), None);
+        assert_eq!(entry_target("[Desktop Entry]\nName=Claudium\n"), None);
         assert_eq!(entry_target("[Desktop Entry]\nExec=\nTryExec=\n"), None);
     }
 
@@ -331,7 +331,7 @@ mod tests {
         fs::remove_file(&installed).unwrap();
         assert!(needs_repair_in(&data, path));
         // An entry that starts nothing is broken too.
-        fs::write(&entry, "[Desktop Entry]\nName=Horizon\n").unwrap();
+        fs::write(&entry, "[Desktop Entry]\nName=Claudium\n").unwrap();
         assert!(needs_repair_in(&data, path));
         let _ = fs::remove_dir_all(&root);
     }

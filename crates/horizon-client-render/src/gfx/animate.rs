@@ -110,7 +110,7 @@ impl SpriteAnimator {
             let bytes: u64 = chains.iter().map(|chain| chain.len() as u64).sum();
             if bytes > limit {
                 log::warn!(
-                    "Horizon: layer {}'s animation ({bytes} bytes) does not fit in a storage buffer; it stays still",
+                    "Claudium: layer {}'s animation ({bytes} bytes) does not fit in a storage buffer; it stays still",
                     animation.layer
                 );
                 continue;
@@ -391,7 +391,7 @@ fn pipeline(device: &wgpu::Device) -> Option<(wgpu::ComputePipeline, wgpu::BindG
     match internal.or(pollster::block_on(validation.pop())) {
         None => Some((pipeline, layout)),
         Some(e) => {
-            log::warn!("Horizon renderer: animated sprites drawn on the CPU ({e})");
+            log::warn!("Claudium renderer: animated sprites drawn on the CPU ({e})");
             None
         }
     }

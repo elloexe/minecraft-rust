@@ -82,7 +82,7 @@ impl SourceId {
         match self {
             SourceId::Modrinth => "Modrinth",
             SourceId::CurseForge => "CurseForge",
-            SourceId::Horizon => "Horizon",
+            SourceId::Horizon => "Claudium",
         }
     }
 }
@@ -268,7 +268,7 @@ pub trait Source: Send + Sync {
 pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
 /// What another source answers for shader packs: Horizon's own are on its registry only.
 pub const SHADERS_ON_HORIZON: &str =
-    "Horizon's shader packs are on Horizon's registry: pick Horizon.";
+    "Claudium's shader packs are on Claudium's registry: pick Claudium.";
 
 /// The sources this launcher uses: Modrinth and Horizon's registry. CurseForge support is coming
 /// soon: its API needs a paid key, so no search or install goes to it; `curseforge` is kept for
@@ -289,7 +289,7 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
         return match newest_release(game_versions)
             .filter(|_| !game_versions.iter().any(|v| v == GAME))
         {
-            Some(other) => Support::No(format!("Made for Horizon on {other}.")),
+            Some(other) => Support::No(format!("Made for Claudium on {other}.")),
             None => Support::Works,
         };
     }
@@ -307,9 +307,9 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
             }
         }
         Kind::Modpack => {
-            Support::Partial("Horizon runs the mods it can port, from your own downloads.".into())
+            Support::Partial("Claudium runs the mods it can port, from your own downloads.".into())
         }
-        Kind::Shader => Support::No("Not one of Horizon's own shader packs.".into()),
+        Kind::Shader => Support::No("Not one of Claudium's own shader packs.".into()),
         Kind::DataPack => {
             let made_for = match newest_release(game_versions) {
                 _ if game_versions.iter().any(|v| v == GAME) => String::new(),
@@ -324,7 +324,7 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
             } else if !game_versions.iter().any(|v| portable_version(v)) {
                 let newest = newest_release(game_versions).unwrap_or("an unknown version");
                 Support::No(format!(
-                    "Made for {newest}: Horizon ports mods made for 1.21 and later."
+                    "Made for {newest}: Claudium ports mods made for 1.21 and later."
                 ))
             } else {
                 Support::Partial(
@@ -335,9 +335,9 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
     }
 }
 
-/// What a data pack does in Horizon today, said before install; the install says it for the
+/// What a data pack does in Claudium today, said before install; the install says it for the
 /// pack's own files (`crate::datapacks::coverage`).
-pub const DATAPACK_SUPPORT: &str = "Horizon runs a data pack's functions, function tags, \
+pub const DATAPACK_SUPPORT: &str = "Claudium runs a data pack's functions, function tags, \
      predicates and item modifiers; not yet its recipes, loot tables, advancements, other tags \
      or worldgen.";
 

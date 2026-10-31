@@ -113,7 +113,7 @@ fn vanilla_terrain() -> String {
 /// The terrain shader for the pack's material stage `source`.
 fn shader_source(source: &str) -> String {
     format!(
-        "{source}\n// Horizon's terrain (terrain.wgsl)\n{}{ENTRIES}",
+        "{source}\n// Claudium's terrain (terrain.wgsl)\n{}{ENTRIES}",
         vanilla_terrain()
     )
 }
@@ -291,7 +291,7 @@ mod tests {
             assert!(terrain.contains(&format!("{PREFIX}{name}")), "{name}");
         }
         assert!(!terrain.contains("fs_sky"), "the sky stays out");
-        // A pack may use any name Horizon's terrain uses unprefixed.
+        // A pack may use any name Claudium's terrain uses unprefixed.
         let own = "override gain: f32;\nconst PI: f32 = 3.0;\n\
             fn sprite(c: vec4<f32>) -> vec4<f32> { return c * PI; }\n\
             fn apply_fog(c: vec4<f32>) -> vec4<f32> { return c * gain; }\n\

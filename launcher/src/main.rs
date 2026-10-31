@@ -632,7 +632,7 @@ impl Launcher {
                     .cloned()
             });
         let Some(base) = base else {
-            self.native_error = Some(tr("Install Horizon first.").into());
+            self.native_error = Some(tr("Install Claudium first.").into());
             return;
         };
         let folder = match self.native_mods_to_build() {
@@ -988,7 +988,7 @@ impl Launcher {
                                 .and_then(|since| backend::crash_report_since(&home, since));
                             if error.is_some() && report.is_none() && self.switched_to_dx12() {
                                 self.client_error = Some(
-                                    "Horizon's Vulkan renderer crashed while starting on this \
+                                    "Claudium's Vulkan renderer crashed while starting on this \
                                      graphics card, so the game now uses DirectX 12. Press Play \
                                      to start it again. Video Settings > Graphics API switches \
                                      back."
@@ -1070,7 +1070,7 @@ impl Launcher {
         for home in homes {
             match backend::switch_to_dx12(&home) {
                 Ok(changed) => switched |= changed,
-                Err(e) => eprintln!("Horizon launcher: could not switch to DirectX 12: {e}"),
+                Err(e) => eprintln!("Claudium launcher: could not switch to DirectX 12: {e}"),
             }
         }
         switched
@@ -1188,8 +1188,8 @@ impl Launcher {
             .filter(|i| i.java.is_some())
             .cloned();
         if let Some(instance) = java {
-            // Mojang's game: no Horizon version or preparation, only no game already running.
-            // It joins a server; a friend's code and opening a world are Horizon's.
+            // Mojang's game: no Claudium version or preparation, only no game already running.
+            // It joins a server; a friend's code and opening a world are Claudium's.
             self.joining = None;
             let server = self
                 .quick_play
@@ -1245,7 +1245,7 @@ impl Launcher {
     }
 
     /// Whether the selected instance's version can start now, from a shortcut (a server's Join,
-    /// a world's Play, a friend's code): Horizon's only, never a Java instance.
+    /// a world's Play, a friend's code): Claudium's only, never a Java instance.
     pub(crate) fn can_start_selected(&self) -> bool {
         self.selected_instance().is_none_or(|i| i.java.is_none())
             && self.selected().is_some_and(|tag| self.can_start(tag))
@@ -1428,7 +1428,7 @@ fn version_tag(tag: &str) -> Div {
         )
 }
 
-/// Horizon's mark: two stems, their reflection below, and the horizon across in the accent.
+/// Claudium's mark: two stems, their reflection below, and the horizon across in the accent.
 fn mark(size: f32, t: &Theme) -> Div {
     let u = size / 16.;
     let stem = |x: f32, y: f32, color: Hsla| {
@@ -2025,7 +2025,7 @@ impl Launcher {
             .child(nav)
     }
 
-    /// The sidebar, from the top of the window: the wordmark, Horizon and the imported modpacks,
+    /// The sidebar, from the top of the window: the wordmark, Claudium and the imported modpacks,
     /// the player's servers, then the launcher's own update, the community links and its version.
     fn sidebar(&mut self, window: &Window, cx: &mut Context<Self>) -> Stateful<Div> {
         let t = self.theme;
@@ -2125,7 +2125,7 @@ impl Launcher {
             _ => {}
         }
         // Settings sits at the foot of the sidebar, where the Minecraft launcher has it. The
-        // community links that were here are upstream Horizon's, not ours.
+        // community links that were here are upstream Claudium's, not ours.
         {
             let id = SharedString::from("nav-Settings");
             let on = self.page == Page::Settings;
@@ -2341,7 +2341,7 @@ impl Launcher {
 
     fn play_page(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
-        // A Java instance plays Mojang's game: no Horizon version, nothing of Horizon's to prepare.
+        // A Java instance plays Mojang's game: no Claudium version, nothing of Claudium's to prepare.
         let java = self.selected_instance().and_then(|i| i.java.clone());
         let Some(tag) = self
             .selected()
@@ -2375,7 +2375,7 @@ impl Launcher {
             .as_ref()
             .map_or_else(|| backend::game_version(&tag), |j| j.minecraft.clone());
         let hero = match &java {
-            // Its own game: the Minecraft version and the loader, never Horizon's.
+            // Its own game: the Minecraft version and the loader, never Claudium's.
             Some(j) => {
                 let game = match &j.loader {
                     Some(l) => format!("{version} · {} {}", l.kind.name(), l.version),
@@ -2389,7 +2389,7 @@ impl Launcher {
         let left = self.download_left();
         let steps = self.preparing.then(|| self.steps(&version, left));
 
-        // Not prepared: an owner can have Horizon download Minecraft from Mojang; without an
+        // Not prepared: an owner can have Claudium download Minecraft from Mojang; without an
         // owner there is nothing to play, so signing in comes first.
         let first = (!prepared && !self.preparing)
             .then_some(self.owner_shown())
@@ -2403,7 +2403,7 @@ impl Launcher {
                 &[("version", &version)],
             ),
             Some(true) => trf(
-                "Not prepared. Horizon can download Minecraft {version} from Mojang for your account, or use your own install.",
+                "Not prepared. Claudium can download Minecraft {version} from Mojang for your account, or use your own install.",
                 &[("version", &version)],
             ),
             Some(false) => trf(
@@ -2481,7 +2481,7 @@ impl Launcher {
             || {
                 div()
                     .child(if owner {
-                        tr("None needed: Horizon downloads Minecraft from Mojang for your account.")
+                        tr("None needed: Claudium downloads Minecraft from Mojang for your account.")
                     } else {
                         tr("Not found. Choose the folder where your launcher keeps Minecraft.")
                     })
@@ -2626,7 +2626,7 @@ impl Launcher {
                     .gap(px(32.))
                     .pb(px(24.))
                     .child(div().flex_1().min_w_0().child(hero))
-                    // Notes and friends are Horizon's.
+                    // Notes and friends are Claudium's.
                     .children(java.is_none().then(|| self.home_card(&tag, cx))),
             )
             // The play bar runs the full width under the hero, as the Minecraft launcher's does:
@@ -2662,7 +2662,7 @@ impl Launcher {
         page
     }
 
-    /// "Horizon crashed": the report and the logs, and where to report it.
+    /// "Claudium crashed": the report and the logs, and where to report it.
     fn crash_notice(&self, crash: Crash, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let mut actions = div().flex().flex_wrap().gap(px(8.)).mt(px(8.));
@@ -2738,7 +2738,7 @@ impl Launcher {
             .child(
                 text(theme::HEADING)
                     .text_color(t.ink)
-                    .child(tr("Horizon crashed")),
+                    .child(tr("Claudium crashed")),
             );
         if !crash.summary.is_empty() {
             body = body.child(div().text_color(t.ink_soft).child(crash.summary));
@@ -2985,7 +2985,7 @@ impl Launcher {
                     .child(group("AI", "terminal"))
                     .child(self.no_ai_row(n + 6, cx))
                     .child(group("About", "info-box"))
-                    .child(index_row(n + 7, "Horizon", Some(plain(&horizon)), horizon_action, &t))
+                    .child(index_row(n + 7, "Claudium", Some(plain(&horizon)), horizon_action, &t))
                     .child(index_row(
                         n + 8,
                         tr("Launcher"),
@@ -3024,7 +3024,7 @@ impl Launcher {
                             n + 11,
                             tr("Applications menu"),
                             Some(plain(if self.settings.desktop_entry() {
-                                "Horizon and its icon are in your desktop's menu."
+                                "Claudium and its icon are in your desktop's menu."
                             } else {
                                 "Not in your desktop's menu."
                             })),
@@ -3146,7 +3146,7 @@ impl Launcher {
         ))
     }
 
-    /// Mods made for other Horizon versions: which, and the version the build uses. They often
+    /// Mods made for other Claudium versions: which, and the version the build uses. They often
     /// still work, so the player may build anyway.
     fn native_mismatch_panel(&self, list: &str, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
@@ -3157,7 +3157,7 @@ impl Launcher {
             .mt(px(8.))
             .p(px(12.))
             .bg(t.well)
-            .child(div().text_color(t.danger).child(tr("These mods were made for different Horizon versions").to_string()))
+            .child(div().text_color(t.danger).child(tr("These mods were made for different Claudium versions").to_string()))
             .child(list.to_owned())
             .child(tr("They often still work together. If the build fails, install versions made for the same Nightly.").to_string())
             .child(
@@ -3403,7 +3403,7 @@ impl Launcher {
             Some(SignInState::Done(Ok(a))) => div().child(format!("Signed in as {}.", a.name)),
             Some(SignInState::Done(Err(e))) => div().text_color(t.danger).child(e.clone()),
             None if self.accounts.accounts.is_empty() => div().child(tr(
-                "Horizon needs a Microsoft account that owns Minecraft: Java Edition, like other launchers. It also plays online servers with your name and skin.",
+                "Claudium needs a Microsoft account that owns Minecraft: Java Edition, like other launchers. It also plays online servers with your name and skin.",
             )),
             None => div().child(tr("Add another account.")),
         };
@@ -3482,7 +3482,7 @@ impl Launcher {
     /// Join a friend: a code field and Join, which starts the game straight
     /// into the friend's world (errors show in the game).
     /// Plays the selected instance straight into a world (`--world`) or a server (`--server`):
-    /// flags every Horizon release takes.
+    /// flags every Claudium release takes.
     pub(crate) fn quick_play(&mut self, flag: &'static str, value: String) {
         self.quick_play = Some((flag, value));
         self.play();
@@ -3766,7 +3766,7 @@ impl Launcher {
                                 .child("Support the work below"),
                         )
                         .child(text(theme::UI).text_color(t.muted).child(
-                            "Horizon is built in the open. Sponsors fund the next release.",
+                            "Claudium is built in the open. Sponsors fund the next release.",
                         )),
                 )
                 .child(
@@ -4215,8 +4215,8 @@ fn key_bindings() -> Vec<KeyBinding> {
 fn menus() -> Vec<Menu> {
     vec![
         Menu {
-            name: "Horizon Launcher".into(),
-            items: vec![MenuItem::action("Quit Horizon Launcher", Quit)],
+            name: "Claudium Launcher".into(),
+            items: vec![MenuItem::action("Quit Claudium Launcher", Quit)],
         },
         Menu {
             name: "Window".into(),
@@ -4271,7 +4271,7 @@ fn main() {
                     titlebar: Some(titlebar::options()),
                     #[cfg(target_os = "linux")]
                     window_decorations: Some(gpui::WindowDecorations::Client),
-                    app_id: Some("horizon-launcher".into()),
+                    app_id: Some("claudium-launcher".into()),
                     ..Default::default()
                 },
                 |window, cx| cx.new(|cx| Launcher::new(window, cx)),
@@ -4391,10 +4391,10 @@ mod tests {
     #[test]
     fn the_app_menu_has_quit() {
         let menus = super::menus();
-        assert_eq!(menus[0].name, "Horizon Launcher");
+        assert_eq!(menus[0].name, "Claudium Launcher");
         assert!(matches!(
             &menus[0].items[0],
-            gpui::MenuItem::Action { name, .. } if name == "Quit Horizon Launcher"
+            gpui::MenuItem::Action { name, .. } if name == "Quit Claudium Launcher"
         ));
     }
 

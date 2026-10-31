@@ -1590,7 +1590,7 @@ impl Streaming {
                 Some(Done::Saved(protos)) => self.receive_saved(protos),
                 Some(other) => self.deferred.push(other),
                 None => {
-                    log::warn!("Horizon: chunk generation did not finish before saving");
+                    log::warn!("Claudium: chunk generation did not finish before saving");
                     break;
                 }
             }

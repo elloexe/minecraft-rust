@@ -160,7 +160,7 @@ async fn a_report_becomes_an_issue_in_the_bug_template() {
         "> **What I did:**\n> Opened a new world\n> Walked to the sea",
         "> **What happened:**\n> The water is black",
         "> **What I expected:**\n> Blue water, as in vanilla",
-        "> **Horizon version:** v0.2.57",
+        "> **Claudium version:** v0.2.57",
         "> **OS, CPU, GPU:** Windows 11, Ryzen 5 5600, RX 6600",
         "Reported on playhorizon.dev",
     ] {

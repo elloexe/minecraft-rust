@@ -6,7 +6,7 @@
 //!   opening it swaps the code for an `HttpOnly; SameSite=Strict` session cookie. Anyone who can read the
 //!   server folder's token can make a link, and no one else can. Sessions end when the supervisor does.
 //! - **Rebinding and CSRF.** The `Host` header must name the panel's own address (`localhost` too on
-//!   loopback, a MagicDNS name on a tailnet). Every POST needs the `X-Horizon: 1` header, which a page from
+//!   loopback, a MagicDNS name on a tailnet). Every POST needs the `X-Claudium: 1` header, which a page from
 //!   another site can't send without the browser asking first.
 //! - **The page** loads nothing from elsewhere (a strict Content-Security-Policy) and can't be framed.
 
@@ -97,7 +97,7 @@ impl Auth {
 
 fn page_error(status: u16, message: &str) -> Response {
     let body = format!(
-        "<!doctype html><meta charset=utf-8><title>Horizon server</title>\
+        "<!doctype html><meta charset=utf-8><title>Claudium server</title>\
          <link rel=stylesheet href=/panel.css><main class=message><p>{}</p></main>",
         message
             .replace('&', "&amp;")
@@ -174,8 +174,8 @@ fn handle(shared: &Arc<Shared>, address: SocketAddr, request: &Request) -> Respo
         }
         _ => {}
     }
-    if method == "POST" && request.header("x-horizon") != Some("1") {
-        return Response::error(403, "missing the X-Horizon header");
+    if method == "POST" && request.header("x-claudium") != Some("1") {
+        return Response::error(403, "missing the X-Claudium header");
     }
     if (method, path) == ("POST", "/logout") {
         shared.panel.lock().unwrap().sign_out(request);
@@ -298,14 +298,14 @@ mod tests {
         };
         assert!(post("").starts_with("HTTP/1.1 403"));
         assert!(!shared.restart.load(std::sync::atomic::Ordering::SeqCst));
-        assert!(post("X-Horizon: 1\r\n").starts_with("HTTP/1.1 200"));
+        assert!(post("X-Claudium: 1\r\n").starts_with("HTTP/1.1 200"));
         assert!(shared.restart.load(std::sync::atomic::Ordering::SeqCst));
         // Login links come only from the token API.
         assert!(
             send(
                 address,
                 &format!(
-                    "POST /api/v1/panel/login HTTP/1.1\r\n{host}{with_cookie}X-Horizon: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    "POST /api/v1/panel/login HTTP/1.1\r\n{host}{with_cookie}X-Claudium: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
                 ),
             )
             .0

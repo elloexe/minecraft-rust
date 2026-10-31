@@ -14,8 +14,8 @@
 //! custom properties (a horizon-theme test fails when the file is out of date).
 //!
 //! `icons`: renders the icon masters in `docs/media/brand` (with `rsvg-convert`, from librsvg)
-//! into every size the platforms and the website use, and packs `packaging/icons/horizon.ico`
-//! and `horizon.icns`. `docs/media/brand/README.md` lists what goes where.
+//! into every size the platforms and the website use, and packs `packaging/icons/claudium.ico`
+//! and `claudium.icns`. `docs/media/brand/README.md` lists what goes where.
 
 use std::fs;
 use std::path::{Component, Path, PathBuf};
@@ -171,28 +171,28 @@ fn icons() -> Result<(), String> {
     for size in HICOLOR {
         let png = render(&square, (size, size))?;
         write(
-            &packaging.join(format!("hicolor/{size}x{size}/apps/horizon.png")),
+            &packaging.join(format!("hicolor/{size}x{size}/apps/claudium.png")),
             &png,
         )?;
     }
     write(
-        &packaging.join("hicolor/scalable/apps/horizon.svg"),
+        &packaging.join("hicolor/scalable/apps/claudium.svg"),
         &fs::read(&square).map_err(|e| format!("{}: {e}", square.display()))?,
     )?;
     let images = ICO
         .iter()
         .map(|&s| render(&square, (s, s)).map(|png| (s, png)))
         .collect::<Result<Vec<_>, _>>()?;
-    write(&packaging.join("horizon.ico"), &ico(&images))?;
+    write(&packaging.join("claudium.ico"), &ico(&images))?;
     let macos = brand.join("icon-macos.svg");
     let entries = ICNS
         .iter()
         .map(|&(kind, s)| render(&macos, (s, s)).map(|png| (kind, png)))
         .collect::<Result<Vec<_>, _>>()?;
-    write(&packaging.join("horizon.icns"), &icns(&entries))?;
+    write(&packaging.join("claudium.icns"), &icns(&entries))?;
     // The window icon the game and the launcher set at run time (X11 and Windows title bars).
     write(
-        &repo.join("crates/horizon-theme/icons/horizon-64.png"),
+        &repo.join("crates/horizon-theme/icons/claudium-64.png"),
         &render(&square, (64, 64))?,
     )?;
     // Avatars, and the website's icons (horizon-site copies docs/media/brand/web/ into its public/).

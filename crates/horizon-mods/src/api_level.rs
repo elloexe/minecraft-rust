@@ -3,7 +3,7 @@
 //! level it arrived at; a Horizon serves every level up to its [`LEVEL`].
 //! A mod needs the level of the newest function it imports, so a mod that
 //! calls a function this Horizon doesn't have is refused with "update
-//! Horizon" instead of a linking error, and the registry lists each
+//! Claudium" instead of a linking error, and the registry lists each
 //! version's level so the launcher can tell before it installs.
 
 /// The newest level this Horizon serves.
@@ -114,7 +114,7 @@ pub fn needed<'a>(imports: impl IntoIterator<Item = &'a str>) -> (u32, Option<&'
 pub fn too_new(level: u32, function: Option<&str>) -> Option<String> {
     (level > LEVEL).then(|| {
         let uses = function.map_or(String::new(), |f| format!(" (it uses {f})"));
-        format!("made for a newer Horizon{uses}: update Horizon to run it")
+        format!("made for a newer Claudium{uses}: update Claudium to run it")
     })
 }
 
@@ -197,7 +197,7 @@ mod tests {
         assert_eq!(too_new(LEVEL, None), None);
         assert_eq!(
             too_new(LEVEL + 1, Some("render.set-sky")).as_deref(),
-            Some("made for a newer Horizon (it uses render.set-sky): update Horizon to run it")
+            Some("made for a newer Claudium (it uses render.set-sky): update Claudium to run it")
         );
     }
 }

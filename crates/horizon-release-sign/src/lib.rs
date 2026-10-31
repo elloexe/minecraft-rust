@@ -106,7 +106,7 @@ pub fn verify(
         });
     if !signed {
         return Err(format!(
-            "{tag}'s signature doesn't match Horizon's release key, so it was not installed. \
+            "{tag}'s signature doesn't match Claudium's release key, so it was not installed. \
              The download may have been tampered with: please report it on Discord or GitHub."
         ));
     }
@@ -205,7 +205,7 @@ fn digest_in(
 ) -> Result<String, String> {
     let (Some(sums), Some(signature)) = (sums, signature) else {
         return Err(format!(
-            "{name} is not signed, and Horizon installs only signed releases: pick a newer version."
+            "{name} is not signed, and Claudium installs only signed releases: pick a newer version."
         ));
     };
     verify(signed_for, sums, signature, keys)?

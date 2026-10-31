@@ -24,7 +24,7 @@ fn home(name: &str) -> PathBuf {
 }
 
 fn launcher(root: &Path, args: &[&str]) -> Command {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_horizon-launcher"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_claudium-launcher"));
     cmd.args(args)
         .env("HORIZON_HOME", root.join("game"))
         .env("HORIZON_LAUNCHER_HOME", root.join("launcher"))

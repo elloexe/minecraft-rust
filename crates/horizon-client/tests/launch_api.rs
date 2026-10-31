@@ -69,7 +69,7 @@ fn a_refused_command_line_exits_2_without_a_crash_report() {
         let output = run(&dir, args);
         assert_eq!(output.status.code(), Some(2), "{args:?}");
         assert!(
-            !last_stderr_line(&output).starts_with("Horizon: crash report saved to "),
+            !last_stderr_line(&output).starts_with("Claudium: crash report saved to "),
             "{args:?}"
         );
         assert!(!dir.join("home/crash-reports").exists(), "{args:?}");
@@ -99,7 +99,7 @@ fn an_error_exits_1_and_names_the_crash_report_under_home() {
     assert_eq!(output.status.code(), Some(1));
     let line = last_stderr_line(&output);
     let report = line
-        .strip_prefix("Horizon: crash report saved to ")
+        .strip_prefix("Claudium: crash report saved to ")
         .unwrap_or_else(|| panic!("last stderr line: {line}"));
     let report = Path::new(report);
     assert!(report.is_file(), "{}", report.display());

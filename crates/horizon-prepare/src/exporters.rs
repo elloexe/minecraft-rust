@@ -74,7 +74,7 @@ fn outputs(dir: &Path) -> Result<Value, String> {
             if !name.starts_with("server/dev/horizonlab/parity/")
                 && !name.starts_with("client/dev/horizonlab/parity/")
             {
-                return Err(format!("Non-Horizon class in exporter bundle: {name}"));
+                return Err(format!("Non-Claudium class in exporter bundle: {name}"));
             }
             hashes.insert(&name, Value::Str(digest(&path, "sha256")?));
         }

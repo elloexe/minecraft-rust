@@ -432,7 +432,7 @@ fn join(o: &Options, name: &str) -> Result<Connection, String> {
         .encode(),
     )
     .map_err(err)?;
-    // ClientBrandRetriever: vanilla's client says "vanilla", Horizon's "horizon".
+    // ClientBrandRetriever: vanilla's client says "vanilla", Claudium's "horizon".
     if let Some(brand) = &o.brand {
         let mut w = Writer::new();
         w.string(brand);

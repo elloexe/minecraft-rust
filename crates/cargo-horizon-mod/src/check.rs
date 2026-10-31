@@ -78,7 +78,7 @@ impl Report {
             out += &format!("  needs {} {} ({})\n", r.id, r.version, &r.sha256[..12]);
         }
         if self.kind == Kind::NativeMod {
-            out += "  native source: unsandboxed; not executed by the registry check. Compile and test against the exact pinned Horizon and Mixins revisions before review.\n";
+            out += "  native source: unsandboxed; not executed by the registry check. Compile and test against the exact pinned Claudium and Mixins revisions before review.\n";
         }
         if self.kind == Kind::Mod {
             out += "  no code: content only, nothing to run\n";
@@ -140,7 +140,7 @@ pub fn check(
 fn content_only(path: &Path) -> Result<(), String> {
     match Package::read(path)?.wasm {
         Some(_) => Err(
-            "it has WebAssembly code, which Horizon doesn't run any more: make it a native mod (docs/native-mods.md)"
+            "it has WebAssembly code, which Claudium doesn't run any more: make it a native mod (docs/native-mods.md)"
                 .into(),
         ),
         None => Ok(()),

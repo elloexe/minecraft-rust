@@ -715,7 +715,7 @@ impl RecipeIndex {
         for (id, files) in overlay.kind("recipe") {
             match serde_json::from_slice::<serde_json::Value>(PackOverlay::top(files)) {
                 Ok(v) => insert(id.to_owned(), &v),
-                Err(e) => log::warn!("Horizon: pack recipe {id} not shown in the book: {e}"),
+                Err(e) => log::warn!("Claudium: pack recipe {id} not shown in the book: {e}"),
             }
         }
         // RecipeManager keeps its recipes sorted by id and numbers the displays in that order.

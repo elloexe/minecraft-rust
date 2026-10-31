@@ -230,7 +230,7 @@ pub const POLICY: &str = "https://playhorizon.dev/mods/policy";
 /// Whether the Horizon project made `p` (the mod policy's "Official": author Horizon, source in
 /// the horizon-rust organisation).
 pub fn official(p: &index::Project) -> bool {
-    p.authors == ["Horizon"] && p.source.starts_with("https://github.com/horizon-rust/")
+    p.authors == ["Claudium"] && p.source.starts_with("https://github.com/horizon-rust/")
 }
 
 /// What the player reads about a registry project before installing it: who made it, whether its
@@ -244,10 +244,10 @@ pub fn trust_and_capabilities(id: &str) -> Vec<String> {
         return Vec::new();
     };
     let mut lines = vec![if official(p) {
-        "Made by Horizon".to_owned()
+        "Made by Claudium".to_owned()
     } else {
         format!(
-            "Made by {}. Not made or endorsed by the Horizon project ({POLICY})",
+            "Made by {}. Not made or endorsed by the Claudium project ({POLICY})",
             p.authors.join(", ")
         )
     }];
@@ -262,7 +262,7 @@ pub fn trust_and_capabilities(id: &str) -> Vec<String> {
         if let Some(v) = p.versions.first() {
             let pin = v.api.split('/').nth(1).unwrap_or_default();
             lines.push(format!(
-                "Built by the launcher on Horizon {}",
+                "Built by the launcher on Claudium {}",
                 &pin[..pin.len().min(7)]
             ));
         }
@@ -389,10 +389,10 @@ impl Source for Registry {
         let index = index()?;
         let p = index
             .project(id)
-            .ok_or_else(|| format!("{id} isn't in Horizon's registry."))?;
+            .ok_or_else(|| format!("{id} isn't in Claudium's registry."))?;
         project_of(p).ok_or_else(|| {
             format!(
-                "{} is a {} in Horizon's registry: this launcher can't install those yet.",
+                "{} is a {} in Claudium's registry: this launcher can't install those yet.",
                 p.name,
                 p.kind.name()
             )
@@ -403,7 +403,7 @@ impl Source for Registry {
         let index = index()?;
         let p = index
             .project(&project.id)
-            .ok_or_else(|| format!("{} isn't in Horizon's registry.", project.title))?;
+            .ok_or_else(|| format!("{} isn't in Claudium's registry.", project.title))?;
         let level = crate::backend::game_mod_api_level();
         Ok(p.versions
             .iter()
@@ -416,7 +416,7 @@ impl Source for Registry {
         let index = index()?;
         let p = index
             .project(&project.id)
-            .ok_or_else(|| format!("{} isn't in Horizon's registry.", project.title))?;
+            .ok_or_else(|| format!("{} isn't in Claudium's registry.", project.title))?;
         let newest = p.versions.first();
         let mut body = p.description.clone();
         if let Some(v) = newest.filter(|v| !v.capabilities.is_empty()) {
@@ -527,7 +527,7 @@ fn relative(kind: Kind, id: &str, file_name: &str) -> Result<String, String> {
         Kind::ResourcePack => Ok(format!("resourcepacks/{file_name}")),
         Kind::Shader => Ok(format!("shaderpacks/{file_name}")),
         Kind::Modpack => Err("A modpack installs as its own profile (pack::install).".into()),
-        Kind::DataPack => Err("Horizon's registry has no data packs.".into()),
+        Kind::DataPack => Err("Claudium's registry has no data packs.".into()),
     }
 }
 
@@ -555,7 +555,7 @@ fn install_from(
 ) -> Result<Vec<installed::Entry>, String> {
     let p = index
         .project(&project.id)
-        .ok_or_else(|| format!("{} isn't in Horizon's registry.", project.title))?;
+        .ok_or_else(|| format!("{} isn't in Claudium's registry.", project.title))?;
     let v = newest(index, p, level)?;
     if needs_port(v) {
         return Err(format!("{} {NEEDS_PORT}.", p.name));
@@ -587,8 +587,8 @@ fn newest<'a>(
     })
 }
 
-const NEEDS_NEWER: &str = "needs a newer Horizon than the game you play";
-const NEEDS_PORT: &str = "needs a native port: Horizon doesn't run WebAssembly mods any more";
+const NEEDS_NEWER: &str = "needs a newer Claudium than the game you play";
+const NEEDS_PORT: &str = "needs a native port: Claudium doesn't run WebAssembly mods any more";
 
 /// Whether version `v` is a WebAssembly mod with code: a `.hmod` that may do more than add
 /// content. The registry keeps it for the modpacks that need it; a modpack installs it with its

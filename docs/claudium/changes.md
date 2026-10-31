@@ -6,6 +6,32 @@ are ours.
 
 ## Unreleased
 
+### Debranding
+
+- Renamed every player-facing "Horizon" to "Claudium": 684 string literals across
+  both workspaces, all seven language files, the window and title bar, the Linux
+  desktop entries and Wayland app id, the macOS bundle identity, and the icon
+  files (`packaging/icons/claudium.*`, `claudium-64.png`).
+- The data folders a player sees are now `~/.local/share/claudium` and
+  `claudium-launcher`, and the installed binary is `claudium-launcher`.
+- The `minecraft:brand` our client and server send is now `claudium`
+  (`horizon_protocol::BRAND`). `is_native_brand` still accepts `horizon`, so the
+  extra channels (quiet commands, content identity) keep working both ways with
+  upstream Horizon. Vanilla ignores the brand, so joining vanilla servers is
+  unaffected.
+- The server panel's POST guard header is `X-Claudium`, and a shortcut's macOS
+  plist key is `ClaudiumInstance`.
+- Removed the official-server injection from both the launcher and the game: it
+  put *upstream's* server (`horizon.bunchy7s.dev`) at the top of the player's
+  list, which a fork must not ship under its own name. Nothing is added to the
+  server list that the player did not add.
+
+What deliberately keeps the old name: crate names and Rust paths
+(`horizon_client::…`, which native mod hook targets are pinned to), `HORIZON_*`
+environment variables, the `horizon` mod namespace (renaming it would break mod
+content), the `SourceId::Horizon` registry and `Item::Horizon` settings variants,
+code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required.
+
 ### Launcher
 
 - Renamed the shipped binary to `claudium-launcher` and the window, title bar

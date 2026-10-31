@@ -19,6 +19,22 @@ pub mod secure_chat;
 pub mod servers;
 pub mod text;
 
+/// The `minecraft:brand` string our client and server send (ClientBrandRetriever and
+/// MinecraftServer.getServerModName; vanilla says "vanilla"). Servers log it and may gate
+/// features on it. Vanilla ignores it, so it never affects joining a vanilla server.
+pub const BRAND: &str = "claudium";
+
+/// Whether a brand names one of ours, so the two ends may use the extra channels vanilla has
+/// no idea about (quiet commands, content identity).
+///
+/// Upstream Horizon's brand is accepted as well as our own: Claudium was renamed from it, and
+/// the two speak the same extra channels, so a Claudium client still gets the full experience
+/// on a Horizon server and the other way round. Dropping `"horizon"` here would debrand the
+/// wire a little more and cost that interoperability.
+pub fn is_native_brand(brand: &str) -> bool {
+    brand == BRAND || brand == "horizon"
+}
+
 /// SharedConstants.getProtocolVersion().
 pub const PROTOCOL_VERSION: i32 = horizon_core::version::PROTOCOL_VERSION;
 /// The game version servers report in their status.

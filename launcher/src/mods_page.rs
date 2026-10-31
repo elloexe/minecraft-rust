@@ -29,7 +29,7 @@ const CHECKING: usize = 2;
 /// The sources to pick from; CurseForge is shown beside them as coming soon.
 const SOURCES: [(SourceId, &str); 2] = [
     (SourceId::Modrinth, "Modrinth"),
-    (SourceId::Horizon, "Horizon"),
+    (SourceId::Horizon, "Claudium"),
 ];
 const PAGE: usize = 20;
 
@@ -866,8 +866,8 @@ impl Launcher {
         }
         let header = page_header(
             "Mods",
-            "Mods and shader packs made for Horizon from its own reviewed registry, and Java \
-             mods, modpacks and resource packs from Modrinth: Horizon ports what a Java mod \
+            "Mods and shader packs made for Claudium from its own reviewed registry, and Java \
+             mods, modpacks and resource packs from Modrinth: Claudium ports what a Java mod \
              carries (blocks, items, recipes, worldgen) and says before you install what runs. Each file is checked \
              against its source's checksum before it reaches your game folder.",
             &t,
@@ -879,7 +879,7 @@ impl Launcher {
                 let _ = this.update(cx, |this, cx| {
                     if this.mods.kind != kind {
                         this.mods.kind = kind;
-                        // Horizon's own shader packs are on its registry only.
+                        // Claudium's own shader packs are on its registry only.
                         if kind == PackKind::Shader {
                             this.mods.source = SourceId::Horizon;
                         }
@@ -921,7 +921,7 @@ impl Launcher {
         let java = self.mods.java_for(self.mods.kind).is_some();
         let source_note = (self.mods.kind != PackKind::DataPack && !java)
             .then(|| div().flex().child(self.mods_source_switch(cx)));
-        // The registry lists only what was made for Horizon: no "everything", no Modrinth filters.
+        // The registry lists only what was made for Claudium: no "everything", no Modrinth filters.
         let registry = self.mods.source == SourceId::Horizon;
         let filters = (!registry).then(|| self.mods_filters(cx));
         let controls = div()
@@ -962,7 +962,7 @@ impl Launcher {
                 .child(section_title("Browse modpacks", "search", &t));
         }
         body = body.child(controls);
-        // Native mods from a GitHub link: Horizon instances, on the Mods tab.
+        // Native mods from a GitHub link: Claudium instances, on the Mods tab.
         if self.mods.kind == PackKind::Mod && self.mods.java.is_none() {
             body = body.child(self.github_panel(cx));
         }
@@ -1312,11 +1312,11 @@ impl Launcher {
                     &t,
                 );
             } else if m.source == SourceId::Horizon {
-                "Nothing in Horizon's registry matches yet."
+                "Nothing in Claudium's registry matches yet."
             } else if m.everything {
                 "Nothing found."
             } else {
-                "Nothing found that runs in Horizon. Show everything lists the rest."
+                "Nothing found that runs in Claudium. Show everything lists the rest."
             };
             return centered(line, &t);
         }
@@ -1454,7 +1454,7 @@ impl Launcher {
 }
 
 impl Launcher {
-    /// The source switch: Modrinth or Horizon's registry, CurseForge shown as coming soon and not
+    /// The source switch: Modrinth or Claudium's registry, CurseForge shown as coming soon and not
     /// clickable, like the Microsoft account's "Coming soon".
     fn mods_source_switch(&self, cx: &mut Context<Self>) -> Stateful<Div> {
         let this = cx.entity().downgrade();

@@ -3,7 +3,7 @@
 `package.sh BINARY VERSION OUTDIR` (run by `.github/workflows/launcher.yml` on macOS) makes:
 
 - `Horizon.app`: `Contents/MacOS/horizon-launcher`, `Contents/Info.plist` (this folder's, bundle
-  id `dev.horizon.launcher`, macOS 11 or later), `Contents/Resources/horizon.icns`
+  id `dev.horizon.launcher`, macOS 11 or later), `Contents/Resources/claudium.icns`
   (`packaging/icons`, from `cargo run -p xtask -- icons`).
 - `horizon-launcher-macos-arm64.dmg`: the installer. Opening it shows the app and a link to
   Applications over `background.png` / `background@2x.png` (drawn from `background.html`); the

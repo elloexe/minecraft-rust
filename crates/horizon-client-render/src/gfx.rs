@@ -128,7 +128,7 @@ fn world_pass_after_culling<'e>(
     keep_depth: bool,
 ) -> wgpu::RenderPass<'e> {
     encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-        label: Some("Horizon world, after culling"),
+        label: Some("Claudium world, after culling"),
         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
             view,
             resolve_target: None,
@@ -882,7 +882,7 @@ struct Opened {
 fn describe_adapter(adapter: &wgpu::Adapter) {
     let info = adapter.get_info();
     log::info!(
-        "Horizon renderer: {} ({:?}, {:?})",
+        "Claudium renderer: {} ({:?}, {:?})",
         info.name,
         info.backend,
         info.device_type
@@ -960,7 +960,7 @@ async fn open_device(
     for (attempt, backends) in order.iter().copied().enumerate() {
         let name = backends_name(backends);
         if attempt > 0 {
-            log::warn!("Horizon renderer: trying {name} ({})", failures.join("; "));
+            log::warn!("Claudium renderer: trying {name} ({})", failures.join("; "));
         }
         match open_with_retry(backends, window, offscreen, layers).await {
             Ok(opened) => return Ok(opened),
@@ -990,14 +990,14 @@ async fn open_with_retry(
     match open_backend(backends, window, offscreen, false, layers).await {
         Err(NoDevice::NoAdapter(hidden)) => {
             log::warn!(
-                "Horizon renderer: {} has no conformant adapter ({hidden}); asking again for the \
+                "Claudium renderer: {} has no conformant adapter ({hidden}); asking again for the \
                  ones wgpu hides as non-conformant",
                 backends_name(backends)
             );
             match open_backend(backends, window, offscreen, true, layers).await {
                 Ok(opened) => {
                     log::warn!(
-                        "Horizon renderer: using {} although its driver reports no Vulkan \
+                        "Claudium renderer: using {} although its driver reports no Vulkan \
                          conformance version",
                         opened.adapter.get_info().name
                     );
@@ -1076,7 +1076,7 @@ async fn open_backend(
         limits.max_texture_array_layers,
     ));
     let desc = wgpu::DeviceDescriptor {
-        label: Some("Horizon device"),
+        label: Some("Claudium device"),
         required_features: features,
         required_limits: limits,
         ..Default::default()
@@ -1107,20 +1107,20 @@ async fn open_backend(
 /// Vulkan is loaded at run time (the game links no graphics library), so a
 /// missing driver shows here rather than as a missing-DLL dialog.
 #[cfg(target_os = "windows")]
-const NO_GPU_DRIVER: &str = "No graphics driver with Vulkan, DirectX 12 or OpenGL found: Horizon needs \
+const NO_GPU_DRIVER: &str = "No graphics driver with Vulkan, DirectX 12 or OpenGL found: Claudium needs \
      a GPU driver with one of them. Install the latest driver for your NVIDIA, AMD or Intel GPU and \
      start the game again";
 #[cfg(target_os = "macos")]
 const NO_GPU_DRIVER: &str = "No Metal graphics device found";
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-const NO_GPU_DRIVER: &str = "No Vulkan or OpenGL graphics driver found: Horizon needs the Vulkan loader \
+const NO_GPU_DRIVER: &str = "No Vulkan or OpenGL graphics driver found: Claudium needs the Vulkan loader \
      (libvulkan.so.1) and a Vulkan driver for your GPU (Mesa's, or NVIDIA's), or OpenGL through EGL";
 /// Logs a step of the renderer's start, for a native crash in the graphics
 /// driver: it leaves no panic or crash report, so the log's last line is the
 /// only sign of where the game stopped. The log file is written unbuffered;
 /// the flush is for loggers that buffer.
 fn startup_step(step: std::fmt::Arguments) {
-    log::info!("Horizon renderer: {step}");
+    log::info!("Claudium renderer: {step}");
     log::logger().flush();
 }
 /// How far the first frame on a new device got, for `startup_step`.
@@ -1180,7 +1180,7 @@ impl Renderer {
         let split = sprite_split();
         if layers > split * SPRITE_ARRAYS {
             return Err(format!(
-                "{layers} block textures; Horizon draws at most {}",
+                "{layers} block textures; Claudium draws at most {}",
                 split * SPRITE_ARRAYS
             )
             .into());
@@ -1260,7 +1260,7 @@ impl Renderer {
             crate::graphics::offer_hdr(hdr_output.is_some());
             if previous.is_none() {
                 log::info!(
-                    "Horizon renderer: HDR output {}",
+                    "Claudium renderer: HDR output {}",
                     hdr_output.map_or("not offered by this display", hdr::Output::name)
                 );
             }
@@ -1288,7 +1288,7 @@ impl Renderer {
         }
         let gpu_timer = timing::GpuTimer::new(&device, &queue);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Horizon terrain"),
+            label: Some("Claudium terrain"),
             source: wgpu::ShaderSource::Wgsl(include_str!("terrain.wgsl").into()),
         });
         let entry = |binding, visibility, ty| wgpu::BindGroupLayoutEntry {
@@ -1305,14 +1305,14 @@ impl Renderer {
         };
         let sprite_arrays = layers.div_ceil(split).max(1);
         if sprite_arrays > 1 {
-            log::info!("Horizon: {layers} block textures in {sprite_arrays} arrays");
+            log::info!("Claudium: {layers} block textures in {sprite_arrays} arrays");
         }
         let sprite_constants = [
             ("SPRITE_ARRAYS", f64::from(sprite_arrays)),
             ("SPRITE_SPLIT", f64::from(split)),
         ];
         let bindings = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Horizon terrain bindings"),
+            label: Some("Claudium terrain bindings"),
             entries: &[
                 entry(
                     0,
@@ -1361,7 +1361,7 @@ impl Renderer {
             ],
         });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Horizon terrain layout"),
+            label: Some("Claudium terrain layout"),
             bind_group_layouts: &[Some(&bindings)],
             ..Default::default()
         });
@@ -1552,7 +1552,7 @@ impl Renderer {
             Some(alpha_blend),
         );
         let globals = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("Horizon globals"),
+            label: Some("Claudium globals"),
             size: std::mem::size_of::<Globals>() as u64,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
@@ -1671,7 +1671,7 @@ impl Renderer {
         });
         let group = terrain_group(
             &device,
-            "Horizon terrain resources",
+            "Claudium terrain resources",
             &bindings,
             &globals,
             &sprite_views,
@@ -1807,7 +1807,7 @@ impl Renderer {
         )?;
         hud.atlas_texture = Some(atlas.clone());
         let entity_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Horizon entities"),
+            label: Some("Claudium entities"),
             source: wgpu::ShaderSource::Wgsl(entity_shader().into()),
         });
         let entity_bindings = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -2434,7 +2434,7 @@ impl Renderer {
             ..Default::default()
         });
         let border_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Horizon world border"),
+            label: Some("Claudium world border"),
             source: wgpu::ShaderSource::Wgsl(include_str!("border.wgsl").into()),
         });
         let border_attributes = wgpu::vertex_attr_array![0=>Float32x3,1=>Float32x2];
@@ -2494,7 +2494,7 @@ impl Renderer {
             cache: None,
         });
         let screen_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Horizon screen effects"),
+            label: Some("Claudium screen effects"),
             source: wgpu::ShaderSource::Wgsl(include_str!("screen.wgsl").into()),
         });
         let screen_attributes =
@@ -2942,7 +2942,7 @@ impl Renderer {
         let read = cull.is_some_and(|c| c.depth_test() == cull::DepthTest::InShader);
         device
             .create_texture(&wgpu::TextureDescriptor {
-                label: Some("Horizon depth"),
+                label: Some("Claudium depth"),
                 size: wgpu::Extent3d {
                     width: config.width,
                     height: config.height,
@@ -2962,7 +2962,7 @@ impl Renderer {
             .create_view(&Default::default())
     }
     /// VSync on presents with Fifo, capped to the display's refresh rate in a
-    /// window and in fullscreen alike; Horizon's present-mode setting applies
+    /// window and in fullscreen alike; Claudium's present-mode setting applies
     /// only with VSync off (`window::chosen_present_mode`).
     pub fn set_present_mode(&mut self, vsync: bool, mode: crate::graphics::PresentMode) {
         use crate::graphics::PresentMode as P;
@@ -3067,7 +3067,7 @@ impl Renderer {
         self.sections.len()
     }
     /// What a shader pack's shadow pass draws of the entities this frame: (entities or block
-    /// entities other than the player, so those Horizon's culling hides from the camera are
+    /// entities other than the player, so those Claudium's culling hides from the camera are
     /// kept for it; the local player, so its model is built in first person too). (false,
     /// false) without a pack or its shadow pass.
     pub fn pack_shadow_casters(&self) -> (bool, bool) {
@@ -3365,7 +3365,7 @@ impl Renderer {
                 .map(|s| (s.page, s.start, u64::from(s.solid + s.translucent) * 4)),
         );
     }
-    /// Horizon's resolution scale (world pixels per window pixel) and FXAA.
+    /// Claudium's resolution scale (world pixels per window pixel) and FXAA.
     /// Configures `surface` and, while HDR output is on, sends its HDR metadata
     /// again: a new swapchain starts without it.
     fn configure(
@@ -3419,7 +3419,7 @@ impl Renderer {
             None => "HDR: not offered by this display".into(),
         }
     }
-    /// HDR output (Horizon setting): HDR10 or scRGB at `paper_white` nits, the world's
+    /// HDR output (Claudium setting): HDR10 or scRGB at `paper_white` nits, the world's
     /// highlights expanded up to `peak` nits. Off where the surface can't present it.
     pub fn set_hdr(
         &mut self,
@@ -3455,11 +3455,11 @@ impl Renderer {
             self.configure_surface();
             match output {
                 Some(output) => log::info!(
-                    "Horizon renderer: HDR on: {} ({:?}), {paper_white}/{peak} nits",
+                    "Claudium renderer: HDR on: {} ({:?}), {paper_white}/{peak} nits",
                     output.name(),
                     output.format()
                 ),
-                None => log::info!("Horizon renderer: HDR off"),
+                None => log::info!("Claudium renderer: HDR off"),
             }
         }
         if let Some(hdr) = &mut self.hdr {
@@ -3567,7 +3567,7 @@ impl Renderer {
         self.native = None;
         self.pack_atlas = None;
     }
-    /// Runs the sky, material and post stages of one of Horizon's own shader packs from now
+    /// Runs the sky, material and post stages of one of Claudium's own shader packs from now
     /// on (`None`: no pack), with its options' values; replaces a `shaders/` pack. Returns the
     /// stages' labels; on an error the pack that ran keeps running.
     pub fn set_native_shader_pack(
@@ -3593,7 +3593,7 @@ impl Renderer {
         }
         Ok(labels)
     }
-    /// What a shader pack's gbuffers programs read from Horizon's geometry: the sky's, and
+    /// What a shader pack's gbuffers programs read from Claudium's geometry: the sky's, and
     /// terrain's in the pack's block atlas (made here when missing; none when it does not fit).
     pub fn pack_inputs(&mut self) -> horizon_shaders::GameInputs {
         horizon_shaders::GameInputs {
@@ -3681,7 +3681,7 @@ impl Renderer {
         let views = sprite_views(&self.sprite_textures, &self.sprite_unused, Some(levels + 1));
         self.group = terrain_group(
             &self.device,
-            "Horizon terrain resources",
+            "Claudium terrain resources",
             &self.terrain_layout,
             &self.globals,
             &views,
@@ -3887,7 +3887,7 @@ impl Renderer {
         let mut encoder = section_copies.unwrap_or_else(|| {
             self.device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("Horizon frame"),
+                    label: Some("Claudium frame"),
                 })
         });
         if self.animated_textures {
@@ -4156,7 +4156,7 @@ impl Renderer {
         // to phase 2, after the others, with instance counts of 0. Whether
         // the frame has draws enough goes by the last one's.
         // A shader pack drawing terrain draws all of it: occlusion culling reads the depth of
-        // Horizon's own terrain draw.
+        // Claudium's own terrain draw.
         let pack_terrain = !frame.title
             && self
                 .pack_post
@@ -4494,7 +4494,7 @@ impl Renderer {
                 .buffer(&mut encoder, &self.outline, 0, bytemuck::cast_slice(&lines));
         }
         // While a shader pack draws entities, the runs of `entity_spans` its programs draw are
-        // left out of Horizon's own entity draw.
+        // left out of Claudium's own entity draw.
         let mut entities = frame.entities;
         if !frame.title
             && let Some((_, Some(post))) = &mut self.pack_post
@@ -4765,7 +4765,7 @@ impl Renderer {
         }
         // The world's targets: the screen, or the scaled target of `post`.
         let pack_post = !frame.title && self.pack_post.as_ref().is_some_and(|p| p.1.is_some());
-        // One of Horizon's own packs reads the same world target.
+        // One of Claudium's own packs reads the same world target.
         let native_post = !frame.title && self.native.as_ref().is_some_and(|n| n.post.is_some());
         if let Some(timer) = Self::pass_timer(&mut self.pack_post, &mut self.native)
             && timer.is_some() != self.pass_timing
@@ -4842,7 +4842,7 @@ impl Renderer {
             }
         };
         let sky_visible = sky_open(frame);
-        // One of Horizon's own packs: this frame's inputs; in a timed frame its sky draws in a
+        // One of Claudium's own packs: this frame's inputs; in a timed frame its sky draws in a
         // pass of its own, so that it has a time of its own.
         let mut native_sky_pass = false;
         if !frame.title
@@ -4893,7 +4893,7 @@ impl Renderer {
             pass.set_bind_group(0, &self.group, &[]);
             sky.draw(&mut pass, &native.frame);
         }
-        // One of Horizon's own packs with a material stage: terrain draws with its pipelines,
+        // One of Claudium's own packs with a material stage: terrain draws with its pipelines,
         // which read the pack's frame at group 3.
         let material = self
             .native
@@ -4923,7 +4923,7 @@ impl Renderer {
                 },
             })];
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Horizon world"),
+                label: Some("Claudium world"),
                 color_attachments: &attachments,
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                     view: world_depth,
@@ -5574,7 +5574,7 @@ impl Renderer {
                 match self.write_hdr_screenshot(&hdr_path, &hdr_buffer) {
                     Ok(()) => log::info!("Saved HDR screenshot to {}", hdr_path.display()),
                     Err(e) => log::warn!(
-                        "Horizon renderer: HDR screenshot {}: {e}",
+                        "Claudium renderer: HDR screenshot {}: {e}",
                         hdr_path.display()
                     ),
                 }
@@ -5600,7 +5600,7 @@ impl Renderer {
                 && let Some(marker) = self.hdr_marker.take()
             {
                 let _ = std::fs::remove_file(marker);
-                log::info!("Horizon renderer: HDR output presented its first frame");
+                log::info!("Claudium renderer: HDR output presented its first frame");
             }
             if reconfigure && let Some(surface) = &self.surface {
                 Self::configure(
@@ -5642,7 +5642,7 @@ fn copy_frame(
     [width, height]: [u32; 2],
 ) -> wgpu::Buffer {
     let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("Horizon screenshot"),
+        label: Some("Claudium screenshot"),
         size: u64::from(padded_row(width)) * u64::from(height),
         usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
         mapped_at_creation: false,
@@ -6479,7 +6479,7 @@ fn flush_display_log() {
 fn reported(l: horizon_hdr::wayland::Luminances) -> crate::graphics::Reported {
     let peak = (l.target_max * 203.0 / l.reference.max(1.0)).round() as u32;
     log_display(format!(
-        "Horizon renderer: the compositor shows this window with reference white {} nits, \
+        "Claudium renderer: the compositor shows this window with reference white {} nits, \
          {}..{} nits: peak {peak} nits in HDR output's scale",
         l.reference, l.target_min, l.target_max,
     ));

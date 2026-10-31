@@ -1125,7 +1125,7 @@ impl Game<'_> {
         match index {
             Some(i) => Some(DialogHolder::Registry(i as i32)),
             None => {
-                log::warn!("Horizon: no dialog {id} in the registry");
+                log::warn!("Claudium: no dialog {id} in the registry");
                 None
             }
         }

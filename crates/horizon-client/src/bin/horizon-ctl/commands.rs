@@ -188,8 +188,8 @@ macro_rules! cmd {
 pub const COMMANDS: &[Cmd] = &[
     // Session
     cmd!("launch", Session, "launch [--world NAME] [--seed N] [--creative] [--version TAG] [--game PATH] [--wait] [GAME ARGS...]",
-        "start Horizon with the control socket and wait until it answers",
-        "Finds the game in this order: --game PATH; a horizon-client next to horizon-ctl (a build folder, a release folder or a launcher install); the newest version installed by the Horizon launcher (--version TAG picks one). Launcher installs run with their prepared resources and keep saves in the game home ($HORIZON_HOME, else ~/.local/share/horizon). --wait also waits until the player has spawned and chunks are loaded. Other arguments go to the game (horizon-client --help lists them). The game's output goes to a .log file beside the socket.",
+        "start Claudium with the control socket and wait until it answers",
+        "Finds the game in this order: --game PATH; a horizon-client next to horizon-ctl (a build folder, a release folder or a launcher install); the newest version installed by the Claudium launcher (--version TAG picks one). Launcher installs run with their prepared resources and keep saves in the game home ($HORIZON_HOME, else ~/.local/share/claudium). --wait also waits until the player has spawned and chunks are loaded. Other arguments go to the game (horizon-client --help lists them). The game's output goes to a .log file beside the socket.",
         ["horizon-ctl launch --world Survival --seed 42 --wait", "horizon-ctl launch --world Flat --creative --render-distance 8"],
         &[flag("world", Ty::Str, "world folder to open or create"), flag("seed", Ty::Str, "seed for a new world"), flag("creative", Ty::Bool, "creative mode for a new world"),
           flag("version", Ty::Str, "an installed launcher version tag such as v2026.10.13"), flag("game", Ty::Str, "path to a horizon-client binary"),
@@ -207,7 +207,7 @@ pub const COMMANDS: &[Cmd] = &[
         "Polls status every 250 ms; replies with the status, or an error after SECONDS (default 120).",
         ["horizon-ctl wait-ready 300"], &[opt("seconds", Ty::Num, "how long to wait (default 120)")], mcp: true, local: true),
     cmd!("logs", Session, "logs [--lines N] [--crash]", "the end of the game's log, or its newest crash report",
-        "Reads the game home ($HORIZON_HOME, else ~/.local/share/horizon): logs/latest.log (the last N lines, default 100) or, with --crash, the newest file in crash-reports. Read-only; works whether the game runs or not.",
+        "Reads the game home ($HORIZON_HOME, else ~/.local/share/claudium): logs/latest.log (the last N lines, default 100) or, with --crash, the newest file in crash-reports. Read-only; works whether the game runs or not.",
         ["horizon-ctl logs", "horizon-ctl logs --lines 300", "horizon-ctl logs --crash"],
         &[flag("lines", Ty::Int, "how many lines of latest.log (default 100)"), flag("crash", Ty::Bool, "the newest crash report instead")],
         mcp: true, local: true),
@@ -380,7 +380,7 @@ pub const COMMANDS: &[Cmd] = &[
     cmd!("respawn", Screens, "respawn", "respawn from the death screen", "", ["horizon-ctl respawn"], &[], mcp: true, local: false),
     cmd!("pause", Screens, "pause", "open the pause menu", "", ["horizon-ctl pause"], &[], mcp: true, local: false),
     cmd!("resume", Screens, "resume", "leave the pause menu", "", ["horizon-ctl resume"], &[], mcp: true, local: false),
-    cmd!("options", Screens, "options [PAGE]", "open the options screen, or one of its pages (Horizon's too)",
+    cmd!("options", Screens, "options [PAGE]", "open the options screen, or one of its pages (Claudium's too)",
         "Then ui lists its widgets and click, set and type change them, as with the mouse. options-set changes an options.txt value without the screen.",
         ["horizon-ctl options video", "horizon-ctl options horizon"], &[opt("page", PAGES, "the page (default: the main options)")], mcp: true, local: false),
     cmd!("book", Screens, "book [next|back|take|done]", "the open book or lectern: its page text, or press one of its buttons",
@@ -453,7 +453,7 @@ pub fn find(name: &str) -> Option<&'static Cmd> {
 /// `horizon-ctl help`.
 pub fn overview() -> String {
     let mut out = String::from(
-        "horizon-ctl: play and script a running Horizon from the command line.\n\n\
+        "horizon-ctl: play and script a running Claudium from the command line.\n\n\
          usage: horizon-ctl [--socket PATH] [--timeout SECONDS] [--pretty] COMMAND [ARGS...]\n\
          \x20      horizon-ctl COMMAND --help      (or: horizon-ctl help COMMAND)\n",
     );

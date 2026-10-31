@@ -15,7 +15,7 @@ pub const FILE: &str = "server.toml";
 pub const PROPERTIES: &str = "server.properties";
 
 /// What `init` writes: every typed setting, with vanilla 26.3's defaults and what it means.
-pub const TEMPLATE: &str = r##"# Horizon server settings (docs/server.md). The server writes them into server.properties before
+pub const TEMPLATE: &str = r##"# Claudium server settings (docs/server.md). The server writes them into server.properties before
 # every start: edit this file, not that one.
 
 [server]
@@ -56,7 +56,7 @@ keep = 1                     # other releases kept by updates, besides the one i
 bind = "127.0.0.1:8130"      # the web panel: this computer only, or a tailnet address (100.x); "" turns it off
 allow_public = false         # true lets bind be any address; never put the panel on the open internet
 
-# Horizon's anticheat (docs/anticheat.md) is off: the server checks only what vanilla's checks. To turn it on:
+# Claudium's anticheat (docs/anticheat.md) is off: the server checks only what vanilla's checks. To turn it on:
 # [anticheat]
 # enabled = true
 # alerts = true              # tell online operators (alert_level = 2) in their chat; the console always is

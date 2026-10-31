@@ -77,11 +77,11 @@ pub struct Post {
 impl Post {
     pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Horizon post"),
+            label: Some("Claudium post"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../world_post.wgsl").into()),
         });
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Horizon post bindings"),
+            label: Some("Claudium post bindings"),
             entries: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
@@ -113,13 +113,13 @@ impl Post {
         };
         let float = wgpu::TextureSampleType::Float { filterable: true };
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Horizon post"),
+            label: Some("Claudium post"),
             bind_group_layouts: &[Some(&layout)],
             ..Default::default()
         });
         let pipeline = |entry: &str, layout: &wgpu::PipelineLayout, format| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Horizon post"),
+                label: Some("Claudium post"),
                 layout: Some(layout),
                 vertex: wgpu::VertexState {
                     module: &shader,
@@ -149,7 +149,7 @@ impl Post {
         // Intel GPUs on Linux), TAA cannot compile its pipeline.
         let taa_resources = {
             let taa_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Horizon TAA bindings"),
+                label: Some("Claudium TAA bindings"),
                 entries: &[
                     texture(0, float),
                     wgpu::BindGroupLayoutEntry {
@@ -174,14 +174,14 @@ impl Post {
             });
             let taa_pipeline_layout =
                 device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                    label: Some("Horizon TAA"),
+                    label: Some("Claudium TAA"),
                     bind_group_layouts: &[Some(&taa_layout)],
                     ..Default::default()
                 });
             let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
             let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
             let taa_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Horizon TAA"),
+                label: Some("Claudium TAA"),
                 layout: Some(&taa_pipeline_layout),
                 vertex: wgpu::VertexState {
                     module: &shader,
@@ -209,7 +209,7 @@ impl Post {
             match internal.or(pollster::block_on(validation.pop())) {
                 None => {
                     let uniform = device.create_buffer(&wgpu::BufferDescriptor {
-                        label: Some("Horizon TAA"),
+                        label: Some("Claudium TAA"),
                         size: std::mem::size_of::<TaaUniform>() as u64,
                         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                         mapped_at_creation: false,
@@ -221,13 +221,13 @@ impl Post {
                     })
                 }
                 Some(e) => {
-                    log::warn!("Horizon renderer: temporal anti-aliasing unavailable ({e})");
+                    log::warn!("Claudium renderer: temporal anti-aliasing unavailable ({e})");
                     None
                 }
             }
         };
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Horizon post"),
+            label: Some("Claudium post"),
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
@@ -356,7 +356,7 @@ impl Post {
                 });
                 let resolve = [0, 1].map(|i| {
                     device.create_bind_group(&wgpu::BindGroupDescriptor {
-                        label: Some("Horizon TAA"),
+                        label: Some("Claudium TAA"),
                         layout: &res.layout,
                         entries: &[
                             wgpu::BindGroupEntry {
@@ -413,7 +413,7 @@ impl Post {
     /// Bindings that copy (or anti-alias) `view` onto the screen in `finish_with`.
     pub fn bind(&self, device: &wgpu::Device, view: &wgpu::TextureView) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Horizon post"),
+            label: Some("Claudium post"),
             layout: &self.layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -456,7 +456,7 @@ impl Post {
             },
         })];
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Horizon TAA"),
+            label: Some("Claudium TAA"),
             color_attachments: &attachments,
             ..Default::default()
         });
@@ -484,7 +484,7 @@ impl Post {
             },
         })];
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Horizon post"),
+            label: Some("Claudium post"),
             color_attachments: &attachments,
             ..Default::default()
         });

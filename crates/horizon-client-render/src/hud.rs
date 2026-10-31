@@ -1500,7 +1500,7 @@ impl HudRenderer {
         glint_sampler: &wgpu::Sampler,
     ) -> Result<Self> {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Horizon HUD"),
+            label: Some("Claudium HUD"),
             source: wgpu::ShaderSource::Wgsl(include_str!("hud.wgsl").into()),
         });
 

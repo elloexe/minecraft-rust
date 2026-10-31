@@ -160,7 +160,7 @@ pub fn read_hello(stream: &mut TcpStream) -> io::Result<Hello> {
         m if m == CODE_MAGIC => Ok(Hello::Code(session)),
         _ => Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            "not a Horizon stream",
+            "not a Claudium stream",
         )),
     }
 }
@@ -177,7 +177,7 @@ pub fn code_hello(stream: &mut TcpStream, session: u64) -> io::Result<()> {
     if theirs != hello {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            "not a Horizon host",
+            "not a Claudium host",
         ));
     }
     Ok(())

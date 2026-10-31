@@ -572,7 +572,7 @@ impl Item {
     /// while it is on.
     fn blocked(self, s: &Settings) -> Option<&'static str> {
         if !self.available() {
-            return Some("This feature is not yet available in Horizon.");
+            return Some("This feature is not yet available in Claudium.");
         }
         match self {
             Item::Horizon(H::HdrSettings | H::Hdr) if !crate::graphics::hdr_offered() => {

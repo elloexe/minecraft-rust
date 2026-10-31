@@ -113,7 +113,7 @@ impl Game<'_> {
             found = true;
         }
         if found && let Err(e) = servers::save(&file, &list) {
-            log::warn!("Horizon: could not save {}: {e}", file.display());
+            log::warn!("Claudium: could not save {}: {e}", file.display());
         }
     }
 

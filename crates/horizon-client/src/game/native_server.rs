@@ -515,7 +515,7 @@ impl Game<'_> {
         let (tree, levels, problems) =
             command_tree(&commands, |name| host.hub.vanilla_command(name));
         for p in problems {
-            log::warn!("Horizon: a native mod's command was left out: {p}");
+            log::warn!("Claudium: a native mod's command was left out: {p}");
         }
         host.hub.set_mod_commands(0, tree);
         host.native_commands = Some(levels);

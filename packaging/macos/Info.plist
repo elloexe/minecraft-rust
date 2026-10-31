@@ -8,11 +8,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>Horizon</string>
 	<key>CFBundleExecutable</key>
-	<string>horizon-launcher</string>
+	<string>claudium-launcher</string>
 	<key>CFBundleIconFile</key>
-	<string>horizon</string>
+	<string>claudium</string>
 	<key>CFBundleIdentifier</key>
-	<string>dev.horizon.launcher</string>
+	<string>dev.claudium.launcher</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
