@@ -6,6 +6,18 @@ are ours.
 
 ## Unreleased
 
+### CI
+
+- Removed nine Python tests that asserted on upstream machinery this fork does
+  not have: the issue-tracker command bots (`test_claim_command`,
+  `test_triage_command`, `test_overlap_note`, `test_pr_labels`), the nightly
+  release channel (`test_nightly`, `test_nightly_set`), the README parity table
+  (`test_parity`, `test_parity_gaps`) and roadmap generation (`test_roadmap`).
+  Their workflows, README section and ROADMAP were already removed or moved, so
+  the tests failed on main's `verify` job. The ~430 kernel parity tests and the
+  parity-harness runner tests are untouched. The orphaned tool scripts under
+  `tools/ci/` and `tools/` stay for now (some are shared by `test_release_train`).
+
 ### Debranding
 
 - Renamed every player-facing "Horizon" to "Claudium": 684 string literals across
