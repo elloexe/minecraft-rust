@@ -9,8 +9,8 @@ again. The normal game path does not create a compositor.
 A standalone example exercises this without game resources, profiles, audio or launcher data:
 
 ```sh
-cargo run --profile fast -p horizon-client-render --example compositor
-cargo run --profile fast -p horizon-client-render --example compositor -- --smoke
+cargo run --profile fast -p claudium-client-render --example compositor
+cargo run --profile fast -p claudium-client-render --example compositor -- --smoke
 ```
 
 The window shows a red view on the left and a blue one on the right. Resize it to check clipping

@@ -1,17 +1,17 @@
 //! Repository tasks, run with `cargo run -p xtask -- TASK`.
 //!
-//! `package BINARY OUTDIR`: a playable Horizon folder with the game binary, horizon-ctl,
-//! horizon-prepare and horizon-server (built beside it: cargo build --release -p horizon-client
-//! --bins -p horizon-prepare -p horizon-server), the exporters horizon-prepare compiles, its sources (the launcher compares
+//! `package BINARY OUTDIR`: a playable Claudium folder with the game binary, claudium-ctl,
+//! claudium-prepare and claudium-server (built beside it: cargo build --release -p claudium-client
+//! --bins -p claudium-prepare -p claudium-server), the exporters claudium-prepare compiles, its sources (the launcher compares
 //! them to its own), and PLAY.txt. It holds none of Minecraft's files: players prepare those
 //! from their own copy. .github/workflows/release.yml makes the release folders with it.
 //!
 //! `package-server ENGINE OUTDIR`: a server folder (docs/server.md): the server build of the game
-//! (`cargo build --release -p horizon-client --no-default-features`, without sound or controllers)
-//! as horizon-engine, with horizon-prepare and horizon-server from beside it and the same sources.
+//! (`cargo build --release -p claudium-client --no-default-features`, without sound or controllers)
+//! as claudium-engine, with claudium-prepare and claudium-server from beside it and the same sources.
 //!
-//! `tokens`: writes `crates/horizon-theme/tokens.css`, the design tokens of `crates/horizon-theme` as CSS
-//! custom properties (a horizon-theme test fails when the file is out of date).
+//! `tokens`: writes `crates/claudium-theme/tokens.css`, the design tokens of `crates/claudium-theme` as CSS
+//! custom properties (a claudium-theme test fails when the file is out of date).
 //!
 //! `icons`: renders the icon masters in `docs/media/brand` (with `rsvg-convert`, from librsvg)
 //! into every size the platforms and the website use, and packs `packaging/icons/claudium.ico`
@@ -26,20 +26,20 @@ const USAGE: &str = "usage: cargo run -p xtask -- package BINARY OUTDIR | packag
 /// What the release folder takes from the repository at HEAD, as `git archive` writes it.
 const ARCHIVED: [&str; 5] = [
     "tools",
-    "mods/horizon/src/test/java",
-    "crates/horizon-prepare",
+    "mods/claudium/src/test/java",
+    "crates/claudium-prepare",
     "research-lock.json",
     "LICENSE",
 ];
 
-/// The programs that sit beside the client: horizon-ctl, the command line and MCP server that
-/// play the game, horizon-prepare, which prepares the resources from the player's own
-/// Minecraft, and horizon-server, which hosts a server with the client as its engine
+/// The programs that sit beside the client: claudium-ctl, the command line and MCP server that
+/// play the game, claudium-prepare, which prepares the resources from the player's own
+/// Minecraft, and claudium-server, which hosts a server with the client as its engine
 /// (docs/server.md).
-const TOOLS: [&str; 3] = ["horizon-ctl", "horizon-prepare", "horizon-server"];
+const TOOLS: [&str; 3] = ["claudium-ctl", "claudium-prepare", "claudium-server"];
 
 /// The programs beside the engine in a server folder.
-const SERVER_TOOLS: [&str; 2] = ["horizon-prepare", "horizon-server"];
+const SERVER_TOOLS: [&str; 2] = ["claudium-prepare", "claudium-server"];
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -79,9 +79,9 @@ fn git(repo: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
 }
 
 fn tokens() -> Result<(), String> {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../crates/horizon-theme/tokens.css");
-    fs::write(&path, horizon_theme::css()).map_err(|e| format!("{}: {e}", path.display()))?;
-    println!("wrote crates/horizon-theme/tokens.css");
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../crates/claudium-theme/tokens.css");
+    fs::write(&path, claudium_theme::css()).map_err(|e| format!("{}: {e}", path.display()))?;
+    println!("wrote crates/claudium-theme/tokens.css");
     Ok(())
 }
 
@@ -192,10 +192,10 @@ fn icons() -> Result<(), String> {
     write(&packaging.join("claudium.icns"), &icns(&entries))?;
     // The window icon the game and the launcher set at run time (X11 and Windows title bars).
     write(
-        &repo.join("crates/horizon-theme/icons/claudium-64.png"),
+        &repo.join("crates/claudium-theme/icons/claudium-64.png"),
         &render(&square, (64, 64))?,
     )?;
-    // Avatars, and the website's icons (horizon-site copies docs/media/brand/web/ into its public/).
+    // Avatars, and the website's icons (claudium-site copies docs/media/brand/web/ into its public/).
     let avatar = brand.join("avatar.svg");
     for (svg, size, out) in [
         (
@@ -230,14 +230,14 @@ fn package(binary: &Path, out: &Path) -> Result<(), String> {
 fn package_server(engine: &Path, out: &Path) -> Result<(), String> {
     let repo = new_folder(out)?;
     copy_exporters(&repo.join("exporters"), &out.join("exporters"))?;
-    copy(engine, &out.join(program_name(engine, "horizon-engine")))?;
+    copy(engine, &out.join(program_name(engine, "claudium-engine")))?;
     copy_beside(engine, &SERVER_TOOLS, out)
 }
 
 /// Release builds supply only our compiled classes and their integrity manifest.
 fn copy_exporters(from: &Path, to: &Path) -> Result<(), String> {
     if !from.join("manifest.json").is_file() {
-        return Err("Missing exporters/manifest.json; run horizon-prepare compile-exporters and copy its bundle to exporters/".into());
+        return Err("Missing exporters/manifest.json; run claudium-prepare compile-exporters and copy its bundle to exporters/".into());
     }
     copy_exporter_tree(from, to)
 }
@@ -294,7 +294,7 @@ fn copy_beside(program: &Path, tools: &[&str], out: &Path) -> Result<(), String>
             .join(program_name(program, tool));
         if !path.is_file() {
             return Err(format!(
-                "{} is missing; build it too: cargo build --release -p horizon-client --bins -p horizon-prepare -p horizon-server",
+                "{} is missing; build it too: cargo build --release -p claudium-client --bins -p claudium-prepare -p claudium-server",
                 path.display()
             ));
         }

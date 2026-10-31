@@ -38,7 +38,7 @@ LOGIN = re.compile(r"^@?([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))$")
 USAGE = "Use `/claim` or `/unclaim` (the trusted reviewers: `/unclaim @login`)."
 # The login GitHub shows for this workflow's token: `github-actions[bot]` in REST, `github-actions` in GraphQL.
 BOT_LOGINS = ("github-actions", "github-actions[bot]")
-# Kira's Discord `/claim` marks an issue with this label (horizon-rust/kira, WORK.label): it is taken too.
+# Kira's Discord `/claim` marks an issue with this label (elloexe/kira, WORK.label): it is taken too.
 KIRA_LABEL = "in progress"
 
 

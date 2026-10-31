@@ -1,12 +1,12 @@
-//! New instance's kinds (docs/design-system.md, "Night"; plan R0, screen 4): Horizon, Vanilla
+//! New instance's kinds (docs/design-system.md, "Night"; plan R0, screen 4): Claudium, Vanilla
 //! (Minecraft: Java Edition as Mojang ships it) and Modded (with Fabric or Quilt). A Java kind picks
 //! its version from Mojang's public list (`minecraft_versions`), fetched once when the dialog first
 //! needs it; the game itself comes with the first Play, for an account that owns it.
 use super::*;
 use crate::plate::alpha;
 use crate::shell::{c, Action};
-use horizon_launcher::loaders::{self, Kind as Loader};
-use horizon_launcher::minecraft_versions::{Kind as VersionKind, Versions};
+use claudium_launcher::loaders::{self, Kind as Loader};
+use claudium_launcher::minecraft_versions::{Kind as VersionKind, Versions};
 use servers_page::Field;
 use theme::night;
 
@@ -15,7 +15,7 @@ const ROWS: usize = 60;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum NewKind {
-    Horizon,
+    Claudium,
     Vanilla,
     Modded,
 }
@@ -34,7 +34,7 @@ pub(super) struct JavaChoice {
 impl Default for JavaChoice {
     fn default() -> Self {
         JavaChoice {
-            kind: NewKind::Horizon,
+            kind: NewKind::Claudium,
             loader: Loader::Fabric,
             version: None,
             snapshots: false,
@@ -82,7 +82,7 @@ impl Launcher {
             VersionList::Ready(v) => Some(v),
             _ => None,
         };
-        (j.kind != NewKind::Horizon)
+        (j.kind != NewKind::Claudium)
             .then(|| j.minecraft(versions))
             .flatten()
             .map(|mc| j.default_name(&mc))
@@ -105,13 +105,13 @@ impl Launcher {
     /// Picks the dialog's kind; a Java one fetches Mojang's list the first time.
     pub(super) fn pick_kind(&mut self, kind: NewKind, cx: &mut Context<Self>) {
         self.change(|j| j.kind = kind);
-        if kind == NewKind::Horizon || !matches!(self.instances.versions, VersionList::NotAsked) {
+        if kind == NewKind::Claudium || !matches!(self.instances.versions, VersionList::NotAsked) {
             return;
         }
         self.instances.versions = VersionList::Loading;
         let task = cx
             .background_executor()
-            .spawn(async { horizon_launcher::minecraft_versions::load() });
+            .spawn(async { claudium_launcher::minecraft_versions::load() });
         cx.spawn(async move |this, cx| {
             let list = task.await;
             let _ = this.update(cx, |this, cx| {
@@ -130,13 +130,13 @@ impl Launcher {
         .detach();
     }
 
-    /// The tabs over a new instance's dialog: Horizon, Vanilla, Modded.
+    /// The tabs over a new instance's dialog: Claudium, Vanilla, Modded.
     pub(super) fn kind_tabs(&self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let now = self.instances.dialog.as_ref().map(|d| d.java.kind);
         div().flex().gap(px(4.)).children(
             [
-                (NewKind::Horizon, "Claudium"),
+                (NewKind::Claudium, "Claudium"),
                 (NewKind::Vanilla, "Vanilla"),
                 (NewKind::Modded, "Modded"),
             ]

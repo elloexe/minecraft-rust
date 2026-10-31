@@ -1,6 +1,6 @@
 # Neighboring model-face visibility
 
-`horizon-world::block_render::FaceVisibility` decides whether to emit a model
+`claudium-world::block_render::FaceVisibility` decides whether to emit a model
 quad with a culling direction beside a neighboring block. It prepares immutable
 face geometry from the pinned raw occlusion shapes, shares faces across states,
 and caches shape-pair subtraction with bounded memory. The development client

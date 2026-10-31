@@ -1,10 +1,10 @@
-//! Servers hosted from the launcher. Every server is a `horizon-server` folder and the launcher drives
-//! `horizon-server` (docs/server.md in the repository) rather than its own copy of the logic: `init`,
+//! Servers hosted from the launcher. Every server is a `claudium-server` folder and the launcher drives
+//! `claudium-server` (docs/server.md in the repository) rather than its own copy of the logic: `init`,
 //! `start`, `stop`, `config set`, `backup`, `restore`, `update`, `service`, and the control API the running
 //! supervisor serves on 127.0.0.1 for the live status, the log and console commands.
 //!
-//! The programs come from an installed Horizon version, laid out as `install.sh` lays them out
-//! (`server-runtime/releases/<tag>`, `current`, `game-files/`), so `horizon-server update` and its
+//! The programs come from an installed Claudium version, laid out as `install.sh` lays them out
+//! (`server-runtime/releases/<tag>`, `current`, `game-files/`), so `claudium-server update` and its
 //! rollback work on them unchanged. The game files are the player's own, copied from the version the
 //! launcher prepared: nothing of Mojang's is downloaded or shipped.
 
@@ -18,9 +18,9 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 
 const PROGRAM: &str = if cfg!(windows) {
-    "horizon-server.exe"
+    "claudium-server.exe"
 } else {
-    "horizon-server"
+    "claudium-server"
 };
 
 /// The Minecraft EULA a server owner agrees to.
@@ -106,7 +106,7 @@ fn trash_stopped_server(
     {
         return Err("This is not a server folder.".into());
     }
-    let state = dir.join(".horizon");
+    let state = dir.join(".claudium");
     fs::create_dir_all(&state).map_err(|e| e.to_string())?;
     // The supervisor holds this same lock throughout starting, running and stopping.
     // Hold it through the move so a stale UI/API status cannot delete a live server.
@@ -157,13 +157,13 @@ pub fn new_folder(name: &str) -> PathBuf {
     dir
 }
 
-// ----- The programs: an installed Horizon version, laid out as install.sh does ---------------------
+// ----- The programs: an installed Claudium version, laid out as install.sh does ---------------------
 
 pub fn runtime_root() -> PathBuf {
     backend::data_dir().join("server-runtime")
 }
 
-/// `horizon-server` of the release in use, once one is set up.
+/// `claudium-server` of the release in use, once one is set up.
 pub fn program() -> Option<PathBuf> {
     Some(runtime_root().join("current").join(PROGRAM)).filter(|p| p.is_file())
 }
@@ -174,19 +174,19 @@ pub fn runtime_release() -> Option<String> {
     Some(target.file_name()?.to_string_lossy().into_owned())
 }
 
-/// Where `horizon-server` finds the game files: the folder install.sh keeps across updates.
+/// Where `claudium-server` finds the game files: the folder install.sh keeps across updates.
 pub fn game_files(root: &Path, game_version: &str) -> PathBuf {
-    root.join("game-files/horizon-client").join(game_version)
+    root.join("game-files/claudium-client").join(game_version)
 }
 
 /// Whether the servers' game files are there.
 pub fn game_files_ready() -> bool {
     game_files(&runtime_root(), "26.3")
-        .join("horizon-resources.json")
+        .join("claudium-resources.json")
         .is_file()
 }
 
-/// Whether an installed version can host: it ships `horizon-server` and is prepared.
+/// Whether an installed version can host: it ships `claudium-server` and is prepared.
 pub fn can_host(tag: &str) -> Result<(), String> {
     if !backend::version_dir(tag).join(PROGRAM).is_file() {
         return Err(format!(
@@ -231,16 +231,16 @@ pub fn set_up_in(root: &Path, version: &Path, tag: &str, game_version: &str) -> 
         }
         let local = release.join(".local");
         fs::create_dir_all(&local).map_err(|e| e.to_string())?;
-        let link = local.join("horizon-client");
+        let link = local.join("claudium-client");
         if link.symlink_metadata().is_err() {
-            fs::create_dir_all(root.join("game-files/horizon-client"))
+            fs::create_dir_all(root.join("game-files/claudium-client"))
                 .map_err(|e| e.to_string())?;
-            point(&link, &root.join("game-files/horizon-client")).map_err(|e| e.to_string())?;
+            point(&link, &root.join("game-files/claudium-client")).map_err(|e| e.to_string())?;
         }
         point(&root.join("current"), &release).map_err(|e| e.to_string())?;
     }
     // The game files: a copy (preparing again rewrites files in place), swapped in whole.
-    let from = version.join(".local/horizon-client").join(game_version);
+    let from = version.join(".local/claudium-client").join(game_version);
     let to = game_files(root, game_version);
     let fresh = to.with_extension("copying");
     let _ = fs::remove_dir_all(&fresh);
@@ -307,9 +307,9 @@ fn point(link: &Path, target: &Path) -> std::io::Result<()> {
     }
 }
 
-// ----- Running horizon-server -------------------------------------------------------------------
+// ----- Running claudium-server -------------------------------------------------------------------
 
-/// `horizon-server --dir <dir> <args>`.
+/// `claudium-server --dir <dir> <args>`.
 pub fn command(dir: &Path, args: &[&str]) -> Result<Command, String> {
     let program = program().ok_or(
         "The server programs aren't set up yet: create a server, or press Prepare on its page.",
@@ -327,14 +327,14 @@ fn log_length(dir: &Path) -> u64 {
     fs::metadata(supervisor_log(dir)).map_or(0, |m| m.len())
 }
 
-/// Runs one `horizon-server` command to its end: what it printed, or the problem in plain words.
+/// Runs one `claudium-server` command to its end: what it printed, or the problem in plain words.
 pub fn run(dir: &Path, args: &[&str]) -> Result<String, Problem> {
     let since = log_length(dir);
     let output = command(dir, args)
         .map_err(Problem::plain)?
         .stdin(Stdio::null())
         .output()
-        .map_err(|e| Problem::plain(format!("Couldn't run horizon-server: {e}")))?;
+        .map_err(|e| Problem::plain(format!("Couldn't run claudium-server: {e}")))?;
     let out = String::from_utf8_lossy(&output.stdout).into_owned();
     if output.status.success() {
         Ok(out)
@@ -344,7 +344,7 @@ pub fn run(dir: &Path, args: &[&str]) -> Result<String, Problem> {
     }
 }
 
-/// Runs a long `horizon-server` command, passing each line it prints to `line`.
+/// Runs a long `claudium-server` command, passing each line it prints to `line`.
 pub fn run_streamed(dir: &Path, args: &[&str], line: &dyn Fn(String)) -> Result<(), Problem> {
     use std::io::{BufRead, BufReader, Read};
     let since = log_length(dir);
@@ -354,7 +354,7 @@ pub fn run_streamed(dir: &Path, args: &[&str], line: &dyn Fn(String)) -> Result<
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| Problem::plain(format!("Couldn't run horizon-server: {e}")))?;
+        .map_err(|e| Problem::plain(format!("Couldn't run claudium-server: {e}")))?;
     let mut err = child.stderr.take();
     let errors = std::thread::spawn(move || {
         let mut text = String::new();
@@ -415,7 +415,7 @@ impl Problem {
         }
     }
 
-    /// Reads what `horizon-server` (and the game log it points at) said.
+    /// Reads what `claudium-server` (and the game log it points at) said.
     /// `since` is the background server's log length before the command: only what it logged after counts.
     pub fn explain(output: &str, dir: &Path, since: u64) -> Self {
         let log = fs::read(supervisor_log(dir)).unwrap_or_default();
@@ -468,7 +468,7 @@ impl Problem {
         let said = both
             .lines()
             .rev()
-            .find_map(|l| l.strip_prefix("horizon-server: "))
+            .find_map(|l| l.strip_prefix("claudium-server: "))
             .map(str::to_string)
             .or_else(|| {
                 output
@@ -477,7 +477,7 @@ impl Problem {
                     .find(|l| !l.trim().is_empty())
                     .map(str::to_string)
             })
-            .unwrap_or_else(|| "horizon-server failed without saying why".into());
+            .unwrap_or_else(|| "claudium-server failed without saying why".into());
         Self::plain(capitalised(&said))
     }
 }
@@ -582,7 +582,7 @@ pub fn player_worlds() -> Vec<(String, PathBuf)> {
     worlds.into_iter().map(|(_, n, p)| (n, p)).collect()
 }
 
-/// The `horizon-server init` arguments for a new server.
+/// The `claudium-server init` arguments for a new server.
 pub fn init_args(spec: &NewServer, world: &str, port: u16) -> Vec<String> {
     let mut args: Vec<String> = vec!["init".into(), "--yes".into()];
     if spec.eula {
@@ -612,7 +612,7 @@ pub fn init_args(spec: &NewServer, world: &str, port: u16) -> Vec<String> {
     args
 }
 
-/// The `horizon-server config set` arguments that finish a new server.
+/// The `claudium-server config set` arguments that finish a new server.
 pub fn settings_args(spec: &NewServer, panel_port: u16) -> Vec<String> {
     vec![
         "config".into(),
@@ -716,8 +716,8 @@ fn copy_world(from: &Path, to: &Path) -> std::io::Result<()> {
 
 // ----- A server's files --------------------------------------------------------------------------
 
-/// The settings, as `horizon-server config --json` prints them (`None` before `init`, or from a
-/// `horizon-server` older than the command).
+/// The settings, as `claudium-server config --json` prints them (`None` before `init`, or from a
+/// `claudium-server` older than the command).
 pub fn config(dir: &Path) -> Option<Value> {
     if !dir.join("server.toml").is_file() {
         return None;
@@ -737,7 +737,7 @@ pub struct Applied {
     pub running: bool,
 }
 
-/// Changes settings through `horizon-server config set` (checked there; nothing is written if one is
+/// Changes settings through `claudium-server config set` (checked there; nothing is written if one is
 /// wrong).
 pub fn set_config(dir: &Path, changes: &[(&str, String)]) -> Result<Applied, Problem> {
     let pairs: Vec<String> = changes.iter().map(|(k, v)| format!("{k}={v}")).collect();
@@ -773,7 +773,7 @@ pub fn entries(dir: &Path, file: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-/// A backup, as `horizon-server backups --json` lists it.
+/// A backup, as `claudium-server backups --json` lists it.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Backup {
     pub name: String,
@@ -796,10 +796,10 @@ pub fn lan_address() -> Option<std::net::IpAddr> {
     (!ip.is_unspecified() && !ip.is_loopback()).then_some(ip)
 }
 
-/// Whether the server starts at login: the service definition `horizon-server service print` names exists.
+/// Whether the server starts at login: the service definition `claudium-server service print` names exists.
 pub fn service_installed(dir: &Path) -> bool {
     if cfg!(windows) {
-        let name = format!("horizon-server-{}", service_suffix(dir));
+        let name = format!("claudium-server-{}", service_suffix(dir));
         return crate::process::command("schtasks")
             .args(["/Query", "/TN", &name])
             .stdout(Stdio::null())
@@ -818,7 +818,7 @@ pub fn service_installed(dir: &Path) -> bool {
         .is_some_and(|p| p.is_file())
 }
 
-/// horizon-server's service name for a folder, after `horizon-server-`.
+/// claudium-server's service name for a folder, after `claudium-server-`.
 fn service_suffix(dir: &Path) -> String {
     let folder = dir
         .file_name()
@@ -844,7 +844,7 @@ fn service_suffix(dir: &Path) -> String {
 
 // ----- The running server: its control API -------------------------------------------------------
 
-/// The running supervisor's control API (`.horizon/api.json`: its address and token).
+/// The running supervisor's control API (`.claudium/api.json`: its address and token).
 #[derive(Clone, Debug)]
 pub struct Api {
     address: String,
@@ -854,7 +854,7 @@ pub struct Api {
 impl Api {
     /// The API of the server running in `dir`, if one runs.
     pub fn open(dir: &Path) -> Option<Self> {
-        let text = fs::read_to_string(dir.join(".horizon/api.json")).ok()?;
+        let text = fs::read_to_string(dir.join(".claudium/api.json")).ok()?;
         let v: Value = serde_json::from_str(&text).ok()?;
         Some(Self {
             address: v["address"].as_str()?.to_string(),

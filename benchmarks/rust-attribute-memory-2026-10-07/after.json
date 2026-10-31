@@ -8,9 +8,9 @@
     "tools/measure_attribute_memory.py": "30920696fdc0868f109b8c6863132810e56297ce9d9af8b917d8d45506fb9620",
     "Cargo.toml": "3f93319c1eb70dbd7ba25cd74ef343fbf35c52c7c4752f955605c58699cbff9d",
     "Cargo.lock": "cb1e87d449114a63edd904c0559d631e8fa9feeb27efd6539aacdcfeae178876",
-    "crates/horizon-world/src/attributes/entity.rs": "56fb96b1beb9caaa769369bf7cddf522d2f2e84e241c213b51ae8d39d31a9f13",
-    "crates/horizon-world/src/attributes/mod.rs": "3d05ce2ff10c1b68540e3c87bbd2ac65c56a2e7b7127a7865b60890a2e9a690d",
-    "crates/horizon-world/examples/attribute_memory.rs": "29c0944f0a687369eb012f441c7b7f69eac95658be062bf742470f94b2ef6cd8"
+    "crates/claudium-world/src/attributes/entity.rs": "56fb96b1beb9caaa769369bf7cddf522d2f2e84e241c213b51ae8d39d31a9f13",
+    "crates/claudium-world/src/attributes/mod.rs": "3d05ce2ff10c1b68540e3c87bbd2ac65c56a2e7b7127a7865b60890a2e9a690d",
+    "crates/claudium-world/examples/attribute_memory.rs": "29c0944f0a687369eb012f441c7b7f69eac95658be062bf742470f94b2ef6cd8"
   },
   "results": [
     {

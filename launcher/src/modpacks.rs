@@ -1,14 +1,14 @@
 //! Modpacks: import a Java modpack (a Modrinth `.mrpack`, a CurseForge zip, an instance folder),
-//! show what Horizon runs of it, port that on this computer from the player's own downloads, and
+//! show what Claudium runs of it, port that on this computer from the player's own downloads, and
 //! play it as a profile of its own (docs/modpacks.md).
 //!
-//! Each pack lives in `ports/<slug>/` in the game's home: the work folder `horizon-port-pack`
+//! Each pack lives in `ports/<slug>/` in the game's home: the work folder `claudium-port-pack`
 //! writes (pack.json, inventory, the jars, the carried-over mods, the coverage report) and
 //! `home/`, the profile's own saves and options. Nothing is uploaded or shared: mod jars are
 //! often All Rights Reserved, so the ports stay on the player's machine.
 use crate::backend;
-use crate::browser::horizon::pack as horizon_pack;
-use horizon_port_pack::{
+use crate::browser::claudium::pack as claudium_pack;
+use claudium_port_pack::{
     fetch::{Fetched, How},
     import::Pack,
     pipeline::{self, Log},
@@ -107,7 +107,7 @@ impl Imported {
 pub fn load(work: &Path) -> Result<Imported, String> {
     let pack: Pack = pipeline::read_json(&work.join("pack.json"))?;
     let rows: Vec<Row> = pipeline::read_json(&work.join("coverage.json")).unwrap_or_default();
-    let records: Vec<horizon_port_pack::inventory::Record> =
+    let records: Vec<claudium_port_pack::inventory::Record> =
         pipeline::read_json(&work.join("inventory.json")).unwrap_or_default();
     let (mods, mut left_off) = pipeline::loadable(&carried(work));
     let fetched = Fetched::load(work);
@@ -156,7 +156,7 @@ pub fn carried(work: &Path) -> Vec<PathBuf> {
         .flatten()
         .flatten()
         .map(|e| e.path().join("carry"))
-        .filter(|c| c.join("horizon-mod.toml").is_file())
+        .filter(|c| c.join("claudium-mod.toml").is_file())
         .collect();
     mods.sort();
     mods
@@ -166,7 +166,7 @@ pub fn carried(work: &Path) -> Vec<PathBuf> {
 /// metadata (Modrinth answers by file hash; nothing is downloaded yet). Importing the same pack
 /// again keeps the jars and ports it already has.
 pub fn import(path: &Path, log: Log) -> Result<Imported, String> {
-    let pack = horizon_port_pack::import::import(path)?;
+    let pack = claudium_port_pack::import::import(path)?;
     let name = if pack.name.is_empty() || pack.name == "modlist" {
         path.file_stem()
             .map(|s| s.to_string_lossy().into_owned())
@@ -237,8 +237,8 @@ pub fn outcome(pack: &Imported) -> String {
 
 /// Removes an imported pack: its jars, ports and the profile's saves.
 pub fn remove(work: &Path) -> Result<(), String> {
-    if horizon_pack::is_pack(work) {
-        return horizon_pack::remove(work);
+    if claudium_pack::is_pack(work) {
+        return claudium_pack::remove(work);
     }
     if work.parent() != Some(ports_dir().as_path()) {
         return Err(format!("{} is not an imported pack", work.display()));
@@ -253,10 +253,10 @@ pub fn profile_home(work: &Path) -> PathBuf {
 
 /// Turns the game's command into this pack's profile: its own home (the player's options.txt
 /// copied in the first time, so keys and video settings carry over) and its carried-over mods.
-/// A modpack from Claudium's registry (`horizon-packs/<id>/`) plays its own profile the same way.
+/// A modpack from Claudium's registry (`claudium-packs/<id>/`) plays its own profile the same way.
 pub fn apply_profile(cmd: &mut Command, work: &Path) -> Result<(), String> {
-    if horizon_pack::is_pack(work) {
-        return horizon_pack::apply(cmd, work);
+    if claudium_pack::is_pack(work) {
+        return claudium_pack::apply(cmd, work);
     }
     // Only mods that load together: the game would refuse the later of two sharing a namespace.
     let (mods, _) = pipeline::loadable(&carried(work));
@@ -270,7 +270,7 @@ pub fn apply_profile(cmd: &mut Command, work: &Path) -> Result<(), String> {
     if !options.exists() && own.is_file() {
         let _ = fs::copy(own, &options);
     }
-    cmd.current_dir(&home).env("HORIZON_HOME", &home);
+    cmd.current_dir(&home).env("CLAUDIUM_HOME", &home);
     for m in mods {
         cmd.arg("--dev-mod").arg(m);
     }
@@ -290,8 +290,9 @@ mod tests {
 
     #[test]
     fn jars_only_curseforge_serves_are_left_off_as_coming_soon() {
-        use horizon_port_pack::fetch::Outcome;
-        let work = std::env::temp_dir().join(format!("horizon-launcher-cf-{}", std::process::id()));
+        use claudium_port_pack::fetch::Outcome;
+        let work =
+            std::env::temp_dir().join(format!("claudium-launcher-cf-{}", std::process::id()));
         let _ = fs::remove_dir_all(&work);
         fs::create_dir_all(&work).unwrap();
         pipeline::write_json(&work.join("pack.json"), &Pack::default()).unwrap();
@@ -319,7 +320,7 @@ mod tests {
     #[test]
     fn a_profile_has_its_own_home_and_mods() {
         let root =
-            std::env::temp_dir().join(format!("horizon-launcher-pack-{}", std::process::id()));
+            std::env::temp_dir().join(format!("claudium-launcher-pack-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         let work = root.join("ports/small");
         let mut cmd = Command::new("true");
@@ -328,7 +329,7 @@ mod tests {
             let carry = work.join("mods").join(id).join("carry");
             fs::create_dir_all(&carry).unwrap();
             fs::write(
-                carry.join("horizon-mod.toml"),
+                carry.join("claudium-mod.toml"),
                 format!(
                     "id = \"{id}\"\nname = \"{id}\"\nversion = \"1\"\napi = \"0.2\"\n\
                      capabilities = [\"registries\"]\nnamespaces = [{namespaces}]\n"

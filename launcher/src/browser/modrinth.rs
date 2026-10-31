@@ -189,7 +189,7 @@ impl Source for Modrinth {
 
     fn search(&self, query: &Query) -> Result<Vec<Project>, String> {
         if query.kind == Kind::Shader {
-            return Err(super::SHADERS_ON_HORIZON.into());
+            return Err(super::SHADERS_ON_CLAUDIUM.into());
         }
         let found = get(&search_url(query))?;
         Ok(found["hits"]

@@ -39,7 +39,7 @@ fn a_summary_says_what_runs() {
 
 #[test]
 fn each_system_gets_its_plan() {
-    let game = os(&["/opt/horizon-client", "--world", "My World"]);
+    let game = os(&["/opt/claudium-client", "--world", "My World"]);
     let wrapper = Launch {
         wrapper: "nice -n 5".into(),
         ..Launch::default()
@@ -50,7 +50,7 @@ fn each_system_gets_its_plan() {
             "nice",
             "-n",
             "5",
-            "/opt/horizon-client",
+            "/opt/claudium-client",
             "--world",
             "My World"
         ]))
@@ -68,12 +68,12 @@ fn each_system_gets_its_plan() {
     assert_eq!(
         plan(
             &both,
-            os(&[r"C:\Claudium\horizon-client.exe", "--world", "My World"]),
+            os(&[r"C:\Claudium\claudium-client.exe", "--world", "My World"]),
             true,
             &Found::default()
         ),
         Plan::Cmd {
-            line: r#"echo hi && nice -n 5 C:\Claudium\horizon-client.exe --world "My World""#
+            line: r#"echo hi && nice -n 5 C:\Claudium\claudium-client.exe --world "My World""#
                 .into()
         }
     );
@@ -101,7 +101,7 @@ fn nothing_to_add_leaves_the_command_as_it_is() {
 #[cfg(unix)]
 #[test]
 fn the_wrapped_game_runs_after_its_pre_launch_command_in_its_folder() {
-    let dir = std::env::temp_dir().join(format!("horizon-launch-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("claudium-launch-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let mut game = Command::new("/bin/sh");
@@ -197,7 +197,7 @@ fn the_linux_switches_act_only_where_their_tools_are() {
 
 #[test]
 fn the_post_exit_command_runs_with_the_instance_variables() {
-    let dir = std::env::temp_dir().join(format!("horizon-post-exit-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("claudium-post-exit-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     assert!(after_exit(&Launch::default(), &dir, &[]).is_none());
@@ -234,8 +234,8 @@ fn the_post_exit_command_runs_with_the_instance_variables() {
         .success());
     let written = std::fs::read_to_string(dir.join("after.txt")).unwrap();
     assert_eq!(written.trim(), "My Pack my-pack java 1");
-    // A Horizon instance has no Java.
-    assert!(!instance_vars("H", "horizon", &dir, None)
+    // A Claudium instance has no Java.
+    assert!(!instance_vars("H", "claudium", &dir, None)
         .iter()
         .any(|(k, _)| *k == "INST_JAVA"));
     let _ = std::fs::remove_dir_all(&dir);

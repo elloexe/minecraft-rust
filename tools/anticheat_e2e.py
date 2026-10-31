@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""The dedicated server's anticheat (docs/anticheat.md), end to end: a real `horizon-client --dedicated`
-and horizon-bots, legit bots beside cheating ones.
+"""The dedicated server's anticheat (docs/anticheat.md), end to end: a real `claudium-client --dedicated`
+and claudium-bots, legit bots beside cheating ones.
 
     python3 tools/anticheat_e2e.py --bin-dir target/fast            # every check
     python3 tools/anticheat_e2e.py --bin-dir target/fast --check timer
@@ -12,10 +12,10 @@ Checks:
          reported to the console and kicked; the legit bots (walking and exploring at 20 Hz) are never
          flagged.
 
-Each server runs in a fresh folder with fresh HORIZON_HOME and XDG folders (lab.game_env), on a free port,
+Each server runs in a fresh folder with fresh CLAUDIUM_HOME and XDG folders (lab.game_env), on a free port,
 in a flat creative world (the bots fly). Build first:
-    cargo build --profile fast -p horizon-client --bin horizon-client
-    cargo build --profile fast -p horizon-bots
+    cargo build --profile fast -p claudium-client --bin claudium-client
+    cargo build --profile fast -p claudium-bots
 """
 import argparse
 from concurrent.futures import ThreadPoolExecutor
@@ -61,16 +61,16 @@ def start(bins, folder, anticheat, out, name):
     (folder / 'eula.txt').write_text('eula=true\n')
     if anticheat is not None:
         (folder / 'server.toml').write_text(anticheat)
-    command = [bins / f'horizon-client{EXE}', '--resources', lab.RESOURCES, '--dedicated', '--nogui']
+    command = [bins / f'claudium-client{EXE}', '--resources', lab.RESOURCES, '--dedicated', '--nogui']
     server = Server(command, folder, out / f'{name}-server.log')
     server.wait_for(DONE, 300)
     return server, port
 
 
 def bots(bins, port, out, name, count, behaviour, seconds, *extra):
-    """horizon-bots, run to the end; its report."""
+    """claudium-bots, run to the end; its report."""
     report = out / f'{name}.json'
-    subprocess.run([bins / f'horizon-bots{EXE}', '--server', f'127.0.0.1:{port}', '--bots', str(count),
+    subprocess.run([bins / f'claudium-bots{EXE}', '--server', f'127.0.0.1:{port}', '--bots', str(count),
                     '--behaviour', behaviour, '--seconds', str(seconds), '--join-every', '0.2',
                     '--name', name, '--report', report, *extra],
                    check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=seconds + 180)
@@ -141,7 +141,7 @@ def main():
     bins, out = Path(args.bin_dir).resolve(), Path(args.out)
     shutil.rmtree(out, ignore_errors=True)
     out.mkdir(parents=True)
-    # One set of scratch HORIZON_HOME and XDG folders for every server below.
+    # One set of scratch CLAUDIUM_HOME and XDG folders for every server below.
     os.environ.update(lab.game_env())
     failed = []
     with tempfile.TemporaryDirectory(prefix='anticheat-e2e-') as scratch:

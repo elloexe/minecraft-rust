@@ -65,7 +65,7 @@ class ArtifactTests(unittest.TestCase):
                                   "server": {"sha1": lock["minecraft"]["server_sha1"]}}}
         with tempfile.TemporaryDirectory() as temp, mock.patch("urllib.request.urlopen") as request, \
                 mock.patch.dict("os.environ", {}, clear=False) as environment:
-            environment.pop("HORIZON_SERVER_JAR", None)
+            environment.pop("CLAUDIUM_SERVER_JAR", None)
             launcher, cache = Path(temp) / "minecraft", Path(temp) / "cache"
             version = launcher / "versions" / "26.3"
             version.mkdir(parents=True)
@@ -172,11 +172,11 @@ class PublicationTests(unittest.TestCase):
     def test_private_paths_rejected(self):
         for path in [".local/minecraft/source.java", "decompiled/Foo.txt", "game.JAR", "capture.jfr", "source/Foo.java"]:
             self.assertTrue(check_public_tree.prohibited(path), path)
-        for path in ["tools/lab.py", "crates/horizon-core/src/lib.rs", "Cargo.lock", "docs/analysis.md",
-                     "mods/horizon/src/main/java/dev/horizonlab/HorizonLab.java",
-                     "mods/horizon-lab/src/main/java/dev/horizonlab/HorizonLab.java"]:
+        for path in ["tools/lab.py", "crates/claudium-core/src/lib.rs", "Cargo.lock", "docs/analysis.md",
+                     "mods/claudium/src/main/java/dev/claudiumlab/ClaudiumLab.java",
+                     "mods/claudium-lab/src/main/java/dev/claudiumlab/ClaudiumLab.java"]:
             self.assertFalse(check_public_tree.prohibited(path), path)
-        self.assertTrue(check_public_tree.prohibited("mods/horizon/src/main/java/net/minecraft/Client.java"))
+        self.assertTrue(check_public_tree.prohibited("mods/claudium/src/main/java/net/minecraft/Client.java"))
         for path in ["tools/JfrSummary.java", "tests/java/JfrFixture.java"]:
             self.assertFalse(check_public_tree.prohibited(path), path)
         for path in ["tools/Minecraft.java", "tests/java/Client.java", ".local/tools/JfrSummary.java"]:

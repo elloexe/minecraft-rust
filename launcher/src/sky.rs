@@ -8,13 +8,13 @@
 //! stars steps to its next brightness): a few frames a second. The sky stands still under reduced
 //! motion, and stops 10 s after the window loses focus ([`motion`]).
 use crate::art::bake;
+use claudium_theme::night::Night;
 use gpui::{div, img, prelude::*, px, rgb, Div, RenderImage};
-use horizon_theme::night::Night;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
 /// Draw the page colour instead of the sky. Claudium follows the Minecraft launcher, which has a
-/// flat background; set this to `false` to get Horizon's painted night sky back, which the rest of
+/// flat background; set this to `false` to get Claudium's painted night sky back, which the rest of
 /// this module still implements in full.
 const FLAT: bool = true;
 
@@ -197,8 +197,8 @@ const STAR_LEVELS: [f32; 4] = [0.95, 0.6, 0.3, 0.6];
 const STAR_PERIODS: [f32; 4] = [4., 6., 8., 10.];
 
 /// How the sky moves: not at all under the system's reduced motion (macOS) or with
-/// `HORIZON_LAUNCHER_MOTION=off`; while the window is in front (and 10 s after); or always, with
-/// `HORIZON_LAUNCHER_MOTION=always`, for recordings.
+/// `CLAUDIUM_LAUNCHER_MOTION=off`; while the window is in front (and 10 s after); or always, with
+/// `CLAUDIUM_LAUNCHER_MOTION=always`, for recordings.
 #[derive(Clone, Copy, PartialEq)]
 enum Motion {
     Still,
@@ -208,7 +208,7 @@ enum Motion {
 
 fn motion() -> Motion {
     static MOTION: LazyLock<Motion> = LazyLock::new(|| {
-        match std::env::var("HORIZON_LAUNCHER_MOTION").as_deref() {
+        match std::env::var("CLAUDIUM_LAUNCHER_MOTION").as_deref() {
             Ok("off" | "reduced") => return Motion::Still,
             Ok("always") => return Motion::Always,
             Ok("full") => return Motion::InFront,
@@ -473,7 +473,7 @@ fn bands(n: &Night, h: f32) -> Vec<(f32, f32, u32)> {
         let mut from = at;
         for k in 0..STEPS {
             let to = (at + span * (k + 1) as f32 / STEPS as f32).round();
-            let c = horizon_theme::night::over(next, k as f32 / STEPS as f32, n.sky[i]);
+            let c = claudium_theme::night::over(next, k as f32 / STEPS as f32, n.sky[i]);
             out.push((from * TEXEL, (to - from) * TEXEL, c));
             from = to;
         }
@@ -491,7 +491,7 @@ struct Star {
 }
 
 /// The stars, the same on every start: a fixed field wide enough for any window, thinned toward
-/// the horizon.
+/// the claudium.
 fn stars() -> &'static [Star] {
     static STARS: LazyLock<Vec<Star>> = LazyLock::new(|| {
         let mut rng = 0x2545_f491u32;
@@ -580,8 +580,8 @@ fn skyline(line: &Skyline, color: u32, scale: f32) -> Arc<RenderImage> {
     bake(&out, w, line.rows, LAND, scale)
 }
 
-/// The upper half of a sun cut by the horizon, in three bands of colour, its lower half sliced by
-/// rows of sky like Horizon's mark.
+/// The upper half of a sun cut by the claudium, in three bands of colour, its lower half sliced by
+/// rows of sky like Claudium's mark.
 fn sun(art: &Colors) -> Vec<[u8; 4]> {
     let (r, w) = (SUN_RADIUS as f32, SUN_RADIUS * 2);
     let mut out = vec![[0; 4]; w * SUN_RADIUS];
@@ -610,7 +610,7 @@ fn sun(art: &Colors) -> Vec<[u8; 4]> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use horizon_theme::night::{DAWN, NIGHT, UNCARDED_STOPS};
+    use claudium_theme::night::{DAWN, NIGHT, UNCARDED_STOPS};
 
     /// The sky's upper bands, behind text without a plate, hold the night tokens' text colours.
     fn uncarded_bands(n: &Night, h: f32) -> Vec<u32> {
@@ -641,7 +641,7 @@ mod tests {
         for n in [NIGHT, DAWN] {
             for c in uncarded_bands(&n, 800.) {
                 for text in [n.ink, n.ink_soft, n.muted] {
-                    let ratio = horizon_theme::contrast(text, c);
+                    let ratio = claudium_theme::contrast(text, c);
                     assert!(ratio >= 4.5, "#{text:06x} on #{c:06x}: {ratio:.2}");
                 }
             }

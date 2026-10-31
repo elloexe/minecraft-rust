@@ -1,7 +1,7 @@
 name: checks
 # verify: formatting, lint and the Rust tests for the game workspace, on every pull request and every push to main.
 # launcher: the launcher is its own Cargo workspace (launcher/Cargo.toml), so verify never builds it; it is checked
-# here. Upstream Horizon also runs ~290 differential parity harnesses against a real Minecraft install on a
+# here. Upstream Claudium also runs ~290 differential parity harnesses against a real Minecraft install on a
 # self-hosted runner; those are not wired up here because they need the maintainer's own game files.
 on:
   push:
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   # Test runs never reach the telemetry server: no live-count ping, no uploads (docs/telemetry.md).
-  HORIZON_TELEMETRY_URL: "off"
+  CLAUDIUM_TELEMETRY_URL: "off"
 
 jobs:
   verify:
@@ -59,8 +59,8 @@ jobs:
         run: |
           cargo +stable fmt --all -- --check
           cargo +stable clippy --workspace --all-targets -- -D warnings
-          # The server build (released as horizon-engine): the game without sound or controllers.
-          cargo +stable clippy -p horizon-client --all-targets --no-default-features -- -D warnings
+          # The server build (released as claudium-engine): the game without sound or controllers.
+          cargo +stable clippy -p claudium-client --all-targets --no-default-features -- -D warnings
       # Libraries, binaries and integration tests, then doc tests: not the ~275 examples, which clippy above already
       # type-checks and the parity job builds and runs (they were most of this step's build and link time).
       - name: Test Rust core and voxel kernel correctness

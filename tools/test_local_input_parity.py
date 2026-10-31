@@ -34,8 +34,8 @@ def main():
     lock,jars,_=base.verify_artifacts();libraries=baking.client_libraries()
     build=lab.LOCAL/'rust-local-input';build.mkdir(exist_ok=True)
     report=build/'report.json';report.unlink(missing_ok=True)
-    oracle=lab.ROOT/'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaLocalInputOracle.java'
-    sources=[Path(__file__),lab.ROOT/'tools/test_rust_parity.py',lab.ROOT/'tools/test_model_baking_parity.py',lab.ROOT/'tools/lab.py',oracle,lab.ROOT/'Cargo.toml',lab.ROOT/'Cargo.lock',lab.ROOT/'crates/horizon-client/Cargo.toml',lab.ROOT/'crates/horizon-client-input/src/input.rs',lab.ROOT/'crates/horizon-client/src/lib.rs',lab.ROOT/'crates/horizon-client/examples/probe/input_probe.rs']
+    oracle=lab.ROOT/'mods/claudium/src/test/java/dev/claudiumlab/parity/VanillaLocalInputOracle.java'
+    sources=[Path(__file__),lab.ROOT/'tools/test_rust_parity.py',lab.ROOT/'tools/test_model_baking_parity.py',lab.ROOT/'tools/lab.py',oracle,lab.ROOT/'Cargo.toml',lab.ROOT/'Cargo.lock',lab.ROOT/'crates/claudium-client/Cargo.toml',lab.ROOT/'crates/claudium-client-input/src/input.rs',lab.ROOT/'crates/claudium-client/src/lib.rs',lab.ROOT/'crates/claudium-client/examples/probe/input_probe.rs']
     tested=base.source_hashes(sources)
     def run(command,name):
         with (build/(name+'.log')).open('w') as log:subprocess.run(list(map(str,command)),cwd=lab.ROOT,check=True,timeout=600,stdout=log,stderr=subprocess.STDOUT)
@@ -43,12 +43,12 @@ def main():
     inputs.write_text(''.join(json.dumps(f,separators=(',',':'))+'\n' for f in fixtures));input_hash=lab.digest(inputs,'sha256')
     classes=build/'classes';classes.mkdir(exist_ok=True)
     dependencies=os.pathsep.join(map(str,[jars['client'],*libraries]))
-    run(['javac','--release',lock['minecraft']['java_major'],'-proc:none','-sourcepath',str(lab.ROOT/'mods/horizon/src/test/java'),'-cp',dependencies,'-d',classes,oracle],'compile-java')
-    run(['cargo','build','--locked','-p','horizon-client','--example','client_probe'],'compile-rust')
+    run(['javac','--release',lock['minecraft']['java_major'],'-proc:none','-sourcepath',str(lab.ROOT/'mods/claudium/src/test/java'),'-cp',dependencies,'-d',classes,oracle],'compile-java')
+    run(['cargo','build','--locked','-p','claudium-client','--example','client_probe'],'compile-rust')
     metadata=json.loads(subprocess.check_output(['cargo','metadata','--locked','--no-deps','--format-version','1'],cwd=lab.ROOT))
     binary=Path(metadata['target_directory'])/'debug/examples'/('client_probe.exe' if os.name=='nt' else 'client_probe')
     run([binary,'input_probe',inputs,build/'rust.txt'],'rust')
-    run(['java','-Xmx768M','-cp',str(classes)+os.pathsep+dependencies,'dev.horizonlab.parity.VanillaLocalInputOracle',inputs,build/'client.txt'],'client')
+    run(['java','-Xmx768M','-cp',str(classes)+os.pathsep+dependencies,'dev.claudiumlab.parity.VanillaLocalInputOracle',inputs,build/'client.txt'],'client')
     matched=base.compare(build/'client.txt',build/'rust.txt')
     if matched!=len(fixtures):raise AssertionError('Incomplete input output')
     base.ensure_sources_unchanged(sources,tested)

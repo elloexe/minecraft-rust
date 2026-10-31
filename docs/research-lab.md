@@ -1,14 +1,14 @@
 # Decompilation and Rust research lab
 
-Horizon started as a decompilation and optimization lab. This page describes the local game inspection workspace and the first Rust research crates. For the playable client, see [the native client](native-client.md); for the rewrite as a whole, see [Rust rewrite status](rust-parity.md).
+Claudium started as a decompilation and optimization lab. This page describes the local game inspection workspace and the first Rust research crates. For the playable client, see [the native client](native-client.md); for the rewrite as a whole, see [Rust rewrite status](rust-parity.md).
 
 ## Local game inspection
 
 Game JARs, decompiled Java, libraries, inventories, worlds and logs live **inside this checkout** under gitignored **`.local/`**. No game code is in Git history or release downloads. Fresh clones rebuild the inspection workspace from your own copy of the game (see [Build from source](../README.md#build-from-source)); nothing of the game is downloaded.
 
 ```sh
-git clone https://github.com/horizon-rust/horizon.git
-cd horizon
+git clone https://github.com/elloexe/minecraft-rust.git
+cd claudium
 git config core.hooksPath .githooks
 python3 tools/lab.py prepare --server-jar ~/Downloads/server.jar
 python3 tools/lab.py decompile
@@ -21,7 +21,7 @@ Class-file SourceFile metadata covers inner classes, which often share a source 
 
 ## Original Rust research
 
-The dependency-free `horizon-core` crate starts the Rust simulation foundation:
+The dependency-free `claudium-core` crate starts the Rust simulation foundation:
 integer block/chunk/section positions, legacy and xoroshiro seeded random streams and positional factories,
 padded palette-index storage, scheduled block/fluid tick queues, and double-precision
 bounding-box and voxel-grid collision geometry. Noise samplers, octave stacks and
@@ -52,7 +52,7 @@ The [density suite](density-functions.md) checks compiled scalar and bulk
 evaluation, including nested samplers, their different arithmetic paths, and
 selected interval operations used for graph range analysis.
 
-`horizon-world` adds NBT, four region compression codecs, `.mca`/`.mcc`
+`claudium-world` adds NBT, four region compression codecs, `.mca`/`.mcc`
 reading and export, saved palettes, a version-checked block-state registry,
 and packed resident block sections. The world-data suite checks Rust output
 with the actual vanilla NBT, region and block-state decoders on both JARs.
@@ -77,8 +77,8 @@ separate implementation. [Geometry and collision scope](collision-geometry.md).
 cargo test --workspace
 ```
 
-Public branding and new mod downloads use **Horizon**. The existing Fabric mod
-ID and `dev.horizonlab` namespace remain stable for installed instances and
-measurement compatibility. The installer backs up both old `horizon-lab-*.jar`
-and new `horizon-*.jar` versions before installing an update.
+Public branding and new mod downloads use **Claudium**. The existing Fabric mod
+ID and `dev.claudiumlab` namespace remain stable for installed instances and
+measurement compatibility. The installer backs up both old `claudium-lab-*.jar`
+and new `claudium-*.jar` versions before installing an update.
 

@@ -2,15 +2,15 @@
 """End-to-end check of Discord Rich Presence: real games talk to a fake Discord.
 
 Each game gets its own fake Discord IPC server (a Unix socket in a scratch folder, pointed to by
-HORIZON_DISCORD_IPC_DIR) that answers the handshake with READY and records every SET_ACTIVITY.
-The game goes title -> world -> Nether -> quit through horizon-ctl, and the activities must say
+CLAUDIUM_DISCORD_IPC_DIR) that answers the handshake with READY and records every SET_ACTIVITY.
+The game goes title -> world -> Nether -> quit through claudium-ctl, and the activities must say
 "In the menus", "Singleplayer" in the Overworld, then the Nether, and be cleared on quit:
 
     single     single player on its server thread (the default)
     in-frame   single player ticked in the window's frame (--in-frame)
     lan        a host opens its world to LAN and a guest joins: the guest shows "Multiplayer",
                the host "Hosting a world" with a party of 2 of 8 (lan-in-frame: the host in-frame)
-    setting    off in horizon-extras.txt: nothing reaches Discord; the Horizon Settings switch
+    setting    off in claudium-extras.txt: nothing reaches Discord; the Claudium Settings switch
                turns it on (the activity appears) and off (it is cleared)
     late       Discord starts after the game: found within the 15 s retry
 
@@ -18,7 +18,7 @@ The game goes title -> world -> Nether -> quit through horizon-ctl, and the acti
     python3 tools/discord_presence_e2e.py --check lan --bin-dir target/fast
 
 macOS and Linux (Discord's Windows pipes aren't faked here). Games render offscreen, have no audio
-and use scratch homes (lab.game_env). Needs the prepared resources in .local/horizon-client.
+and use scratch homes (lab.game_env). Needs the prepared resources in .local/claudium-client.
 """
 import argparse
 import json
@@ -124,20 +124,20 @@ def shows(details, state=None):
 
 
 class Game:
-    """One game started by horizon-ctl in a scratch home, with its own fake Discord."""
+    """One game started by claudium-ctl in a scratch home, with its own fake Discord."""
 
     def __init__(self, bins, name, args=(), extras=None, discord_running=True):
-        self.ctl = bins / 'horizon-ctl'
+        self.ctl = bins / 'claudium-ctl'
         self.home = Path(tempfile.mkdtemp(prefix=f'hzdp-{name}-'))
         if extras:
-            (self.home / 'horizon-extras.txt').write_text(extras)
+            (self.home / 'claudium-extras.txt').write_text(extras)
         self.socket = self.home / 'c.sock'
         self.discord = FakeDiscord()
         if discord_running:
             self.discord.start()
-        extra = {'HORIZON_HOME': self.home, 'HORIZON_TELEMETRY_URL': 'off', 'HORIZON_DISCORD_IPC_DIR': self.discord.dir}
+        extra = {'CLAUDIUM_HOME': self.home, 'CLAUDIUM_TELEMETRY_URL': 'off', 'CLAUDIUM_DISCORD_IPC_DIR': self.discord.dir}
         self.env = lab.game_env(**extra)
-        self.ctl_run('launch', '--offscreen', '--game', str(bins / 'horizon-client'), '--resources',
+        self.ctl_run('launch', '--offscreen', '--game', str(bins / 'claudium-client'), '--resources',
                      str(lab.RESOURCES.resolve()), *args)
 
     def ctl_run(self, *words, timeout=600):
@@ -146,7 +146,7 @@ class Game:
         out = r.stdout.strip().splitlines()
         reply = json.loads(out[-1]) if out else {'error': r.stderr.strip()}
         if r.returncode or 'error' in reply:
-            raise AssertionError(f'horizon-ctl {" ".join(words)}: exit {r.returncode}: {reply}')
+            raise AssertionError(f'claudium-ctl {" ".join(words)}: exit {r.returncode}: {reply}')
         return reply
 
     def quit(self):
@@ -209,7 +209,7 @@ def lan(bins, host_args=()):
 
 
 def setting(bins):
-    """Off in horizon-extras.txt: Discord never hears from the game. Turned on in Horizon Settings: the
+    """Off in claudium-extras.txt: Discord never hears from the game. Turned on in Claudium Settings: the
     activity appears; off again: it is cleared."""
     game = Game(bins, 'setting', extras='discordPresence:false\n')
     d = game.discord
@@ -217,14 +217,14 @@ def setting(bins):
         game.ctl_run('wait-for', 'screen', 'title')
         time.sleep(3)
         assert not d.handshakes and not d.activities, (d.handshakes, d.activities)
-        game.ctl_run('options', 'horizon')
+        game.ctl_run('options', 'claudium')
         switch = next(w for w in game.ctl_run('ui')['widgets'] if w.get('label', '').startswith('Discord Rich'))
         assert switch['label'] == 'Discord Rich Presence: Off', switch
         game.ctl_run('click', switch['id'])
         d.wait('turned on', shows('In the menus'))
         game.ctl_run('click', switch['id'])
         d.wait('turned off', lambda a: a is None)
-        assert 'discordPresence:false' in (game.home / 'horizon-extras.txt').read_text()
+        assert 'discordPresence:false' in (game.home / 'claudium-extras.txt').read_text()
         print('  ok: saved off')
         game.quit()
     finally:
@@ -254,19 +254,19 @@ CHECKS = {'single': single, 'in-frame': lambda b: single(b, ['--in-frame']), 'la
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--check', choices=[*CHECKS, 'all'], default='all')
-    parser.add_argument('--bin-dir', help='prebuilt horizon-client and horizon-ctl (default: build with the fast profile)')
+    parser.add_argument('--bin-dir', help='prebuilt claudium-client and claudium-ctl (default: build with the fast profile)')
     args = parser.parse_args()
     if sys.platform == 'win32':
         sys.exit('the fake Discord is a Unix socket: macOS or Linux only')
     if args.bin_dir:
         bins = Path(args.bin_dir).resolve()
     else:
-        subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'horizon-client', '--bins'],
+        subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'claudium-client', '--bins'],
                        cwd=ROOT, check=True)
         meta = json.loads(subprocess.run(['cargo', 'metadata', '--format-version', '1', '--no-deps'], cwd=ROOT,
                                          capture_output=True, text=True, check=True).stdout)
         bins = Path(meta['target_directory']) / 'fast'
-    if not (lab.RESOURCES / 'horizon-resources.json').exists():
+    if not (lab.RESOURCES / 'claudium-resources.json').exists():
         sys.exit(f'no prepared resources in {lab.RESOURCES}')
     results = {}
     for name in CHECKS if args.check == 'all' else [args.check]:

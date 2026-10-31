@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Server benchmark: the same bots on Horizon's server and on vanilla 26.3's (docs/server.md, section 9).
+"""Server benchmark: the same bots on Claudium's server and on vanilla 26.3's (docs/server.md, section 9).
 
 Every run starts a fresh server from the same server.properties (seed, view and simulation distance 10,
-offline, creative so the bots can fly), waits for `Done`, lets `horizon-bots` join one a second, warms up,
+offline, creative so the bots can fly), waits for `Done`, lets `claudium-bots` join one a second, warms up,
 then measures for a while:
 
 - MSPT (average, P50, P95, P99) from each server's own `/tick query`, asked every 5 seconds on the console:
-  vanilla's ServerTickRateManager numbers, which Horizon reproduces, so both measure themselves the same way;
+  vanilla's ServerTickRateManager numbers, which Claudium reproduces, so both measure themselves the same way;
 - RSS and CPU of the server's whole process tree, once a second;
 - chunks the bots receive per second (new terrain while the `explore` bots fly outwards), chunks sent again
   while a bot still held them, and the moves the server refused (pull-backs; "moved too quickly" and
   "moved wrongly" lines);
 - the start time to `Done`, and every bot that failed to join or was dropped.
 
-    python3 tools/server_bench.py --servers horizon,vanilla --bots 1,10,25 --behaviour walk,explore
+    python3 tools/server_bench.py --servers claudium,vanilla --bots 1,10,25 --behaviour walk,explore
 
 The bots can run on another machine, so they don't take the server's CPU: `--bots-via 'ssh macmini'` with
-`--bots-bin` naming horizon-bots there and `--connect` the address it reaches this machine at. `--nice 19`
+`--bots-bin` naming claudium-bots there and `--connect` the address it reaches this machine at. `--nice 19`
 runs every server at the lowest priority (a shared machine). The explore bots fly as fast as each server
 sends them chunks, so a faster server gets more terrain to generate; `--explore-speed` slows them to a rate
 both servers keep up with, for equal work. After the runs, the work table compares the servers at each bot
@@ -24,8 +24,8 @@ count: chunks sent and new chunks generated a second, against the busiest server
 than 10 % apart isn't a fair comparison of its tick times.
 
 The vanilla side runs the pinned server jar from tools/lab.py prepare (your own copy). It needs Java 25. The
-Horizon side runs target/release/horizon-server with the engine beside it; build both first:
-    cargo build --release -p horizon-client --bin horizon-client -p horizon-server -p horizon-bots
+Claudium side runs target/release/claudium-server with the engine beside it; build both first:
+    cargo build --release -p claudium-client --bin claudium-client -p claudium-server -p claudium-bots
 
 Two more Java servers, both dev-only downloads into .local/server-bench/jars (never committed or shipped):
 - `paper`: Paper's newest build for the pinned version, from PaperMC's download API, checked against the
@@ -62,8 +62,8 @@ except ImportError:
 
 ROOT = lab.ROOT
 EXE = '.exe' if os.name == 'nt' else ''
-# Where horizon-server and horizon-bots are (the engine is found beside horizon-server or on the PATH).
-BIN = Path(os.environ.get('HORIZON_BENCH_BIN', ROOT / 'target/release'))
+# Where claudium-server and claudium-bots are (the engine is found beside claudium-server or on the PATH).
+BIN = Path(os.environ.get('CLAUDIUM_BENCH_BIN', ROOT / 'target/release'))
 
 PROPERTIES = {
     'level-seed': '12345',
@@ -164,7 +164,7 @@ class Server:
         self.log.close()
 
 
-# The line every server logs once it is up: vanilla, Fabric and Horizon `[time] [Server thread/INFO]: Done (`,
+# The line every server logs once it is up: vanilla, Fabric and Claudium `[time] [Server thread/INFO]: Done (`,
 # Paper `[time INFO]: Done (`.
 DONE = r'INFO\]: Done \('
 TICK_AVERAGE = re.compile(r'Average time per tick: ([0-9.]+) ?ms')
@@ -181,7 +181,7 @@ def paper_jar():
     lock, _ = lab.config()
     version = lock['minecraft']['version']
     request = urllib.request.Request(PAPER_API.format(version=version),
-                                     headers={'User-Agent': 'horizon-server-bench (github.com/horizon-rust/horizon)'})
+                                     headers={'User-Agent': 'claudium-server-bench (github.com/elloexe/minecraft-rust)'})
     with urllib.request.urlopen(request, timeout=30) as response:
         build = json.load(response)
     download = build['downloads']['server:default']
@@ -254,7 +254,7 @@ def server_command(kind, directory, args):
         classpath = os.pathsep.join(map(str, [jars['server'], *libraries, *runtime.fabric_libraries()]))
         return [*java, '-Dfabric.log.disableAnsi=true', '-cp', classpath,
                 'net.fabricmc.loader.impl.launch.knot.KnotServer', 'nogui']
-    server = BIN / f'horizon-server{EXE}'
+    server = BIN / f'claudium-server{EXE}'
     subprocess.run([server, '--dir', directory, 'import', directory / 'server.properties'], check=True,
                    capture_output=True)
     toml = directory / 'server.toml'
@@ -267,16 +267,16 @@ def server_command(kind, directory, args):
 
 
 def flag_count(directory):
-    """The lines of Horizon's anticheat log: one a flag (none when it is off)."""
+    """The lines of Claudium's anticheat log: one a flag (none when it is off)."""
     log = directory / 'logs/anticheat.log'
     return len(log.read_text().splitlines()) if log.exists() else 0
 
 
 def bots_command(args):
-    """horizon-bots here, or through `--bots-via` (for example `ssh macmini`) on another machine."""
+    """claudium-bots here, or through `--bots-via` (for example `ssh macmini`) on another machine."""
     if args.bots_via:
-        return [*args.bots_via.split(), args.bots_bin or 'horizon-bots']
-    return [args.bots_bin or BIN / f'horizon-bots{EXE}']
+        return [*args.bots_via.split(), args.bots_bin or 'claudium-bots']
+    return [args.bots_bin or BIN / f'claudium-bots{EXE}']
 
 
 def run_once(kind, bots, behaviour, args, out):
@@ -429,7 +429,7 @@ def versions(kinds):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    parser.add_argument('--servers', default='horizon,vanilla', help='horizon, vanilla, paper, fabric (Lithium)')
+    parser.add_argument('--servers', default='claudium,vanilla', help='claudium, vanilla, paper, fabric (Lithium)')
     parser.add_argument('--bots', default='1,10,25,50')
     parser.add_argument('--behaviour', default='walk,explore', help='one pass per behaviour (comma-separated)')
     parser.add_argument('--join-every', type=float, default=1.0)
@@ -440,15 +440,15 @@ def main():
                         help='blocks a second the explore bots fly (default: the bots\' 22, as fast as chunks '
                              'come); a speed both servers keep up with makes the explore pass equal work')
     parser.add_argument('--gamerule', default='',
-                        help="more game rules for both servers, 'name=value,...' (locator_bar=false: Horizon has "
+                        help="more game rules for both servers, 'name=value,...' (locator_bar=false: Claudium has "
                              "no locator bar yet)")
     parser.add_argument('--heap', default='4g', help='the Java heap, -Xms and -Xmx (vanilla, Paper, Fabric)')
     parser.add_argument('--out', type=Path, default=None, help='the report (JSON)')
     parser.add_argument('--nice', type=int, default=0, help='run the servers under nice -n N')
     parser.add_argument('--anticheat', action='store_true',
-                        help="turn Horizon's anticheat on (server.toml [anticheat]); its flags are counted")
+                        help="turn Claudium's anticheat on (server.toml [anticheat]); its flags are counted")
     parser.add_argument('--bots-via', default='', help="a command prefix to run the bots elsewhere ('ssh host')")
-    parser.add_argument('--bots-bin', default='', help='horizon-bots (on the --bots-via machine)')
+    parser.add_argument('--bots-bin', default='', help='claudium-bots (on the --bots-via machine)')
     parser.add_argument('--connect', default='127.0.0.1', help='the address the bots reach the server at')
     args = parser.parse_args()
     out = lab.LOCAL / 'server-bench'
@@ -462,7 +462,7 @@ def main():
                 runs.append(result)
                 print(json.dumps(result), flush=True)
     report = {
-        'kind': 'horizon-server-benchmark',
+        'kind': 'claudium-server-benchmark',
         'date': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'),
         'machine': {'system': platform.system(), 'machine': platform.machine(), 'cpus': os.cpu_count()},
         'commit': subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True).stdout.strip(),

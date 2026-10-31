@@ -1,5 +1,5 @@
 {
-  "kind": "horizon-server-benchmark",
+  "kind": "claudium-server-benchmark",
   "date": "2026-10-18T19:32:00+00:00",
   "machine": {
     "system": "Linux",
@@ -8,12 +8,12 @@
     "name": "ThinkPad, Intel Core i7-7500U, 32 GB, NixOS"
   },
   "commit": "f1d5bf520986b00a5b968a84d85809fca1a039fa",
-  "engine": "horizon-engine: the server build of #916 (horizon-client --no-default-features) at 519ec121, as install.sh --archive installed it",
+  "engine": "claudium-engine: the server build of #916 (claudium-client --no-default-features) at 519ec121, as install.sh --archive installed it",
   "java": [
     "openjdk 25.0.4.1 2026-08-18"
   ],
   "settings": {
-    "servers": "horizon,vanilla",
+    "servers": "claudium,vanilla",
     "bots": "1,10,25,50",
     "behaviour": "mixed",
     "join_every": 1.0,
@@ -43,7 +43,7 @@
   "note": "server_bench.py was stopped after vanilla's 50-bot server crashed, before it wrote this file; the runs are the lines it printed, and the vanilla 50 entry is taken from that server's log.",
   "runs": [
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 1,
       "behaviour": "mixed",
       "start_seconds": 19.73,
@@ -117,7 +117,7 @@
       "tick_queries": 59
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 10,
       "behaviour": "mixed",
       "start_seconds": 19.54,
@@ -199,7 +199,7 @@
       "tick_queries": 58
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 25,
       "behaviour": "mixed",
       "start_seconds": 9.61,
@@ -281,7 +281,7 @@
       "tick_queries": 58
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 50,
       "behaviour": "mixed",
       "start_seconds": 14.93,
@@ -334,7 +334,7 @@
       "behaviour": "mixed",
       "bots": 1,
       "servers": {
-        "horizon": {
+        "claudium": {
           "chunks_per_second": {
             "value": 9.94,
             "share": 0.996
@@ -363,7 +363,7 @@
       "behaviour": "mixed",
       "bots": 10,
       "servers": {
-        "horizon": {
+        "claudium": {
           "chunks_per_second": {
             "value": 61.35,
             "share": 0.995
@@ -392,7 +392,7 @@
       "behaviour": "mixed",
       "bots": 25,
       "servers": {
-        "horizon": {
+        "claudium": {
           "chunks_per_second": {
             "value": 158.57,
             "share": 1.0

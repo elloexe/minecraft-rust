@@ -1,4 +1,4 @@
-//! Horizon launcher: installs Horizon builds, prepares them from the player's own Minecraft,
+//! Claudium launcher: installs Claudium builds, prepares them from the player's own Minecraft,
 //! and starts the client or a dedicated server.
 
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
@@ -52,18 +52,18 @@ mod titlebar;
 mod while_playing;
 mod worlds_page;
 
+use claudium_launcher::account::{self, Accounts, SignIn, SignInState};
+use claudium_launcher::backend::{self, Job, Msg, Release, Running, Settings, Updates};
+use claudium_launcher::i18n::{self, tr, trf};
+use claudium_launcher::instances;
+use claudium_launcher::native_mods;
+use claudium_launcher::telemetry;
 use gpui::{
     actions, div, ease_out_quint, prelude::*, px, relative, size, Animation, AnimationExt,
     AnyElement, App, Application, Bounds, ClickEvent, Context, Div, ElementId, FocusHandle,
     FontWeight, Hsla, KeyBinding, KeyDownEvent, Menu, MenuItem, MouseDownEvent, PathPromptOptions,
     Pixels, Point, SharedString, Stateful, Subscription, Window, WindowBounds, WindowOptions,
 };
-use horizon_launcher::account::{self, Accounts, SignIn, SignInState};
-use horizon_launcher::backend::{self, Job, Msg, Release, Running, Settings, Updates};
-use horizon_launcher::i18n::{self, tr, trf};
-use horizon_launcher::instances;
-use horizon_launcher::native_mods;
-use horizon_launcher::telemetry;
 use scrollbar::Scrollbar;
 use std::borrow::Cow;
 use std::collections::VecDeque;
@@ -85,13 +85,13 @@ enum Page {
 }
 
 impl Page {
-    /// `HORIZON_LAUNCHER_PAGE=mods` (or `modpacks`, `shaders`, `servers`, `versions`, `notes`,
+    /// `CLAUDIUM_LAUNCHER_PAGE=mods` (or `modpacks`, `shaders`, `servers`, `versions`, `notes`,
     /// `settings`) opens on that page, for screenshots; Home otherwise (`getting-ready`: Home
     /// preparing, `home::getting_ready_preview`; `sign-in`: the owner gate's sheet with a
     /// made-up code, `owner_page::sign_in_preview`; `new-instance`: Home with the New instance
     /// dialog open on Modded; `worlds`, `packs`...: Home on that tab, `HomeTab::from_env`).
     fn from_env() -> Page {
-        match std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() {
+        match std::env::var("CLAUDIUM_LAUNCHER_PAGE").as_deref() {
             Ok("mods" | "modpacks" | "shaders" | "datapacks") => Page::Mods,
             Ok("servers") => Page::Servers,
             Ok("versions") => Page::Versions,
@@ -134,9 +134,9 @@ struct Crash {
 
 /// The opening: the wordmark holds at least `OPENING_HOLD` (until the release
 /// list is in, at most `OPENING_MAX`), then the launcher appears over `OPENING_REVEAL`.
-const OPENING_HOLD: Duration = horizon_theme::OPENING_HOLD;
-const OPENING_MAX: Duration = horizon_theme::OPENING_MAX;
-const OPENING_REVEAL: Duration = horizon_theme::OPENING_REVEAL;
+const OPENING_HOLD: Duration = claudium_theme::OPENING_HOLD;
+const OPENING_MAX: Duration = claudium_theme::OPENING_MAX;
+const OPENING_REVEAL: Duration = claudium_theme::OPENING_REVEAL;
 
 /// The phase of the opening at one moment: how far the reveal has gone, 0 to 1.
 struct Opening {
@@ -147,7 +147,7 @@ struct Opening {
 }
 
 fn ease_out_cubic(x: f32) -> f32 {
-    horizon_theme::ease_out_cubic(x)
+    claudium_theme::ease_out_cubic(x)
 }
 
 enum Load<T> {
@@ -171,7 +171,7 @@ struct Launcher {
     checked: Option<Instant>,
     update_error: Option<String>,
     self_update: SelfUpdate,
-    /// The Horizon version being installed as an update, and whether it becomes the selected one.
+    /// The Claudium version being installed as an update, and whether it becomes the selected one.
     update_install: Option<(String, bool)>,
     /// The install bar's previous and current fraction, so it moves rather than jumps.
     bar: (f32, f32),
@@ -192,7 +192,7 @@ struct Launcher {
     native_step: Option<String>,
     native_error: Option<String>,
     native_confirm: Option<Result<Vec<native_mods::Bundle>, String>>,
-    /// The mods of a build made for other Horizon versions (`native_mods::MISMATCH`): the build
+    /// The mods of a build made for other Claudium versions (`native_mods::MISMATCH`): the build
     /// waits for "Build anyway".
     native_mismatch: Option<String>,
     confirm_remove: Option<String>,
@@ -256,7 +256,7 @@ struct Launcher {
     /// The instance the running game plays and when it started: its play time grows on exit.
     client_run: Option<(String, Instant)>,
     /// The running game's instance variables, for its post-exit command.
-    client_vars: horizon_launcher::launch::Vars,
+    client_vars: claudium_launcher::launch::Vars,
     /// Settings' Game arguments field: the line, whether it has focus, and its focus handle.
     args_input: line_edit::LineEdit,
     args_focused: bool,
@@ -269,7 +269,7 @@ struct Launcher {
     collection: collection::Collection,
     /// Settings' "Connect an AI agent" (`agents_page`).
     agents: agents_page::AgentsUi,
-    /// How many play Horizon now, while the server answers ("N playing now" on the Play page).
+    /// How many play Claudium now, while the server answers ("N playing now" on the Play page).
     playing: Option<u64>,
     tx: Sender<Msg>,
     rx: Receiver<Msg>,
@@ -287,16 +287,16 @@ struct Launcher {
     /// The selected instance's mods, for Home's Mods tab (`instance_mods.rs`).
     instance_mods: instance_mods::InstanceMods,
     play_pressed: Option<Instant>,
-    /// `horizon-launcher benchmark` started this window to measure it.
+    /// `claudium-launcher benchmark` started this window to measure it.
     bench: Option<perf::Bench>,
     /// The Modpacks page: the imported packs (read when the page first opens), the one shown,
     /// the report's filter, and the pipeline step running now with its log.
-    packs: Vec<horizon_launcher::modpacks::Imported>,
-    /// Modpacks installed from Horizon's registry, each its own profile.
-    registry_packs: Vec<horizon_launcher::browser::horizon::pack::Installed>,
+    packs: Vec<claudium_launcher::modpacks::Imported>,
+    /// Modpacks installed from Claudium's registry, each its own profile.
+    registry_packs: Vec<claudium_launcher::browser::claudium::pack::Installed>,
     packs_loaded: Option<Instant>,
     pack_open: Option<String>,
-    pack_filter: Option<horizon_port_pack::report::Status>,
+    pack_filter: Option<claudium_port_pack::report::Status>,
     pack_busy: bool,
     pack_log: VecDeque<String>,
     pack_error: Option<String>,
@@ -321,10 +321,10 @@ struct Launcher {
     aside: while_playing::Aside,
     /// The selected instance's desktop shortcut (`shortcut_page.rs`).
     shortcuts: shortcut_page::Shortcuts,
-    /// The name the game made up for an offline player (`horizon-player.txt`), for the top bar.
+    /// The name the game made up for an offline player (`claudium-player.txt`), for the top bar.
     offline_name: Option<String>,
     /// The player's servers, for the sidebar until the Servers page has read them.
-    side_servers: Vec<horizon_launcher::servers::Entry>,
+    side_servers: Vec<claudium_launcher::servers::Entry>,
     /// The pixel art made for this window (`art.rs`), and pictures downloaded by URL.
     sky: sky::Sky,
     /// When the sky next asks for a frame, and the timer that will draw it.
@@ -356,14 +356,14 @@ impl Launcher {
         }
         // Release builds on Linux put their entry back in the applications menu when there is
         // none or it starts a program that is gone (a moved or deleted binary), never over one
-        // that works; `HORIZON_LAUNCHER_DESKTOP_ENTRY=1` does it in a development build.
+        // that works; `CLAUDIUM_LAUNCHER_DESKTOP_ENTRY=1` does it in a development build.
         if cfg!(target_os = "linux")
             && settings.desktop_entry()
             && (!cfg!(debug_assertions)
-                || std::env::var_os("HORIZON_LAUNCHER_DESKTOP_ENTRY").is_some())
+                || std::env::var_os("CLAUDIUM_LAUNCHER_DESKTOP_ENTRY").is_some())
         {
             std::thread::spawn(|| {
-                let _ = horizon_launcher::desktop::repair(backend::exe_path());
+                let _ = claudium_launcher::desktop::repair(backend::exe_path());
             });
         }
         let installed = backend::installed();
@@ -494,7 +494,7 @@ impl Launcher {
             aside: while_playing::Aside::new(window.window_handle()),
             shortcuts: Default::default(),
             offline_name: offline_name(),
-            side_servers: horizon_launcher::servers::list(),
+            side_servers: claudium_launcher::servers::list(),
             sky: sky::Sky::default(),
             sky_wake: None,
             scale: window.scale_factor(),
@@ -524,8 +524,8 @@ impl Launcher {
             this.preparing = true;
             this.play_when_prepared = this.selected().cloned();
         }
-        // `HORIZON_LAUNCHER_PAGE=new-instance`: the dialog open on Modded, for screenshots.
-        if std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() == Ok("new-instance") {
+        // `CLAUDIUM_LAUNCHER_PAGE=new-instance`: the dialog open on Modded, for screenshots.
+        if std::env::var("CLAUDIUM_LAUNCHER_PAGE").as_deref() == Ok("new-instance") {
             this.open_instance_dialog(None);
             this.pick_kind(new_instance::NewKind::Modded, cx);
         }
@@ -585,10 +585,10 @@ impl Launcher {
         });
     }
 
-    /// Installs the Horizon version the last check found, keeping the player's choice of
+    /// Installs the Claudium version the last check found, keeping the player's choice of
     /// version unless they were on the newest one.
     fn install_update(&mut self) {
-        let Some(release) = self.updates.horizon.clone() else {
+        let Some(release) = self.updates.claudium.clone() else {
             return;
         };
         if self.installing.is_some() || self.removing.contains(&release.tag) {
@@ -612,7 +612,7 @@ impl Launcher {
 
     /// Builds the selected instance's native mods, once the player accepted the warning. The
     /// build reuses the game files of the version the instance plays, else the newest installed.
-    /// `anyway`: the player agreed to build mods made for other Horizon versions together.
+    /// `anyway`: the player agreed to build mods made for other Claudium versions together.
     fn build_native(&mut self, anyway: bool) {
         if self.native_step.is_some() {
             return;
@@ -773,7 +773,7 @@ impl Launcher {
                                     .find(|i| i.work == work)
                                     .map(|i| i.id);
                                 let applied =
-                                    horizon_launcher::modpacks::apply_profile(&mut cmd, &work);
+                                    claudium_launcher::modpacks::apply_profile(&mut cmd, &work);
                                 (applied, id)
                             }
                             None => {
@@ -805,7 +805,7 @@ impl Launcher {
                             .unwrap_or_default();
                         cmd.envs(self.client_vars.iter().map(|(k, v)| (k, v)));
                         let launch = instance.map(|i| i.launch).unwrap_or_default();
-                        let cmd = horizon_launcher::launch::wrap(cmd, &launch);
+                        let cmd = claudium_launcher::launch::wrap(cmd, &launch);
                         self.client_home = cmd.get_current_dir().map(|d| d.to_path_buf());
                         match backend::spawn(Job::Client, cmd, self.tx.clone()) {
                             Ok(r) => {
@@ -836,8 +836,8 @@ impl Launcher {
                     }
                     match result {
                         Ok(()) => {
-                            if self.updates.horizon.as_ref().is_some_and(|r| r.tag == tag) {
-                                self.updates.horizon = None;
+                            if self.updates.claudium.as_ref().is_some_and(|r| r.tag == tag) {
+                                self.updates.claudium = None;
                             }
                             if as_update.is_none_or(|(_, select)| select) {
                                 self.settings.selected = Some(tag);
@@ -974,7 +974,7 @@ impl Launcher {
                                 }
                                 if let Some(i) = instances::list().into_iter().find(|i| i.id == id)
                                 {
-                                    horizon_launcher::launch::run_after_exit(
+                                    claudium_launcher::launch::run_after_exit(
                                         &i.launch, &i.home, &vars,
                                     );
                                 }
@@ -1136,12 +1136,12 @@ impl Launcher {
         let Some(tag) = self.selected().cloned() else {
             return;
         };
-        horizon_launcher::mojang::CANCEL.store(false, Ordering::Relaxed);
+        claudium_launcher::mojang::CANCEL.store(false, Ordering::Relaxed);
         let minecraft = self
             .settings
             .minecraft_dir
             .clone()
-            .unwrap_or_else(|| horizon_prepare::artifacts::minecraft_dir(None));
+            .unwrap_or_else(|| claudium_prepare::artifacts::minecraft_dir(None));
         self.prepare_log.clear();
         self.prepare_error = None;
         self.prepare_log
@@ -1231,7 +1231,7 @@ impl Launcher {
             let cmd = backend::java_game(&instance, server.as_deref(), &log).map(|mut cmd| {
                 let vars = instance.vars(cmd.get_program());
                 cmd.envs(vars.iter().map(|(k, v)| (k, v)));
-                (horizon_launcher::launch::wrap(cmd, &instance.launch), vars)
+                (claudium_launcher::launch::wrap(cmd, &instance.launch), vars)
             });
             let _ = tx.send(Msg::JavaGame(instance.id, instance.home, cmd));
         });
@@ -1423,12 +1423,12 @@ fn version_tag(tag: &str) -> Div {
         .line_height(px(28.))
         .font_weight(FontWeight::MEDIUM)
         .child(
-            horizon_launcher::nightly::label(tag)
+            claudium_launcher::nightly::label(tag)
                 .unwrap_or_else(|| tag.trim_start_matches('v').to_string()),
         )
 }
 
-/// Claudium's mark: two stems, their reflection below, and the horizon across in the accent.
+/// Claudium's mark: two stems, their reflection below, and the claudium across in the accent.
 fn mark(size: f32, t: &Theme) -> Div {
     let u = size / 16.;
     let stem = |x: f32, y: f32, color: Hsla| {
@@ -1544,10 +1544,10 @@ fn button(
     keyboard(track_hover(base, id), &t).active(|s| s.opacity(theme::PRESSED).top(px(1.)))
 }
 
-/// Copies to the clipboard, or into `HORIZON_LAUNCHER_CLIPBOARD` when a test run sets it
-/// (`horizon_launcher::desktop_seams`).
+/// Copies to the clipboard, or into `CLAUDIUM_LAUNCHER_CLIPBOARD` when a test run sets it
+/// (`claudium_launcher::desktop_seams`).
 fn copy_to_clipboard(cx: &mut App, item: gpui::ClipboardItem) {
-    if let Some(file) = horizon_launcher::desktop_seams::clipboard_file() {
+    if let Some(file) = claudium_launcher::desktop_seams::clipboard_file() {
         let bytes = match item.entries().first() {
             Some(gpui::ClipboardEntry::Image(image)) => image.bytes.clone(),
             _ => item.text().unwrap_or_default().into_bytes(),
@@ -1876,10 +1876,10 @@ fn centered(text_: &str, t: &Theme) -> Div {
 
 /// The name the game made up for a player without an account, once it has run.
 fn offline_name() -> Option<String> {
-    player_name(&std::fs::read_to_string(backend::game_home().join("horizon-player.txt")).ok()?)
+    player_name(&std::fs::read_to_string(backend::game_home().join("claudium-player.txt")).ok()?)
 }
 
-/// The name in `horizon-player.txt`: the game writes `name:Player12345` (horizon-client's
+/// The name in `claudium-player.txt`: the game writes `name:Player12345` (claudium-client's
 /// offline_name.rs).
 fn player_name(text: &str) -> Option<String> {
     text.lines()
@@ -2217,7 +2217,7 @@ impl Launcher {
         // "Nightly · ba6344a", a release's tag: the menu lists the full tags.
         let label = self.selected().map_or_else(
             || "No version".into(),
-            |tag| horizon_launcher::nightly::label(tag).unwrap_or_else(|| tag.clone()),
+            |tag| claudium_launcher::nightly::label(tag).unwrap_or_else(|| tag.clone()),
         );
         // As tall as Play: "Version" over the tag, and a chevron.
         let n = t.night;
@@ -2801,29 +2801,29 @@ impl Launcher {
                 cx.notify();
             },
         ));
-        // Linux: the launcher's entry in the applications menu (`horizon_launcher::desktop`).
+        // Linux: the launcher's entry in the applications menu (`claudium_launcher::desktop`).
         let menu_entry = switch("desktop-entry", self.settings.desktop_entry(), &t).on_click(
             cx.listener(|this, _: &ClickEvent, _, cx| {
                 let on = !this.settings.desktop_entry();
                 this.settings.desktop_entry = Some(on);
                 this.settings.save();
                 let _ = if on {
-                    horizon_launcher::desktop::install(backend::exe_path()).map(|_| ())
+                    claudium_launcher::desktop::install(backend::exe_path()).map(|_| ())
                 } else {
-                    horizon_launcher::desktop::remove()
+                    claudium_launcher::desktop::remove()
                 };
                 cx.notify();
             }),
         );
-        let horizon = match (&self.updates.horizon, &self.update_error) {
+        let claudium = match (&self.updates.claudium, &self.update_error) {
             (Some(r), _) => trf("{version} available", &[("version", update_name(r))]),
             (None, Some(e)) => e.clone(),
             (None, None) if self.checked.is_some() => tr("Up to date").to_string(),
             _ => tr("Checking…").to_string(),
         };
-        let horizon_action = self
+        let claudium_action = self
             .updates
-            .horizon
+            .claudium
             .as_ref()
             .filter(|_| self.installing.is_none())
             .map(|_| {
@@ -2985,7 +2985,7 @@ impl Launcher {
                     .child(group("AI", "terminal"))
                     .child(self.no_ai_row(n + 6, cx))
                     .child(group("About", "info-box"))
-                    .child(index_row(n + 7, "Claudium", Some(plain(&horizon)), horizon_action, &t))
+                    .child(index_row(n + 7, "Claudium", Some(plain(&claudium)), claudium_action, &t))
                     .child(index_row(
                         n + 8,
                         tr("Launcher"),
@@ -3287,7 +3287,7 @@ impl Launcher {
         // A half-typed address is no reason to complain; one left behind is.
         let detail = match (
             focused,
-            horizon_launcher::proxy::refuse(self.proxy_input.text()),
+            claudium_launcher::proxy::refuse(self.proxy_input.text()),
         ) {
             (false, Some(why)) => div().text_color(t.danger).child(why).into_any_element(),
             _ => div()
@@ -3302,12 +3302,12 @@ impl Launcher {
     }
 
     /// Keeps the Proxy field in `settings.json`, and tells the parts that build their own agents
-    /// (`horizon-port-pack`) which proxy to use.
+    /// (`claudium-port-pack`) which proxy to use.
     fn save_proxy(&mut self) {
         let value = self.proxy_input.text().trim().to_owned();
         self.settings.proxy = (!value.is_empty()).then_some(value);
         self.settings.save();
-        horizon_launcher::proxy::announce(self.settings.proxy.clone());
+        claudium_launcher::proxy::announce(self.settings.proxy.clone());
     }
 
     /// Settings' Microsoft accounts: who is signed in and plays, the sign-in with its code. The
@@ -3492,7 +3492,7 @@ impl Launcher {
     }
 
     fn join_friend(&mut self) {
-        if horizon_friends::invite::parse(self.friend_code.text()).is_none() {
+        if claudium_friends::invite::parse(self.friend_code.text()).is_none() {
             return;
         }
         self.joining = Some(self.friend_code.text().to_string());
@@ -4072,7 +4072,7 @@ impl Render for Launcher {
                 .line_height(px(theme::WORDMARK.px * 0.5))
                 .font_weight(FontWeight::BOLD)
                 .text_color(t.ink)
-                .children("HORIZON".chars().enumerate().map(|(i, c)| {
+                .children("CLAUDIUM".chars().enumerate().map(|(i, c)| {
                     let at = held - i as f32 * theme::STAGGER.as_secs_f32() * 1.5;
                     let p = ease_out_cubic(at / theme::ENTER.as_secs_f32());
                     div()
@@ -4151,7 +4151,7 @@ impl Launcher {
         (reveal, held.as_secs_f32())
     }
 
-    /// `horizon-launcher benchmark`: scroll the page a little on every frame, back to the top at
+    /// `claudium-launcher benchmark`: scroll the page a little on every frame, back to the top at
     /// the bottom, so the frame times measure scrolling.
     fn bench_scroll(&mut self, window: &mut Window) {
         let handle = &self.content_scroll.handle;
@@ -4187,7 +4187,7 @@ impl Launcher {
     }
 }
 
-actions!(horizon_launcher, [Quit, CloseWindow]);
+actions!(claudium_launcher, [Quit, CloseWindow]);
 
 /// What closing the last window does: stop the servers this launcher started, send the telemetry,
 /// exit. A game that is running keeps running. Cmd+Q goes through here too.
@@ -4233,8 +4233,8 @@ fn main() {
     perf::process_started();
     backend::exe_path();
     // What the launcher downloads goes through the player's proxy, if they set one: the parts
-    // that build their own agents (`horizon-port-pack`) are told before anything starts.
-    horizon_launcher::proxy::announce(horizon_launcher::backend::Settings::load().proxy);
+    // that build their own agents (`claudium-port-pack`) are told before anything starts.
+    claudium_launcher::proxy::announce(claudium_launcher::backend::Settings::load().proxy);
     if let Some(code) = cli::run() {
         std::process::exit(code);
     }
@@ -4243,12 +4243,12 @@ fn main() {
         .run(|cx: &mut App| {
             cx.text_system()
                 .add_fonts(vec![
-                    Cow::Borrowed(horizon_theme::fonts::GEIST_MONO),
-                    Cow::Borrowed(horizon_theme::fonts::BRICOLAGE_REGULAR),
-                    Cow::Borrowed(horizon_theme::fonts::BRICOLAGE_MEDIUM),
-                    Cow::Borrowed(horizon_theme::fonts::BRICOLAGE_SEMIBOLD),
-                    Cow::Borrowed(horizon_theme::fonts::BRICOLAGE_BOLD),
-                    Cow::Borrowed(horizon_theme::fonts::BRICOLAGE_DISPLAY_BOLD),
+                    Cow::Borrowed(claudium_theme::fonts::GEIST_MONO),
+                    Cow::Borrowed(claudium_theme::fonts::BRICOLAGE_REGULAR),
+                    Cow::Borrowed(claudium_theme::fonts::BRICOLAGE_MEDIUM),
+                    Cow::Borrowed(claudium_theme::fonts::BRICOLAGE_SEMIBOLD),
+                    Cow::Borrowed(claudium_theme::fonts::BRICOLAGE_BOLD),
+                    Cow::Borrowed(claudium_theme::fonts::BRICOLAGE_DISPLAY_BOLD),
                 ])
                 .expect("bundled fonts");
             cx.bind_keys(key_bindings());
@@ -4374,7 +4374,7 @@ mod tests {
     }
 
     /// A server's Join (and every other shortcut) waits like Play: not while the version's
-    /// first download and preparation run (#horizon-bugs, 0.2.23: a white window opened).
+    /// first download and preparation run (#claudium-bugs, 0.2.23: a white window opened).
     #[test]
     fn shortcuts_start_only_when_play_would() {
         use super::starts_now;

@@ -1,7 +1,7 @@
-//! Settings' Language row (`horizon_launcher::i18n`): the system's language, or one the player
+//! Settings' Language row (`claudium_launcher::i18n`): the system's language, or one the player
 //! picks, each named in itself.
 use super::*;
-use horizon_launcher::i18n::Language;
+use claudium_launcher::i18n::Language;
 
 impl Launcher {
     pub(super) fn language_row(&self, cx: &mut Context<Self>) -> Div {

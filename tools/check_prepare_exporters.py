@@ -24,7 +24,7 @@ def hashes(folder):
     return {str(p.relative_to(folder)): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in folder.rglob('*') if p.is_file() and p.suffix != '.log'
             and not {'classes', 'client-classes'} & set(p.relative_to(folder).parts)
-            and p.name != 'horizon-resources.json'}
+            and p.name != 'claudium-resources.json'}
 
 
 def normalize(path):
@@ -72,9 +72,9 @@ def verify(folders):
             if isinstance(node, dict):
                 return {key: clean(item) for key, item in node.items()}
             return node
-        manifests.append(clean(json.loads((folder / 'horizon-resources.json').read_text())))
+        manifests.append(clean(json.loads((folder / 'claudium-resources.json').read_text())))
     if manifests[0] != manifests[1] or manifests[0] != manifests[2]:
-        differences.append('horizon-resources.json')
+        differences.append('claudium-resources.json')
     print(f'Normalized exporter noise: {noise}')
     if differences:
         raise SystemExit(f'Resources differ: {differences}')
@@ -100,14 +100,14 @@ def main():
             folder = work / name
             folder.mkdir()
             shutil.copyfile(ROOT / 'research-lock.json', folder / 'research-lock.json')
-            shutil.copytree(ROOT / 'mods/horizon/src/test/java', folder / 'mods/horizon/src/test/java')
+            shutil.copytree(ROOT / 'mods/claudium/src/test/java', folder / 'mods/claudium/src/test/java')
             shutil.copytree(ROOT / 'exporters', folder / 'exporters')
             (folder / '.local').mkdir()
             (folder / '.local/minecraft').symlink_to((ROOT / '.local/minecraft').resolve(), target_is_directory=True)
             env = dict(os.environ)
-            env.pop('HORIZON_PREPARE_ISOLATED', None)
+            env.pop('CLAUDIUM_PREPARE_ISOLATED', None)
             if name.startswith('isolated'):
-                env['HORIZON_PREPARE_ISOLATED'] = '1'
+                env['CLAUDIUM_PREPARE_ISOLATED'] = '1'
             else:
                 # An actual runtime-only home: no javac in bin. Java resolves its own libraries.
                 java = Path(shutil.which('java')).resolve()
@@ -133,7 +133,7 @@ def main():
             text = (work / f'{name}.log').read_text()
             if 'Compiling ' in text:
                 raise SystemExit(f'{name} unexpectedly needed a compiler')
-            resources = next((folder / '.local/horizon-client').iterdir())
+            resources = next((folder / '.local/claudium-client').iterdir())
             results.append(resources)
             times.append(round(time.monotonic() - started, 2))
             print(f'{name}: {times[-1]}s, prepared', flush=True)

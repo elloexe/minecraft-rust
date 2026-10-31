@@ -1,8 +1,8 @@
-# Horizon noise-generation scope
+# Claudium noise-generation scope
 
 The target is the repository-pinned Minecraft Java Edition **26.3**. The Rust
-samplers live in `crates/horizon-core/src/noise/` and use the checked legacy or
-xoroshiro streams. They are a world-generation foundation; Horizon does not yet
+samplers live in `crates/claudium-core/src/noise/` and use the checked legacy or
+xoroshiro streams. They are a world-generation foundation; Claudium does not yet
 generate complete vanilla chunks or run a playable Rust game.
 
 ## Implemented behavior

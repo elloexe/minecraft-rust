@@ -61,7 +61,7 @@ def vscreen_env():
     env.pop("DISPLAY", None)
     # lab.game_env: no sound on the machine's speakers, and scratch folders instead of the player's.
     # Benchmark games do not reach the telemetry server (docs/telemetry.md).
-    env["HORIZON_TELEMETRY_URL"] = "off"
+    env["CLAUDIUM_TELEMETRY_URL"] = "off"
     return env
 
 
@@ -168,9 +168,9 @@ def main():
     if args.compare:
         compare(*args.compare)
         return
-    ctl = Path(args.build).resolve() / "horizon-ctl"
+    ctl = Path(args.build).resolve() / "claudium-ctl"
     if not ctl.exists():
-        sys.exit(f"{ctl} missing: cargo build --release -p horizon-client --bins")
+        sys.exit(f"{ctl} missing: cargo build --release -p claudium-client --bins")
     cwd = ROOT / ".local/graphics-bench"
     shutil.rmtree(cwd / "saves" / WORLD, ignore_errors=True)
     cwd.mkdir(parents=True, exist_ok=True)

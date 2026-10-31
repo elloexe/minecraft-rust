@@ -2,7 +2,7 @@
 
 # Claudium
 
-**Minecraft: Java Edition, in Rust — built on [Horizon](https://github.com/horizon-rust/horizon).**
+**Minecraft: Java Edition, in Rust — built on [Claudium](https://github.com/elloexe/minecraft-rust).**
 
 ![rust](https://img.shields.io/badge/rust-1.85%2B-orange)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -16,9 +16,9 @@ Claudium is a native Rust Minecraft client: it reads vanilla worlds, follows
 vanilla's rules and generates vanilla's terrain, with a `wgpu` renderer and no
 Java in the loop.
 
-It is a **derivative of Horizon**, an independent Rust reimplementation of
+It is a **derivative of Claudium**, an independent Rust reimplementation of
 Minecraft: Java Edition 26.3 that is checked against the real game by more than
-290 differential test harnesses. Horizon is MIT licensed and did the hard part;
+290 differential test harnesses. Claudium is MIT licensed and did the hard part;
 Claudium is where we modify it. See [NOTICE.md](NOTICE.md) for the attribution
 and [docs/claudium/changes.md](docs/claudium/changes.md) for what we have changed.
 
@@ -51,8 +51,8 @@ The game never downloads Minecraft. It prepares its resources once from your own
 copy, then runs:
 
 ```sh
-cargo run --release -p horizon-prepare -- --prepare --server-jar ~/Downloads/server.jar
-cargo run --release -p horizon-client
+cargo run --release -p claudium-prepare -- --prepare --server-jar ~/Downloads/server.jar
+cargo run --release -p claudium-client
 ```
 
 The launcher is a separate Cargo workspace:
@@ -67,12 +67,12 @@ cd launcher && cargo run
 
 | Crate | Owns |
 |---|---|
-| `horizon-client` | The game: gameplay, networking, screens, and the dedicated server |
-| `horizon-client-render` | The `wgpu` renderer, meshing, LOD / distant terrain |
-| `horizon-world` | Chunks, world generation, lighting |
-| `horizon-items` | Blocks and items beneath gameplay |
-| `horizon-protocol` | The Java Edition network protocol |
-| `horizon-command` | Command parsing (Brigadier) |
+| `claudium-client` | The game: gameplay, networking, screens, and the dedicated server |
+| `claudium-client-render` | The `wgpu` renderer, meshing, LOD / distant terrain |
+| `claudium-world` | Chunks, world generation, lighting |
+| `claudium-items` | Blocks and items beneath gameplay |
+| `claudium-protocol` | The Java Edition network protocol |
+| `claudium-command` | Command parsing (Brigadier) |
 
 `docs/architecture.md` maps features to files. `tools/` holds the parity
 harnesses that check behaviour against the real game.
@@ -83,9 +83,9 @@ Read [CLAUDE.md](CLAUDE.md) first — it covers the one rule that matters here
 (vanilla is the specification) and how we track our changes against upstream.
 
 Upstream's own contributor docs are kept in [docs/upstream/](docs/upstream/) for
-reference. They describe *Horizon's* issue tracker and review process, not ours.
+reference. They describe *Claudium's* issue tracker and review process, not ours.
 
 ## License
 
-MIT, inherited from Horizon. [LICENSE](LICENSE) keeps their copyright notice, as
+MIT, inherited from Claudium. [LICENSE](LICENSE) keeps their copyright notice, as
 the licence requires; our changes are MIT on the same terms.

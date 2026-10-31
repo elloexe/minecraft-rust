@@ -11,10 +11,10 @@ are built. Other entity loaders retain their existing behavior.
 From the repository root:
 
 ```sh
-python3 benchmarks/entity-model-document-2026-10-14/generate_fixture.py /tmp/horizon-entity-model-document-fixture.json
-ENTITY_MODEL_BENCH_DOCUMENT=/tmp/horizon-entity-model-document-fixture.json \
-  CARGO_TARGET_DIR=/home/bob/Documents/horizon/target \
-  cargo test -p horizon-client --profile fast --bin horizon-client \
+python3 benchmarks/entity-model-document-2026-10-14/generate_fixture.py /tmp/claudium-entity-model-document-fixture.json
+ENTITY_MODEL_BENCH_DOCUMENT=/tmp/claudium-entity-model-document-fixture.json \
+  CARGO_TARGET_DIR=/home/bob/Documents/claudium/target \
+  cargo test -p claudium-client --profile fast --bin claudium-client \
   entity_model_document_benchmark -- --ignored --nocapture
 ```
 
@@ -33,7 +33,7 @@ optimization benchmarks ran during the measured calls.
 
 ## Input and limitations
 
-Prepared resources were unavailable in the repository and local Horizon asset
+Prepared resources were unavailable in the repository and local Claudium asset
 directories. This is a **synthetic** 2,473,695-byte document with 458 model layers,
 each containing 12 posed parts with six exported quads and normals. It selects 22
 boat/chest-boat layers, six minecart layers and 14 armor/player layers (42 total).
@@ -66,11 +66,11 @@ for both variants, warmup count, document size and selected model count are in
 
 ```sh
 cargo fmt --all -- --check
-CARGO_TARGET_DIR=/home/bob/Documents/horizon/target \
-  cargo test -p horizon-client --profile fast --bin horizon-client \
+CARGO_TARGET_DIR=/home/bob/Documents/claudium/target \
+  cargo test -p claudium-client --profile fast --bin claudium-client \
   entity_model_loading_tests -- --nocapture
-CARGO_TARGET_DIR=/home/bob/Documents/horizon/target \
-  cargo clippy -p horizon-client --profile fast --lib --bin horizon-client --tests -- -D warnings
+CARGO_TARGET_DIR=/home/bob/Documents/claudium/target \
+  cargo clippy -p claudium-client --profile fast --lib --bin claudium-client --tests -- -D warnings
 ```
 
 The regular tests cover full/sparse documents, unrelated layers, a missing file,

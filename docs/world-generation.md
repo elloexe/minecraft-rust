@@ -1,7 +1,7 @@
 # World generation
 
-Horizon targets the repository-pinned Minecraft Java Edition **26.3**.
-`horizon_world::worldgen::decode_noise` implements its direct normal-noise JSON
+Claudium targets the repository-pinned Minecraft Java Edition **26.3**.
+`claudium_world::worldgen::decode_noise` implements its direct normal-noise JSON
 codec. `DensityRegistry` decodes named density definitions and `NoiseRouter`
 loads the eight router roots against the same graph. `AquiferConfig` binds the six
 aquifer density roots, and `NoiseBasedAquifer` implements underground fluid and
@@ -115,7 +115,7 @@ prepared volume.
 The runner exports built-in parameter tables independently from both authenticated
 JARs, requires them to agree and keeps them private. These contain 7,594 Overworld
 entries covering 56 biome identifiers and five Nether entries. Rust loads the
-quantized tables using a Horizon import format. This is an import of built-in
+quantized tables using a Claudium import format. This is an import of built-in
 data; the preset builders and vanilla biome codecs remain pending. The reference
 uses actual `MultiNoiseBiomeSource` resolvers with keyed registration holders.
 These checks resolve identities without evaluating biome properties or gameplay.
@@ -195,10 +195,10 @@ above remains a record of its narrower tested source snapshot.
 
 `tools/test_chunk_generation_parity.py` generates chunks in actual vanilla classes (`VanillaChunkGenerationOracle`: structure starts and
 references, biomes, noise, surface, carvers, then biome decoration and structure pieces through real `WorldGenRegion`s) and with
-`crates/horizon-world/examples/probe/chunk_dump.rs`, and compares every block state, quart biome and block entity (canonical NBT) of each target
+`crates/claudium-world/examples/probe/chunk_dump.rs`, and compares every block state, quart biome and block entity (canonical NBT) of each target
 chunk, and the scheduled block and fluid ticks each proto chunk carries into the live world. Cases are terrain sites for several seeds
 across the overworld, Nether and End, plus rectangles around every structure kind found by scanning the seed. `--phase structures`
-isolates terrain plus structure pieces, `--phase terrain` stops before features. `HORIZON_ORDER` (a file of `x z` lines) makes both sides
+isolates terrain plus structure pieces, `--phase terrain` stops before features. `CLAUDIUM_ORDER` (a file of `x z` lines) makes both sides
 decorate in that order instead of row-major.
 
 ### Data packs
@@ -208,19 +208,19 @@ A world's enabled data packs (`<world>/datapacks`, in `datapacks.json`'s order) 
 conditions, carvers, configured and placed features, structures, structure sets, template pools, processor lists, biomes, level stems), a
 higher pack's file for an id replacing a lower one's, and its block, fluid and biome tag files to the tag bundles in pack order.
 `GeneratorData::load_with` reads the bundles with them; the client caches the result per set of pack entries
-(`vanillagen::shared_data_with`). What Horizon leaves out is logged: a pack's new biomes (the game has no id, colours or sounds for them;
+(`vanillagen::shared_data_with`). What Claudium leaves out is logged: a pack's new biomes (the game has no id, colours or sounds for them;
 their tag entries and climate points go with them) and folders the generator does not read. A pack's dimension types set each level's
 height ([world-height.md](world-height.md)); noise settings taller than the level generate only inside it, as `clampToHeightAccessor`. Sapling growth and bone
 meal still place vanilla's features.
 
-`tools/test_datapack_worldgen_parity.py` runs the whole-chunk harness with `HORIZON_DATAPACKS=tools/fixtures/datapacks` on both sides
+`tools/test_datapack_worldgen_parity.py` runs the whole-chunk harness with `CLAUDIUM_DATAPACKS=tools/fixtures/datapacks` on both sides
 (the oracle selects every pack of the folder after vanilla through vanilla's own pack repository): its pack overrides a noise, a density
 function, the overworld noise settings (sea level 70, no aquifers, a new final density with a new noise added), a placed feature and a
-biome tag. Every site must match vanilla with the pack and differ from Horizon without it.
+biome tag. Every site must match vanilla with the pack and differ from Claudium without it.
 
 Packs must be written for 26.3: its worldgen formats differ from 26.2's (density functions take `left`/`right`, `gradient` replaces
 `y_clamped_gradient`, noises take `base_octave`/`octave_count`, block states are strings, surface rules became the `material_rule` and
-`material_condition` registries, configured features lost `config`). Vanilla 26.3 refuses a 26.2 worldgen pack as Horizon does.
+`material_condition` registries, configured features lost `config`). Vanilla 26.3 refuses a 26.2 worldgen pack as Claudium does.
 
 ### Decoration order
 
@@ -244,8 +244,8 @@ Result on seed 12345 (overworld 42 sites / 372 chunks, Nether, End): structure p
 generation 4 differing chunks (3 blocks, 1 block entity) out of 372; Nether and End terrain sites 0 differences.
 
 Harness normalisations (not generation differences): sections above the noise height (Nether roof, End sky) are all air in vanilla and
-absent in Horizon; structure templates keep their stored NBT integer width; a vanilla block entity left as a `DUMMY` default is equal to no
-Horizon entry; `LootTableSeed` without a `LootTable` and a vault's default reward table are ignored.
+absent in Claudium; structure templates keep their stored NBT integer width; a vanilla block entity left as a `DUMMY` default is equal to no
+Claudium entry; `LootTableSeed` without a `LootTable` and a vault's default reward table are ignored.
 
 Remaining known differences: a handful of single blocks near structure pieces in full generation (abandoned camps, shipwreck, villages) that
 need per-feature tracing, and tree features only through `tools/test_tree_feature_parity.py` (8,898 fixtures, all equal).

@@ -3,33 +3,33 @@
 A player's own AI agent (Claude Code, Codex, Cursor, any MCP client) or a script can do
 everything a player does with the mouse and keyboard, in the launcher and in the game. This page
 covers developers: the surfaces, the full inventory, and the rules every new command follows.
-Players read [Control Horizon with your AI agent](https://playhorizon.dev/docs/agents)
-(playhorizon.dev/docs/agents).
+Players read [Control Claudium with your AI agent](https://claudium.invalid/docs/agents)
+(claudium.invalid/docs/agents).
 
 The command lists are generated, so they can't drift:
 
-- [launcher-commands.md](launcher-commands.md): every `horizon-launcher` command, its arguments
+- [launcher-commands.md](launcher-commands.md): every `claudium-launcher` command, its arguments
   and its MCP tool. It comes from the CLI's clap definition (`cli_tools::markdown`), and the
   launcher test `the_launcher_reference_is_up_to_date` fails when it is stale or a tool is missing.
-- [horizon-ctl-commands.md](horizon-ctl-commands.md): every `horizon-ctl` command, its MCP tool
-  and its arguments. It comes from the command table (`horizon-ctl help --markdown`), and the
+- [claudium-ctl-commands.md](claudium-ctl-commands.md): every `claudium-ctl` command, its MCP tool
+  and its arguments. It comes from the command table (`claudium-ctl help --markdown`), and the
   test `the_generated_reference_is_up_to_date` fails when it is stale.
 
 ## Surfaces
 
 | Surface | Where | Transport |
 | --- | --- | --- |
-| Game control socket | `horizon-client --control` / `--control-socket PATH`, or Agent Control on in Horizon Settings > AI Agent (`crates/horizon-client/src/control.rs`; commands in `src/game/control.rs`, `agent.rs`, `ui_control.rs`, `saves_control.rs` and friends) | text line in, one JSON line out; Unix socket, or localhost TCP and a token where there is none |
-| `horizon-ctl` | `crates/horizon-client/src/bin/horizon-ctl/` | CLI over the socket; one table of commands (`commands.rs`) gives the help, the argument checks, the MCP tools and the reference |
-| `horizon-ctl mcp` | same | MCP over stdio, one tool per command of the table |
-| Launcher CLI | `launcher/src/cli.rs` | `horizon-launcher <command> [--json]` |
-| Launcher MCP | `launcher/src/mcp.rs`, `cli_tools.rs`, `game_tools.rs` | `horizon-launcher mcp` (stdio): every CLI command as a tool, the session tools, and the game's tools as `game_*` |
-| Connecting | `launcher/src/agents.rs`, `agents_page.rs`; `src/game/agent_settings.rs` | `horizon-launcher agent-config`; Settings > AI in the launcher; Horizon Settings > AI Agent in the game |
-| No AI | `crates/horizon-core/src/no_ai.rs` | `noAi:true` in `<game home>/horizon-extras.txt`, read by every surface |
+| Game control socket | `claudium-client --control` / `--control-socket PATH`, or Agent Control on in Claudium Settings > AI Agent (`crates/claudium-client/src/control.rs`; commands in `src/game/control.rs`, `agent.rs`, `ui_control.rs`, `saves_control.rs` and friends) | text line in, one JSON line out; Unix socket, or localhost TCP and a token where there is none |
+| `claudium-ctl` | `crates/claudium-client/src/bin/claudium-ctl/` | CLI over the socket; one table of commands (`commands.rs`) gives the help, the argument checks, the MCP tools and the reference |
+| `claudium-ctl mcp` | same | MCP over stdio, one tool per command of the table |
+| Launcher CLI | `launcher/src/cli.rs` | `claudium-launcher <command> [--json]` |
+| Launcher MCP | `launcher/src/mcp.rs`, `cli_tools.rs`, `game_tools.rs` | `claudium-launcher mcp` (stdio): every CLI command as a tool, the session tools, and the game's tools as `game_*` |
+| Connecting | `launcher/src/agents.rs`, `agents_page.rs`; `src/game/agent_settings.rs` | `claudium-launcher agent-config`; Settings > AI in the launcher; Claudium Settings > AI Agent in the game |
+| No AI | `crates/claudium-core/src/no_ai.rs` | `noAi:true` in `<game home>/claudium-extras.txt`, read by every surface |
 
 ## One MCP server for everything
 
-An agent adds one server, `horizon-launcher mcp`. It holds:
+An agent adds one server, `claudium-launcher mcp`. It holds:
 
 - **The launcher's CLI, generated.** `cli_tools.rs` walks the clap definition. Each command is a
   tool named after its words (`mods search` is `mods_search`). Its arguments are the command's,
@@ -40,22 +40,22 @@ An agent adds one server, `horizon-launcher mcp`. It holds:
   - `play` (the game, under control: `world`, `creative`, `join`, `offscreen`, `arg`);
   - `server`, `server_command`, `server_log`, `server_stop`;
   - `account_sign_in`, `account_list`.
-- **The game's tools.** It runs the selected version's `horizon-ctl mcp` (shipped beside the
+- **The game's tools.** It runs the selected version's `claudium-ctl mcp` (shipped beside the
   game) as a child. It lists that server's tools as `game_<name>`, all but `launch`, and passes
   calls and results through, images included. `play` starts the game with a control socket in
   the launcher's data folder. While no game answers, `game_*` calls say to call `play`.
 
-Why one server rather than two: the game's tools stay defined once, in horizon-ctl's table. The
+Why one server rather than two: the game's tools stay defined once, in claudium-ctl's table. The
 agent's client needs one entry and one approval. The version that plays is always the one the
-launcher selected, so the game's tools always match the game. `horizon-ctl mcp` stays available
+launcher selected, so the game's tools always match the game. `claudium-ctl mcp` stays available
 on its own, for a game started by hand or by a script.
 
 ## Inventory, before and after
 
 Before is `main` at 2026-10-23, before #1342, #1343, #1344, #1345 and #1353. After is with
-them. CLI is `horizon-launcher` for the launcher and `horizon-ctl` for the game. MCP is
-`horizon-launcher mcp` (the game's tools as `game_*`) and `horizon-ctl mcp`. **part** means only
-through a generic command (`ui` and `click` by widget, or a raw socket line that horizon-ctl
+them. CLI is `claudium-launcher` for the launcher and `claudium-ctl` for the game. MCP is
+`claudium-launcher mcp` (the game's tools as `game_*`) and `claudium-ctl mcp`. **part** means only
+through a generic command (`ui` and `click` by widget, or a raw socket line that claudium-ctl
 passes on without checking it).
 
 ### Launcher
@@ -81,7 +81,7 @@ passes on without checking it).
 | Mod browser: search, check, install, update, remove, list (mods, resource packs, modpacks) | Mods | yes | no | yes | yes | `mods ...`; `mods_remove` needs `confirm` |
 | Modpacks: import, port, play, remove, list | Modpacks | yes | no | yes | yes | `modpack ...`; `modpack_remove` needs `confirm` |
 | Launcher benchmark | (none) | yes | no | yes | yes | |
-| The game it started | (the game) | (horizon-ctl) | yes | (horizon-ctl) | yes | `game_*` |
+| The game it started | (the game) | (claudium-ctl) | yes | (claudium-ctl) | yes | `game_*` |
 | Connect an AI agent | Settings > AI | no | (none) | yes | (none) | `agent-config [--client] [--test]`; the agent is already connected, so there is no tool |
 | No AI | Settings > AI | no | (none) | yes | (none) | `no-ai [on\|off]`; the player's switch, never an agent's |
 
@@ -101,8 +101,8 @@ passes on without checking it).
 | Open to LAN | Pause > Open to LAN | part | no | yes | yes | `lan open\|close\|status` |
 | Play with Friends: host, stop, status | Pause | part | no | yes | yes | `friends host\|stop\|status` |
 | Vanilla options, every page | Options | yes | part | yes | yes | `options-get`, `options-set` (all of options.txt, typed); `options PAGE` was socket-only |
-| Horizon Settings: Graphics, Controller, Extras, Mods, AI Agent | Horizon Settings | part | part | yes | yes | `options horizon\|graphics\|extras\|agent...`, then `ui`/`click`/`set` |
-| Agent control on or off, status, connection details | Horizon Settings > AI Agent | no | no | yes | yes | new page (#1353) |
+| Claudium Settings: Graphics, Controller, Extras, Mods, AI Agent | Claudium Settings | part | part | yes | yes | `options claudium\|graphics\|extras\|agent...`, then `ui`/`click`/`set` |
+| Agent control on or off, status, connection details | Claudium Settings > AI Agent | no | no | yes | yes | new page (#1353) |
 | Key binds | Controls > Key Binds | yes | yes | yes | yes | `options-set key_key.jump key.keyboard.j` |
 | Resource packs | Options > Resource Packs | part | part | yes | yes | `options packs`, then `ui` rows and `click`; `options-set resourcePacks` |
 | Chat and commands | Chat | yes | yes | yes | yes | `chat`, `command`, `messages`, `chat-log` |
@@ -124,27 +124,27 @@ passes on without checking it).
 
 ## No AI
 
-One switch hides and turns off every AI feature: `noAi:true` in `<game home>/horizon-extras.txt`.
-The game home is `HORIZON_HOME`, else the data dir's `horizon`. The game reads its extras from
-its working directory, which is that folder. `horizon_core::no_ai` reads and writes the switch:
+One switch hides and turns off every AI feature: `noAi:true` in `<game home>/claudium-extras.txt`.
+The game home is `CLAUDIUM_HOME`, else the data dir's `claudium`. The game reads its extras from
+its working directory, which is that folder. `claudium_core::no_ai` reads and writes the switch:
 
 - `is_on(home)` and `check(home)` read it;
 - `set(home, on)` keeps the file's other lines, and writes no file to turn off a switch that was
   never on;
 - `REFUSAL` is the one line every surface prints.
 
-The switch is in three places: Settings > AI in the launcher, Horizon Settings in the game
-(`Item::NoAi`), and `horizon-launcher no-ai on|off`. When it is on:
+The switch is in three places: Settings > AI in the launcher, Claudium Settings in the game
+(`Item::NoAi`), and `claudium-launcher no-ai on|off`. When it is on:
 
 | Surface | What happens |
 | --- | --- |
-| Game | opens no control socket, even with `--control` (it logs the refusal); Horizon Settings hides AI Agent...; turning it on in a running game closes the socket at once |
-| `horizon-ctl` | every command refuses: exit status 4, `{"error": REFUSAL, "kind": "denied"}` |
-| `horizon-ctl mcp` | refuses to start (exit 4, REFUSAL on stderr); a session already running refuses each call |
-| `horizon-launcher mcp` | refuses to start; a running session answers each `tools/call` with error -32000 and REFUSAL |
+| Game | opens no control socket, even with `--control` (it logs the refusal); Claudium Settings hides AI Agent...; turning it on in a running game closes the socket at once |
+| `claudium-ctl` | every command refuses: exit status 4, `{"error": REFUSAL, "kind": "denied"}` |
+| `claudium-ctl mcp` | refuses to start (exit 4, REFUSAL on stderr); a session already running refuses each call |
+| `claudium-launcher mcp` | refuses to start; a running session answers each `tools/call` with error -32000 and REFUSAL |
 | Launcher CLI | `mcp` and `agent-config` are hidden from the help and refuse |
 | Launcher window | Settings > AI shows only the No AI switch, without Connect an AI agent |
-| Companion (#1068) | uses the same switch (see horizon-parity companion-notes.md) |
+| Companion (#1068) | uses the same switch (see claudium-parity companion-notes.md) |
 
 Every other launcher command stays usable: versions, install, remove, prepare, play, server,
 notes, links, account, settings, game-args, logs, update, desktop-entry, data,
@@ -157,19 +157,19 @@ turn the switch off.
 - **Launcher, Settings > AI > Connect an AI agent:**
   - a client picker (Claude Code, Codex, Cursor, any MCP client) with its config and a Copy button;
   - for clients with a CLI, the add command, shown and run only on **Add to ...**:
-    `claude mcp add --scope user horizon -- <exe> mcp`, `codex mcp add horizon -- <exe> mcp`;
+    `claude mcp add --scope user claudium -- <exe> mcp`, `codex mcp add claudium -- <exe> mcp`;
   - **Test the connection** (`agents::self_test`) starts `<exe> mcp`, lists its tools and says
     how many answered.
-  - `horizon-launcher agent-config [--client ID] [--json] [--test]` prints the same thing.
-- **Game, Horizon Settings > AI Agent:**
-  - **Agent Control** (`agentControl` in horizon-extras.txt, off by default) opens the default
-    endpoint (`$HORIZON_CONTROL`, else `horizon-control.sock` in the runtime directory) in a game
+  - `claudium-launcher agent-config [--client ID] [--json] [--test]` prints the same thing.
+- **Game, Claudium Settings > AI Agent:**
+  - **Agent Control** (`agentControl` in claudium-extras.txt, off by default) opens the default
+    endpoint (`$CLAUDIUM_CONTROL`, else `claudium-control.sock` in the runtime directory) in a game
     the player started. Turning it off closes the endpoint and stops its listener.
   - The page shows whether a client is connected (`Server::clients`), when the last command came,
     and the socket's name.
-  - **Copy Connection Details** copies the socket path, a `horizon-ctl --socket ... state` line
-    and an `mcpServers` config for this game's `horizon-ctl mcp`.
-- **The default:** a game an agent starts (`play` in MCP, `horizon-ctl launch`, `--control`) is
+  - **Copy Connection Details** copies the socket path, a `claudium-ctl --socket ... state` line
+    and an `mcpServers` config for this game's `claudium-ctl mcp`.
+- **The default:** a game an agent starts (`play` in MCP, `claudium-ctl launch`, `--control`) is
   under control. A game the player starts from the window is not, until they turn Agent Control
   on. An open socket lets any program of that user drive the game, so it opens only when an agent
   asked for the game, or when the player chose it.
@@ -178,13 +178,13 @@ turn the switch off.
 
 ### One vocabulary
 
-- **A command has one name**, kebab-case, the same on the socket, in `horizon-ctl` and in the
+- **A command has one name**, kebab-case, the same on the socket, in `claudium-ctl` and in the
   launcher CLI. Its MCP tool is the name with `_` for `-` (`click-slot` is `click_slot`). In the
   launcher, a subcommand's words are joined (`mods search` is `mods_search`). The launcher's MCP
   offers every game tool as `game_<name>`, so none collides with its own (`logs` is on both
   sides). A launcher tool whose name starts with `game_` (`game_args`) is matched first.
 - **Arguments:** positional words, then `--flags`.
-  - The game: the `horizon-ctl` table (`Param`) is the source of truth. It generates the MCP
+  - The game: the `claudium-ctl` table (`Param`) is the source of truth. It generates the MCP
     `inputSchema` and the reference. A game command is not done until it is in that table.
   - The launcher: the clap definition is the source of truth. Give every argument a help line;
     it becomes the tool's description.
@@ -270,10 +270,10 @@ turn the switch off.
 ## Tests
 
 - **Unit tests:**
-  - horizon-ctl: the table, the schemas, the reference, the No AI refusal, the destructive and
+  - claudium-ctl: the table, the schemas, the reference, the No AI refusal, the destructive and
     network annotations;
   - the launcher: generated tools, `confirm`, the reference, the agent configs;
-  - `horizon_core::no_ai`;
+  - `claudium_core::no_ai`;
   - `options_ui`: the AI Agent page, and that No AI hides it.
 - **`tools/agent_control_e2e.py`** drives a real game, offscreen on macOS and on a virtual screen
   on Linux, through the CLI and MCP:
@@ -281,14 +281,14 @@ turn the switch off.
   - `manage`: worlds, servers, effects, books, LAN, the options pages and `confirm`;
   - `no-ai`: every surface refuses;
   - `setting`: Agent Control on opens the endpoint, the AI Agent page, Copy, and off closes it.
-- **`tools/launcher_mcp_e2e.py`** drives `horizon-launcher mcp`: the generated tools, `play` and
+- **`tools/launcher_mcp_e2e.py`** drives `claudium-launcher mcp`: the generated tools, `play` and
   the `game_*` tools, `confirm`, `agent-config` and `--test`, and No AI.
 
 ## Later
 
 These are tracked in FEATURES.md (LATER):
 
-- Horizon's own option files by key (`horizon-graphics.txt`, controller, extras) next to
+- Claudium's own option files by key (`claudium-graphics.txt`, controller, extras) next to
   `options-get` and `options-set`.
 - Adding and removing saved servers by command.
 - `subscribe`: events as a stream on one connection.

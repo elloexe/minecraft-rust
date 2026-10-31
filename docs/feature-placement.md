@@ -1,6 +1,6 @@
 # Feature placement
 
-Horizon implements eighteen Java Edition **26.3** placement modifiers: count,
+Claudium implements eighteen Java Edition **26.3** placement modifiers: count,
 square spread, three-axis offset, height range, rarity filtering, random-chance
 filtering, fixed positions, random selection among modifiers, heightmap positions, surface-relative
 thresholds, water-depth filtering, both noise-based count forms, cuboid placement,

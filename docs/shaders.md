@@ -1,35 +1,35 @@
-# Horizon shader packs
+# Claudium shader packs
 
-Horizon has its own shader packs: WGSL written against stages of Horizon's renderer, checked before they run. This page
+Claudium has its own shader packs: WGSL written against stages of Claudium's renderer, checked before they run. This page
 is the guide for pack authors. The design and the pack format are in [api/shaders.md](api/shaders.md); every stage's
 signature, input, resource and limit is in the generated [api/shaders-reference.md](api/shaders-reference.md).
 
 Shader packs in the Iris/OptiFine format are a separate feature with its own loader; this page is only about
-Horizon's own format.
+Claudium's own format.
 
 | Part | Where | State |
 |---|---|---|
-| Format, stages, check | `crates/horizon-shader-api` | API 0.1, experimental |
-| Authoring tool | `horizon-shader` (same crate) | `new`, `check`, `pack` |
-| Templates | `crates/horizon-shader-api/templates/` | post, sky, material |
-| Example pack | `crates/horizon-shader-api/packs/golden_hour` | a warm sky and two post passes |
-| In the game: every stage | Options > Horizon Settings > Shader Packs | sky, material, post passes, hot reload |
+| Format, stages, check | `crates/claudium-shader-api` | API 0.1, experimental |
+| Authoring tool | `claudium-shader` (same crate) | `new`, `check`, `pack` |
+| Templates | `crates/claudium-shader-api/templates/` | post, sky, material |
+| Example pack | `crates/claudium-shader-api/packs/golden_hour` | a warm sky and two post passes |
+| In the game: every stage | Options > Claudium Settings > Shader Packs | sky, material, post passes, hot reload |
 | The registry and the launcher | `shader` kind ([api/mod-index.md](api/mod-index.md)); the Mods page's Shader packs tab | checked, then installed into `shaderpacks/` |
 
 ## Quick start
 
 ```sh
-cargo install --path crates/horizon-shader-api      # or: cargo run -p horizon-shader-api --bin horizon-shader -- <command>
-horizon-shader new my_pack --template post          # also: --template sky, --template material; --name "My Pack"
-horizon-shader check my_pack                        # what the game, the launcher and the registry will check
-horizon-shader pack my_pack                         # check, then write my_pack-0.1.0.hshader beside the folder
+cargo install --path crates/claudium-shader-api      # or: cargo run -p claudium-shader-api --bin claudium-shader -- <command>
+claudium-shader new my_pack --template post          # also: --template sky, --template material; --name "My Pack"
+claudium-shader check my_pack                        # what the game, the launcher and the registry will check
+claudium-shader pack my_pack                         # check, then write my_pack-0.1.0.hshader beside the folder
 ```
 
 `check` prints each stage with its cost, and the pack's SHA-256:
 
 ```
 golden_hour 1.0.0 (shader API 0.1): ok
-  sky       Warm horizon                     99 expressions, 0 texture reads
+  sky       Warm claudium                     99 expressions, 0 texture reads
   post      Glow                            192 expressions, 3 texture reads
   post      Colour grade                    201 expressions, 2 texture reads
   sha256 b5e0d98c...
@@ -47,8 +47,8 @@ my_pack 0.1.0 (shader API 0.1): FAILED
 ## Trying a pack in the game
 
 Put the pack folder (or its `.hshader`) in `shaderpacks/` beside `options.txt` (Open Pack Folder opens it) and pick
-it on Options > Horizon Settings > Shader Packs, which lists Horizon's packs, marked (Horizon), beside packs in the
-`shaders/` format; one runs at a time, and clicking it again turns it off. `HORIZON_SHADER_PACK=<its folder or file
+it on Options > Claudium Settings > Shader Packs, which lists Claudium's packs, marked (Claudium), beside packs in the
+`shaders/` format; one runs at a time, and clicking it again turns it off. `CLAUDIUM_SHADER_PACK=<its folder or file
 name>` runs a pack whatever the page says, for development. The game checks the pack first, and refuses one that
 fails, with its problems in the chat. While it runs, the game looks at the pack twice a second: save a file
 and the pack is checked and rebuilt in place ("Shader pack ... reloaded"); if the new version fails, the chat says
@@ -56,7 +56,7 @@ where and the last good version keeps drawing. All three stages run.
 
 ## A pack
 
-A folder (or the same files zipped as a `.hshader`) with `horizon-shaders.toml` and WGSL files:
+A folder (or the same files zipped as a `.hshader`) with `claudium-shaders.toml` and WGSL files:
 
 ```toml
 schema = 1
@@ -81,9 +81,9 @@ Every key is in [api/shaders.md](api/shaders.md#the-pack-format-schema-1).
 
 ## Stages
 
-A stage is one function your file defines. Horizon puts its prelude (the structs, `frame`, the stage's resources and
+A stage is one function your file defines. Claudium puts its prelude (the structs, `frame`, the stage's resources and
 helpers) before your file and calls the function from its own pass, so the world is still culled, batched and meshed
-by Horizon: a pack changes how things look, not how they are drawn.
+by Claudium: a pack changes how things look, not how they are drawn.
 
 | Stage | Your function | What it does |
 | --- | --- | --- |
@@ -101,7 +101,7 @@ Post passes also read `scene_color`, `scene_depth`, `previous` (the last pass's 
 `depth_at(uv)` and `view_position(uv, depth)`.
 
 Rules the check enforces: your files declare no bindings (`@group`/`@binding`), no entry points and no names starting
-with `horizon_`. Code shared by several stages goes in files listed in `shared`, put before every stage.
+with `claudium_`. Code shared by several stages goes in files listed in `shared`, put before every stage.
 
 ## Options
 

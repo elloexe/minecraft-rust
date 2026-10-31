@@ -1,7 +1,7 @@
 //! What the browser installed into the game folder, and installing, updating and removing it.
 //!
 //! `mod-browser.json` beside `options.txt` lists each file the browser put in `resourcepacks/`,
-//! and each Java mod it ported into `horizon-mods/`: where it came from, its version and its
+//! and each Java mod it ported into `claudium-mods/`: where it came from, its version and its
 //! checksum. Files the player put there themselves are never touched: the browser only replaces
 //! or removes what it lists.
 use super::{pick, safe_name, Kind, Project, Source, SourceId, Support, Version};
@@ -97,7 +97,7 @@ pub struct Step {
 }
 
 /// What installing `project` takes, dependencies first, checked before any byte is downloaded:
-/// every file runs in Horizon and has a version to install.
+/// every file runs in Claudium and has a version to install.
 pub fn plan(source: &dyn Source, project: &Project, everything: bool) -> Result<Vec<Step>, String> {
     if project.kind == Kind::Modpack {
         return Err(format!(
@@ -170,8 +170,8 @@ pub fn install(
     home: &Path,
     progress: &dyn Fn(&str, f32),
 ) -> Result<Vec<Entry>, String> {
-    if project.source == SourceId::Horizon {
-        return super::horizon::install(project, home, progress);
+    if project.source == SourceId::Claudium {
+        return super::claudium::install(project, home, progress);
     }
     if project.kind == Kind::Mod {
         return super::java::install(source, project, everything, home, progress);
@@ -269,7 +269,7 @@ pub fn remove(home: &Path, name: &str) -> Result<Entry, String> {
         .lookup(name)
         .cloned()
         .ok_or_else(|| format!("{name} wasn't installed by the browser."))?;
-    if entry.kind == Kind::Mod && entry.source != SourceId::Horizon {
+    if entry.kind == Kind::Mod && entry.source != SourceId::Claudium {
         super::java::remove(home, &entry)?;
     } else {
         match fs::remove_file(home.join(&entry.file)) {
@@ -278,8 +278,9 @@ pub fn remove(home: &Path, name: &str) -> Result<Entry, String> {
             Err(e) => return Err(format!("{}: {e}", entry.file)),
         }
     }
-    if let Some(id) = super::horizon::mod_id(&entry).filter(|_| entry.source == SourceId::Horizon) {
-        // The `.hmod` a mod that turned native left behind (horizon::install_version).
+    if let Some(id) = super::claudium::mod_id(&entry).filter(|_| entry.source == SourceId::Claudium)
+    {
+        // The `.hmod` a mod that turned native left behind (claudium::install_version).
         if entry.file.ends_with(".hnmod") {
             let _ = fs::remove_file(home.join(super::java::MODS_DIR).join(format!("{id}.hmod")));
         }
@@ -355,7 +356,7 @@ pub fn install_datapack(
     })?;
     let file = version.file().expect("pick keeps versions with a file");
     let folder = std::env::temp_dir().join(format!(
-        "horizon-launcher-datapack-{}-{}",
+        "claudium-launcher-datapack-{}-{}",
         std::process::id(),
         version.id
     ));

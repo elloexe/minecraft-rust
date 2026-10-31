@@ -69,7 +69,7 @@ fn maven_names_are_paths() {
 
 #[test]
 fn a_profile_comes_with_its_libraries_checked() {
-    let dir = std::env::temp_dir().join(format!("horizon-loaders-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("claudium-loaders-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     let (loader_jar, asm_jar) = (b"loader".to_vec(), b"asm".to_vec());
     let profile = json!({
@@ -141,7 +141,7 @@ fn a_profile_comes_with_its_libraries_checked() {
 fn the_real_loaders_install() {
     for kind in ["fabric", "quilt"] {
         let dir =
-            std::env::temp_dir().join(format!("horizon-loaders-{kind}-{}", std::process::id()));
+            std::env::temp_dir().join(format!("claudium-loaders-{kind}-{}", std::process::id()));
         let loader = choose(kind, "1.21.4", None).unwrap();
         let id = install(&loader, "1.21.4", &dir, &crate::backend::get_bytes, &|l| {
             eprintln!("{l}")

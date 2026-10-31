@@ -101,7 +101,7 @@ impl Server {
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("horizon-mojang-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("claudium-mojang-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     dir
 }
@@ -350,8 +350,8 @@ fn java_runtime_lays_out_mojangs_runtime_with_its_executables_and_links() {
         fs::read(home.join("legal/java.compiler/LICENSE")).unwrap(),
         LICENSE
     );
-    // horizon-prepare finds it where the official launcher would have put it.
-    assert_eq!(horizon_prepare::java::minecraft_runtimes(&dir), [home]);
+    // claudium-prepare finds it where the official launcher would have put it.
+    assert_eq!(claudium_prepare::java::minecraft_runtimes(&dir), [home]);
     // A second call keeps the files: only the index and manifest are asked again.
     server.asked();
     java_runtime(
@@ -458,7 +458,7 @@ fn a_cancelled_download_goes_on_where_it_stopped() {
     fs::remove_dir_all(&dir).unwrap();
 }
 
-/// A version Horizon doesn't pin, as Mojang's list names it (its version file's sha1): the
+/// A version Claudium doesn't pin, as Mojang's list names it (its version file's sha1): the
 /// client's sha1 comes from that checked file, and an old version's natives for this system
 /// (a classifier of their library, `${arch}` filled in) come with the libraries.
 #[test]

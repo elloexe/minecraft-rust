@@ -1002,6 +1002,172 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
 
 [[package]]
+name = "claudium-bench"
+version = "0.1.0"
+dependencies = [
+ "claudium-telemetry",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "claudium-core"
+version = "0.1.0"
+dependencies = [
+ "libm",
+]
+
+[[package]]
+name = "claudium-friends"
+version = "0.1.0"
+dependencies = [
+ "chacha20poly1305",
+ "getrandom 0.3.4",
+ "hkdf",
+ "if-addrs",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "socket2 0.5.10",
+ "spake2",
+]
+
+[[package]]
+name = "claudium-launcher"
+version = "0.2.0"
+dependencies = [
+ "base64",
+ "chrono",
+ "clap",
+ "claudium-bench",
+ "claudium-core",
+ "claudium-friends",
+ "claudium-mods",
+ "claudium-port-pack",
+ "claudium-prepare",
+ "claudium-release-sign",
+ "claudium-telemetry",
+ "claudium-theme",
+ "claudium-world",
+ "dirs 5.0.1",
+ "flate2",
+ "futures-lite 2.6.1",
+ "getrandom 0.3.4",
+ "gpui",
+ "image",
+ "keyring",
+ "objc2-app-kit",
+ "oo7",
+ "proc-macro2",
+ "pulldown-cmark",
+ "raw-window-handle",
+ "self-replace",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2 0.10.9",
+ "syn 2.0.119",
+ "sys-locale",
+ "tar",
+ "toml 1.1.8+spec-1.1.0",
+ "trash",
+ "ureq",
+ "winresource",
+ "zip",
+]
+
+[[package]]
+name = "claudium-mods"
+version = "0.1.0"
+dependencies = [
+ "claudium-shader-api",
+ "log",
+ "minisign-verify",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "toml 1.1.8+spec-1.1.0",
+ "wasmparser",
+ "zip",
+]
+
+[[package]]
+name = "claudium-port-pack"
+version = "0.1.0"
+dependencies = [
+ "claudium-mods",
+ "serde",
+ "serde_json",
+ "sha1",
+ "toml 1.1.8+spec-1.1.0",
+ "ureq",
+ "zip",
+]
+
+[[package]]
+name = "claudium-prepare"
+version = "0.1.0"
+dependencies = [
+ "crc32fast",
+ "libc",
+ "regex",
+ "sha1",
+ "sha2 0.10.9",
+ "zip",
+]
+
+[[package]]
+name = "claudium-release-sign"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "ring",
+]
+
+[[package]]
+name = "claudium-shader-api"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "naga 30.0.1",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "toml 1.1.8+spec-1.1.0",
+ "zip",
+]
+
+[[package]]
+name = "claudium-telemetry"
+version = "0.1.0"
+dependencies = [
+ "getrandom 0.3.4",
+ "ruzstd",
+ "serde",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
+name = "claudium-theme"
+version = "0.1.0"
+
+[[package]]
+name = "claudium-world"
+version = "0.1.0"
+dependencies = [
+ "claudium-core",
+ "flate2",
+ "libm",
+ "lz4_flex",
+ "postcard",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "xxhash-rust",
+]
+
+[[package]]
 name = "cobs"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2697,172 +2863,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cc627f471c528ff0c4a49e1d5e60450c8f6461dd6d10ba9dcd3a61d3dff7728d"
 dependencies = [
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "horizon-bench"
-version = "0.1.0"
-dependencies = [
- "horizon-telemetry",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "horizon-core"
-version = "0.1.0"
-dependencies = [
- "libm",
-]
-
-[[package]]
-name = "horizon-friends"
-version = "0.1.0"
-dependencies = [
- "chacha20poly1305",
- "getrandom 0.3.4",
- "hkdf",
- "if-addrs",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "socket2 0.5.10",
- "spake2",
-]
-
-[[package]]
-name = "horizon-launcher"
-version = "0.2.0"
-dependencies = [
- "base64",
- "chrono",
- "clap",
- "dirs 5.0.1",
- "flate2",
- "futures-lite 2.6.1",
- "getrandom 0.3.4",
- "gpui",
- "horizon-bench",
- "horizon-core",
- "horizon-friends",
- "horizon-mods",
- "horizon-port-pack",
- "horizon-prepare",
- "horizon-release-sign",
- "horizon-telemetry",
- "horizon-theme",
- "horizon-world",
- "image",
- "keyring",
- "objc2-app-kit",
- "oo7",
- "proc-macro2",
- "pulldown-cmark",
- "raw-window-handle",
- "self-replace",
- "serde",
- "serde_json",
- "sha1",
- "sha2 0.10.9",
- "syn 2.0.119",
- "sys-locale",
- "tar",
- "toml 1.1.8+spec-1.1.0",
- "trash",
- "ureq",
- "winresource",
- "zip",
-]
-
-[[package]]
-name = "horizon-mods"
-version = "0.1.0"
-dependencies = [
- "horizon-shader-api",
- "log",
- "minisign-verify",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "toml 1.1.8+spec-1.1.0",
- "wasmparser",
- "zip",
-]
-
-[[package]]
-name = "horizon-port-pack"
-version = "0.1.0"
-dependencies = [
- "horizon-mods",
- "serde",
- "serde_json",
- "sha1",
- "toml 1.1.8+spec-1.1.0",
- "ureq",
- "zip",
-]
-
-[[package]]
-name = "horizon-prepare"
-version = "0.1.0"
-dependencies = [
- "crc32fast",
- "libc",
- "regex",
- "sha1",
- "sha2 0.10.9",
- "zip",
-]
-
-[[package]]
-name = "horizon-release-sign"
-version = "0.1.0"
-dependencies = [
- "base64",
- "ring",
-]
-
-[[package]]
-name = "horizon-shader-api"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "naga 30.0.1",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "toml 1.1.8+spec-1.1.0",
- "zip",
-]
-
-[[package]]
-name = "horizon-telemetry"
-version = "0.1.0"
-dependencies = [
- "getrandom 0.3.4",
- "ruzstd",
- "serde",
- "serde_json",
- "ureq",
-]
-
-[[package]]
-name = "horizon-theme"
-version = "0.1.0"
-
-[[package]]
-name = "horizon-world"
-version = "0.1.0"
-dependencies = [
- "flate2",
- "horizon-core",
- "libm",
- "lz4_flex",
- "postcard",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "xxhash-rust",
 ]
 
 [[package]]

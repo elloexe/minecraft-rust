@@ -1,13 +1,13 @@
 //! Native mods (docs/native-mods.md), experimental and off by default: mixin bundles that
-//! levzzz5154's horizon-mixins (MIT, <https://github.com/horizon-rust/horizon-mixins>) applies to
-//! Horizon's source, which the launcher then compiles into a game of its own with its portable Rust
+//! levzzz5154's claudium-mixins (MIT, <https://github.com/elloexe/claudium-mixins>) applies to
+//! Claudium's source, which the launcher then compiles into a game of its own with its portable Rust
 //! ([`rust_toolchain`]). Unlike `.hmod` mods they are not sandboxed: their code runs with the
 //! player's rights.
 //!
-//! A native mod pins the Horizon revision it was made for (a Nightly's or a release's commit).
+//! A native mod pins the Claudium revision it was made for (a Nightly's or a release's commit).
 //! Mods pinning different ones build on the newest of them, once the player agreed to try (they
-//! often still apply and compile). A mod that hooks only Horizon's native hook points
-//! (`game/native_hooks.rs`) names the version it needs instead (`hooks`): it builds on any Horizon
+//! often still apply and compile). A mod that hooks only Claudium's native hook points
+//! (`game/native_hooks.rs`) names the version it needs instead (`hooks`): it builds on any Claudium
 //! whose hook points have that version or a later one (they are only ever added to), the player's own
 //! by default, so such mods always build together. The build compiles that revision's source, from
 //! GitHub, never a checkout on this computer, and installs as its own version,
@@ -27,12 +27,12 @@ use std::process::{Command, Stdio};
 pub const INSTANCE: &str = "native-mods";
 const NAME: &str = "Native mods";
 const PREFIX: &str = "native-";
-/// horizon-mixins, for bundles that don't name the revision they were tested with.
-const MIXINS_GIT: &str = "https://github.com/horizon-rust/horizon-mixins";
+/// claudium-mixins, for bundles that don't name the revision they were tested with.
+const MIXINS_GIT: &str = "https://github.com/elloexe/claudium-mixins";
 pub const MIXINS_REV: &str = "3f99a5c60dfa311cc365524c44ae2fd799bfa1de";
 /// The profile and features of the release's own game (game-build.yml).
 const PROFILE: &str = "release";
-const FEATURES: &str = "horizon-client/mods";
+const FEATURES: &str = "claudium-client/mods";
 
 /// Whether Native mods are on after an install into a game folder whose list is `installed`:
 /// installing a native mod turns them on, so the player only has to build. A player who never
@@ -64,7 +64,7 @@ pub(crate) fn root() -> PathBuf {
 }
 
 /// A canonical path without Windows' verbatim prefix: `canonicalize` gives `\\?\C:\...` there,
-/// and horizon-mixins' output check stats `\\?\C:`, the volume itself, which Windows refuses
+/// and claudium-mixins' output check stats `\\?\C:`, the volume itself, which Windows refuses
 /// (os error 1). A drive path loses its `\\?\`; any other path is left as it is.
 fn plain(path: PathBuf) -> PathBuf {
     match path.to_str().and_then(|p| p.strip_prefix(r"\\?\")) {
@@ -78,12 +78,12 @@ pub fn log_path() -> PathBuf {
     root().join("build.log")
 }
 
-const MANIFEST: &str = "horizon-mixin.toml";
-/// A registry download's manifest (`.hnmod`, `horizon_mods::index::native`), beside `mixins/<id>/`.
-const NATIVE_MANIFEST: &str = horizon_mods::index::native::MANIFEST;
+const MANIFEST: &str = "claudium-mixin.toml";
+/// A registry download's manifest (`.hnmod`, `claudium_mods::index::native`), beside `mixins/<id>/`.
+const NATIVE_MANIFEST: &str = claudium_mods::index::native::MANIFEST;
 /// Where an instance keeps the native mods installed from the registry, `<id>.hnmod`, each on or
-/// off in `horizon-mods.txt` like any mod.
-pub const INSTALLED: &str = "horizon-native-mods";
+/// off in `claudium-mods.txt` like any mod.
+pub const INSTALLED: &str = "claudium-native-mods";
 
 /// The native mods turned on in the game folder `home`, unpacked into a folder [`build`] takes.
 /// Each `.hnmod` is checked again as the registry checks it (Rust and TOML under
@@ -98,7 +98,7 @@ pub fn installed_mods(home: &Path) -> Result<PathBuf, String> {
     paths.sort();
     let mut count = 0;
     for path in paths {
-        let bundle = horizon_mods::index::native::Bundle::read(&path)
+        let bundle = claudium_mods::index::native::Bundle::read(&path)
             .map_err(|e| format!("{}: {e}", path.display()))?;
         if !crate::browser::java::is_enabled(home, &bundle.manifest.id) {
             continue;
@@ -120,23 +120,23 @@ pub fn installed_mods(home: &Path) -> Result<PathBuf, String> {
     Ok(out)
 }
 
-/// A mixin bundle: a folder with a `horizon-mixin.toml`, and the revisions it pins.
+/// A mixin bundle: a folder with a `claudium-mixin.toml`, and the revisions it pins.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Bundle {
     pub id: String,
     pub version: String,
     pub dir: PathBuf,
-    /// The Claudium commit it builds on (`[compatibility] horizon_revision`, or its `.hnmod`'s).
-    pub horizon: Option<String>,
-    /// The horizon-mixins commit it was tested with (its `.hnmod`'s).
+    /// The Claudium commit it builds on (`[compatibility] claudium_revision`, or its `.hnmod`'s).
+    pub claudium: Option<String>,
+    /// The claudium-mixins commit it was tested with (its `.hnmod`'s).
     pub mixins: Option<String>,
-    /// The native hook points' version it needs (its `.hnmod`'s `hooks`): then `horizon` is the
+    /// The native hook points' version it needs (its `.hnmod`'s `hooks`): then `claudium` is the
     /// revision it was tested on, and it builds on any with these hook points or later ones.
     pub hooks: Option<u32>,
 }
 
-/// The bundles in `folder`: the folder itself when it is one (a `horizon-mixin.toml`, or an
-/// unpacked `.hnmod`: `horizon-native.json` and `mixins/<id>/`), else each of its subfolders that is.
+/// The bundles in `folder`: the folder itself when it is one (a `claudium-mixin.toml`, or an
+/// unpacked `.hnmod`: `claudium-native.json` and `mixins/<id>/`), else each of its subfolders that is.
 pub fn bundles(folder: &Path) -> Result<Vec<Bundle>, String> {
     if let Some(found) = bundle_in(folder)? {
         return Ok(vec![found]);
@@ -175,12 +175,12 @@ pub(crate) fn bundle_in(dir: &Path) -> Result<Option<Bundle>, String> {
     let field = |name: &str| native_json[name].as_str().map(str::to_owned);
     let id = field("id").ok_or_else(|| format!("{} has no id.", path.display()))?;
     let found = bundle(&dir.join("mixins").join(&id), field("mixins"))?;
-    match (&found.horizon, field("horizon")) {
+    match (&found.claudium, field("claudium")) {
         (Some(pinned), Some(native)) if *pinned != native => Err(format!(
             "{id}: {NATIVE_MANIFEST} pins Claudium {native}, its {MANIFEST} {pinned}."
         )),
         (_, native) => Ok(Some(Bundle {
-            horizon: found.horizon.clone().or(native),
+            claudium: found.claudium.clone().or(native),
             hooks: native_json["hooks"]
                 .as_u64()
                 .and_then(|v| u32::try_from(v).ok()),
@@ -209,7 +209,7 @@ fn bundle(dir: &Path, mixins: Option<String>) -> Result<Bundle, String> {
         id: need("id")?,
         version: need("version")?,
         dir: dir.to_owned(),
-        horizon: field("compatibility", "horizon_revision"),
+        claudium: field("compatibility", "claudium_revision"),
         mixins,
         hooks: None,
     })
@@ -255,7 +255,7 @@ fn agreed(
 }
 
 /// The revision `bundles` build on for `which` when their pins differ: the newest of the pins and
-/// `also` (the launcher's own horizon-mixins), by its commit's time (`date`), so no mod gets an
+/// `also` (the launcher's own claudium-mixins), by its commit's time (`date`), so no mod gets an
 /// older one than it was made for. With one pin or none, it is [`agreed`]'s.
 fn newest(
     bundles: &[Bundle],
@@ -311,7 +311,7 @@ fn mismatch(mods: &[Bundle], revision: &str) -> Option<String> {
     let list: Vec<String> = mods
         .iter()
         .filter(|b| b.hooks.is_none())
-        .filter_map(|b| b.horizon.as_ref().map(|r| (b, r)))
+        .filter_map(|b| b.claudium.as_ref().map(|r| (b, r)))
         .filter(|(_, r)| *r != revision)
         .map(|(b, r)| format!("{} → {}", b.id, &r[..r.len().min(7)]))
         .collect();
@@ -325,7 +325,7 @@ fn mismatch(mods: &[Bundle], revision: &str) -> Option<String> {
 }
 
 /// Where Claudium declares its native hook points' version, and the line that does.
-const HOOKS_FILE: &str = "crates/horizon-client/src/game/native_hooks.rs";
+const HOOKS_FILE: &str = "crates/claudium-client/src/game/native_hooks.rs";
 const HOOKS_LINE: &str = "pub(crate) const NATIVE_HOOKS_API: u32 = ";
 
 /// The native hook points' version in `HOOKS_FILE`'s text.
@@ -365,7 +365,7 @@ fn with_hooks(
     let fallback = agreed(
         &tested,
         "Claudium",
-        |b| b.horizon.as_ref(),
+        |b| b.claudium.as_ref(),
         || Err(String::new()),
     );
     if let (true, Ok(revision)) = (free, fallback) {
@@ -385,7 +385,7 @@ fn with_hooks(
 }
 
 /// A bundle that names a hook points' version builds on another revision than the one it was
-/// tested on: its `horizon_revision` (which horizon-mixins checks) becomes the build's.
+/// tested on: its `claudium_revision` (which claudium-mixins checks) becomes the build's.
 fn repin(bundle: &Bundle, revision: &str) -> Result<(), String> {
     let path = bundle.dir.join(MANIFEST);
     let text = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
@@ -393,7 +393,7 @@ fn repin(bundle: &Bundle, revision: &str) -> Result<(), String> {
         .parse()
         .map_err(|e| format!("{}: {e}", path.display()))?;
     if let Some(toml::Value::Table(compat)) = value.get_mut("compatibility") {
-        compat.insert("horizon_revision".into(), revision.into());
+        compat.insert("claudium_revision".into(), revision.into());
     }
     let text = toml::to_string(&value).map_err(|e| e.to_string())?;
     fs::write(&path, text).map_err(|e| format!("{}: {e}", path.display()))
@@ -402,7 +402,7 @@ fn repin(bundle: &Bundle, revision: &str) -> Result<(), String> {
 /// Whether Claudium's source at `source` has the `mods` feature (the WebAssembly mods' runtime,
 /// gone from later revisions).
 fn has_mods_feature(source: &Path) -> bool {
-    let path = source.join("crates/horizon-client/Cargo.toml");
+    let path = source.join("crates/claudium-client/Cargo.toml");
     let text = fs::read_to_string(path).unwrap_or_default();
     let value: toml::Table = text.parse().unwrap_or_default();
     value.get("features").and_then(|f| f.get("mods")).is_some()
@@ -428,7 +428,7 @@ pub fn revision_of(version: &str) -> Result<String, String> {
 }
 
 /// Every file under `dir`, by its path relative to `dir` (with `/`), sorted. A symlink is refused:
-/// horizon-mixins refuses them too.
+/// claudium-mixins refuses them too.
 fn files(dir: &Path) -> Result<Vec<(String, PathBuf)>, String> {
     fn walk(root: &Path, dir: &Path, out: &mut Vec<(String, PathBuf)>) -> Result<(), String> {
         for entry in fs::read_dir(dir).map_err(|e| e.to_string())?.flatten() {
@@ -453,7 +453,7 @@ fn files(dir: &Path) -> Result<Vec<(String, PathBuf)>, String> {
     Ok(out)
 }
 
-/// The installed version `bundles` built on Claudium `revision` with horizon-mixins `mixins`
+/// The installed version `bundles` built on Claudium `revision` with claudium-mixins `mixins`
 /// become: `native-<7 digits of the revision>-<12 hex digits>`.
 pub fn version_for(revision: &str, mixins: &str, bundles: &[Bundle]) -> Result<String, String> {
     let mut hash = Sha256::new();
@@ -500,7 +500,7 @@ impl Step {
                 rust_toolchain::VERSION,
                 done * 100.0
             ),
-            Self::Tool => "Building horizon-mixins (once)".into(),
+            Self::Tool => "Building claudium-mixins (once)".into(),
             Self::Source(revision) => {
                 format!("Downloading Claudium's source at {}", &revision[..7])
             }
@@ -550,7 +550,7 @@ fn run(mut cmd: Command, what: &str, mut line: impl FnMut(&str)) -> Result<(), S
     ))
 }
 
-/// A horizon-mixins diagnostic (`{"code", "message", "file"}`) in one line.
+/// A claudium-mixins diagnostic (`{"code", "message", "file"}`) in one line.
 fn diagnostic(text: &str) -> Option<String> {
     let start = text.find('{')?;
     let value: serde_json::Value = serde_json::from_str(&text[start..]).ok()?;
@@ -565,25 +565,25 @@ fn diagnostic(text: &str) -> Option<String> {
     Some(line)
 }
 
-/// horizon-mixins at commit `rev`, built once with the launcher's cargo (`cargo install --locked`).
+/// claudium-mixins at commit `rev`, built once with the launcher's cargo (`cargo install --locked`).
 fn tool(rust: &Toolchain, rev: &str) -> Result<PathBuf, String> {
     let dir = root().join("tools").join(&rev[..12]);
     let bin = dir
         .join("bin")
-        .join(format!("horizon-mixins{}", std::env::consts::EXE_SUFFIX));
+        .join(format!("claudium-mixins{}", std::env::consts::EXE_SUFFIX));
     if !bin.is_file() {
         let mut cmd = rust.command(&rust.cargo());
         cmd.args([
             "install", "--locked", "--git", MIXINS_GIT, "--rev", rev, "--root",
         ])
         .arg(&dir)
-        .arg("horizon-mixins-cli");
-        run(cmd, "Building horizon-mixins", |_| {})?;
+        .arg("claudium-mixins-cli");
+        run(cmd, "Building claudium-mixins", |_| {})?;
     }
     Ok(bin)
 }
 
-/// `horizon-mixins apply`: the mods in `mods` applied to `source`, into `out`. It runs
+/// `claudium-mixins apply`: the mods in `mods` applied to `source`, into `out`. It runs
 /// `cargo metadata`, so it gets the launcher's toolchain like a build does: on a computer with no
 /// Rust of its own, a plain command found no cargo (E_METADATA).
 fn apply(rust: &Toolchain, tool: &Path, source: &Path, mods: &Path, out: &Path) -> Command {
@@ -594,12 +594,12 @@ fn apply(rust: &Toolchain, tool: &Path, source: &Path, mods: &Path, out: &Path) 
 }
 
 /// Claudium's source at commit `revision`: GitHub's archive of it, unpacked once, with the commit in
-/// `.horizon-revision` (bundles pin it). A Nightly's commit stays downloadable after the Nightly
+/// `.claudium-revision` (bundles pin it). A Nightly's commit stays downloadable after the Nightly
 /// is gone: its `nightly-source/…` tag keeps it (docs/release-flow.md). Links are left out:
-/// horizon-mixins refuses them, and none is needed to build.
+/// claudium-mixins refuses them, and none is needed to build.
 fn source(revision: &str) -> Result<PathBuf, String> {
     let dir = root().join("source").join(revision);
-    if dir.join(".horizon-revision").is_file() {
+    if dir.join(".claudium-revision").is_file() {
         return Ok(dir);
     }
     let archive = format!(
@@ -608,7 +608,7 @@ fn source(revision: &str) -> Result<PathBuf, String> {
     );
     let partial = root().join("source").join(format!(".{revision}.partial"));
     let top = unpack_archive(&archive, &partial, u64::MAX)?;
-    fs::write(top.join(".horizon-revision"), revision).map_err(|e| e.to_string())?;
+    fs::write(top.join(".claudium-revision"), revision).map_err(|e| e.to_string())?;
     let _ = fs::remove_dir_all(&dir);
     fs::rename(&top, &dir).map_err(|e| e.to_string())?;
     let _ = fs::remove_dir_all(&partial);
@@ -666,7 +666,7 @@ fn sync(from: &Path, to: &Path) -> Result<(), String> {
 /// whose game files the build reuses) and points `instance` at the build: the instance the mods
 /// were installed in, else (None, or the game's own home) the Native mods instance. Returns the
 /// build's version; a build already made is used again. Mods pinning different revisions build on
-/// the newest one, with the newest horizon-mixins they name, only when the player agreed to try
+/// the newest one, with the newest claudium-mixins they name, only when the player agreed to try
 /// (`anyway`): else the error starts with [`MISMATCH`] and says which.
 pub fn build(
     base: &str,
@@ -695,11 +695,11 @@ pub fn build(
         .collect();
     // A mod naming a hook points' version doesn't pin: it follows the others, else the game.
     let pins: Vec<Bundle> = mods.iter().filter(|b| b.hooks.is_none()).cloned().collect();
-    let free = pins.iter().all(|b| b.horizon.is_none());
+    let free = pins.iter().all(|b| b.claudium.is_none());
     let pinned = newest(
         &pins,
         "Claudium",
-        |b| b.horizon.as_ref(),
+        |b| b.claudium.as_ref(),
         || revision_of(base),
         None,
         |r| committed(backend::REPO, r),
@@ -711,7 +711,7 @@ pub fn build(
     }
     for b in mods
         .iter()
-        .filter(|b| b.hooks.is_some() || b.horizon.as_ref().is_some_and(|r| *r != revision))
+        .filter(|b| b.hooks.is_some() || b.claudium.as_ref().is_some_and(|r| *r != revision))
     {
         repin(b, &revision)?;
     }
@@ -724,11 +724,11 @@ pub fn build(
     };
     let mixins = newest(
         &mods,
-        "horizon-mixins",
+        "claudium-mixins",
         |b| b.mixins.as_ref(),
         || Ok(MIXINS_REV.into()),
         Some(MIXINS_REV),
-        |r| committed("horizon-rust/horizon-mixins", r),
+        |r| committed("elloexe/claudium-mixins", r),
     )?;
     let version = version_for(&revision, &mixins, &mods)?;
     if !backend::installed().contains(&version) {
@@ -739,13 +739,13 @@ pub fn build(
         progress(Step::Source(revision.clone()));
         let source = source(&revision)?;
         progress(Step::Mixins);
-        // horizon-mixins refuses an output path through a link (macOS's /tmp is one).
+        // claudium-mixins refuses an output path through a link (macOS's /tmp is one).
         let real = plain(root().canonicalize().map_err(|e| e.to_string())?);
         let fresh = real.join("stage.new");
         let _ = fs::remove_dir_all(&fresh);
         run(
             apply(&rust, &tool, &source, &incoming, &fresh),
-            "horizon-mixins",
+            "claudium-mixins",
             |_| {},
         )
         .map_err(blame)?;
@@ -759,7 +759,7 @@ pub fn build(
         if has_mods_feature(&stage) {
             compile.args(["--features", FEATURES]);
         }
-        compile.args(["-p", "horizon-client", "--bin", "horizon-client"]);
+        compile.args(["-p", "claudium-client", "--bin", "claudium-client"]);
         let mut crates = 0;
         run(compile, "Compiling the game", |line| {
             if let Some(name) = line.trim_start().strip_prefix("Compiling ") {
@@ -772,8 +772,8 @@ pub fn build(
         progress(Step::Install);
         let about = serde_json::json!({
             "base": base,
-            "horizon": revision,
-            "horizon_mixins": mixins,
+            "claudium": revision,
+            "claudium_mixins": mixins,
             "hooks": mods.iter().find_map(|m| m.hooks),
             "rust": rust_toolchain::VERSION,
             "mods": mods.iter().map(|m| serde_json::json!({"id": m.id, "version": m.version})).collect::<Vec<_>>(),
@@ -824,7 +824,7 @@ fn install(
         let copied = if entry.path().is_dir() {
             backend::copy_dir(&entry.path(), &to)
         } else {
-            horizon_prepare::clone_or_copy(&entry.path(), &to)
+            claudium_prepare::clone_or_copy(&entry.path(), &to)
         };
         copied.map_err(|e| format!("Could not copy {}: {e}", entry.path().display()))?;
     }
@@ -847,11 +847,11 @@ fn instance_on(version: &str) -> Result<Instance, String> {
 
 /// The mods' settings from the game's own home `from` (where their WebAssembly versions kept
 /// them) into the Native mods instance's `to`, for each mod `to` has none of yet: its storage
-/// folder (`horizon-mods/.horizon-mod-data/<id>/`) and its keys (`key.<id>.<name>:…` lines of
-/// `horizon-mods.txt`). Nothing is overwritten.
+/// folder (`claudium-mods/.claudium-mod-data/<id>/`) and its keys (`key.<id>.<name>:…` lines of
+/// `claudium-mods.txt`). Nothing is overwritten.
 fn carry_settings(from: &Path, to: &Path, ids: &[&str]) -> Result<(), String> {
-    const DATA: &str = "horizon-mods/.horizon-mod-data";
-    const LIST: &str = "horizon-mods.txt";
+    const DATA: &str = "claudium-mods/.claudium-mod-data";
+    const LIST: &str = "claudium-mods.txt";
     let read = |home: &Path| fs::read_to_string(home.join(LIST)).unwrap_or_default();
     let (theirs, mut ours) = (read(from), read(to));
     let before = ours.len();
@@ -905,24 +905,24 @@ mod tests {
     fn installing_a_native_mod_turns_native_mods_on() {
         let entry = |file: &str| {
             serde_json::from_value::<crate::browser::installed::Entry>(serde_json::json!({
-                "source": "horizon", "project": "p", "slug": "p", "title": "P", "kind": "mod",
+                "source": "claudium", "project": "p", "slug": "p", "title": "P", "kind": "mod",
                 "version": "1", "number": "1", "file": file, "checksum": "", "page": ""
             }))
             .unwrap()
         };
         let plain = [
-            entry("horizon-mods/zoom.hmod"),
+            entry("claudium-mods/zoom.hmod"),
             entry("resourcepacks/x.zip"),
         ];
         assert!(!turns_on(false, &[]));
         assert!(!turns_on(false, &plain), "no native mod: they stay off");
         assert!(!turns_on(
             false,
-            &[entry("horizon-native-mods-old/x.hnmod")]
+            &[entry("claudium-native-mods-old/x.hnmod")]
         ));
         let native = [
             plain[0].clone(),
-            entry("horizon-native-mods/veinminer.hnmod"),
+            entry("claudium-native-mods/veinminer.hnmod"),
         ];
         assert!(turns_on(false, &native));
         assert!(turns_on(true, &plain), "on stays on");
@@ -936,7 +936,7 @@ mod tests {
     }
 
     fn dir(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("horizon-native-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("claudium-native-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         d
@@ -945,38 +945,38 @@ mod tests {
     #[test]
     fn the_native_mods_instance_gets_the_mods_settings_once() {
         let (from, to) = (dir("carry-from"), dir("carry-to"));
-        let data = from.join("horizon-mods/.horizon-mod-data");
+        let data = from.join("claudium-mods/.claudium-mod-data");
         fs::create_dir_all(data.join("zoom")).unwrap();
         fs::write(data.join("zoom/level"), "8").unwrap();
         fs::create_dir_all(data.join("other")).unwrap();
         fs::write(
-            from.join("horizon-mods.txt"),
+            from.join("claudium-mods.txt"),
             "mod.zoom:true\nkey.zoom.zoom:key.keyboard.c\nkey.other.x:key.keyboard.x\n",
         )
         .unwrap();
         fs::write(
-            to.join("horizon-mods.txt"),
+            to.join("claudium-mods.txt"),
             "key.minimap.map:key.keyboard.m",
         )
         .unwrap();
         carry_settings(&from, &to, &["zoom", "minimap"]).unwrap();
-        let ours = to.join("horizon-mods/.horizon-mod-data");
+        let ours = to.join("claudium-mods/.claudium-mod-data");
         assert_eq!(fs::read_to_string(ours.join("zoom/level")).unwrap(), "8");
         assert!(!ours.join("other").exists());
         assert_eq!(
-            fs::read_to_string(to.join("horizon-mods.txt")).unwrap(),
+            fs::read_to_string(to.join("claudium-mods.txt")).unwrap(),
             "key.minimap.map:key.keyboard.m\nkey.zoom.zoom:key.keyboard.c\n"
         );
         // Changed in the instance since: kept.
         fs::write(ours.join("zoom/level"), "4").unwrap();
         fs::write(
-            from.join("horizon-mods.txt"),
+            from.join("claudium-mods.txt"),
             "key.zoom.zoom:key.keyboard.v\n",
         )
         .unwrap();
         carry_settings(&from, &to, &["zoom"]).unwrap();
         assert_eq!(fs::read_to_string(ours.join("zoom/level")).unwrap(), "4");
-        assert!(fs::read_to_string(to.join("horizon-mods.txt"))
+        assert!(fs::read_to_string(to.join("claudium-mods.txt"))
             .unwrap()
             .contains("key.zoom.zoom:key.keyboard.c"));
         let _ = (fs::remove_dir_all(&from), fs::remove_dir_all(&to));
@@ -993,8 +993,8 @@ mod tests {
     fn a_canonical_windows_path_loses_only_a_drives_verbatim_prefix() {
         let plain = |p: &str| plain(PathBuf::from(p));
         assert_eq!(
-            plain(r"\\?\C:\Users\me\AppData\Roaming\horizon-launcher\native"),
-            PathBuf::from(r"C:\Users\me\AppData\Roaming\horizon-launcher\native")
+            plain(r"\\?\C:\Users\me\AppData\Roaming\claudium-launcher\native"),
+            PathBuf::from(r"C:\Users\me\AppData\Roaming\claudium-launcher\native")
         );
         // A share has no drive form to fall back to; other paths have no prefix.
         assert_eq!(
@@ -1002,19 +1002,19 @@ mod tests {
             PathBuf::from(r"\\?\UNC\server\share\native")
         );
         assert_eq!(
-            plain("/home/me/.local/share/horizon-launcher/native"),
-            PathBuf::from("/home/me/.local/share/horizon-launcher/native")
+            plain("/home/me/.local/share/claudium-launcher/native"),
+            PathBuf::from("/home/me/.local/share/claudium-launcher/native")
         );
     }
 
     #[test]
-    fn horizon_mixins_finds_the_launchers_cargo() {
+    fn claudium_mixins_finds_the_launchers_cargo() {
         let rust = Toolchain {
             dir: PathBuf::from("/rust/1.99.1-x"),
         };
         let cmd = apply(
             &rust,
-            Path::new("/tools/horizon-mixins"),
+            Path::new("/tools/claudium-mixins"),
             Path::new("/src"),
             Path::new("/mods"),
             Path::new("/out"),
@@ -1063,13 +1063,13 @@ mod tests {
     const A: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     const B: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
-    /// An unpacked `.hnmod`, as the registry ships one (horizon_mods::index::native).
-    fn write_native(at: &Path, id: &str, horizon: &str, mixins: &str) {
+    /// An unpacked `.hnmod`, as the registry ships one (claudium_mods::index::native).
+    fn write_native(at: &Path, id: &str, claudium: &str, mixins: &str) {
         let manifest = serde_json::json!({"schema": 1, "id": id, "version": "0.3.0", "game": "26.3",
-            "horizon": horizon, "mixins": mixins});
+            "claudium": claudium, "mixins": mixins});
         fs::create_dir_all(at.join("mixins").join(id)).unwrap();
         fs::write(at.join(NATIVE_MANIFEST), manifest.to_string()).unwrap();
-        let toml = format!("[mod]\nid = \"{id}\"\nversion = \"0.3.0\"\n[compatibility]\nhorizon_revision = \"{horizon}\"\n");
+        let toml = format!("[mod]\nid = \"{id}\"\nversion = \"0.3.0\"\n[compatibility]\nclaudium_revision = \"{claudium}\"\n");
         fs::write(at.join("mixins").join(id).join(MANIFEST), toml).unwrap();
     }
 
@@ -1082,10 +1082,10 @@ mod tests {
         assert_eq!(found.len(), 2);
         assert_eq!(found[1].id, "veinminer");
         assert_eq!(found[1].dir, d.join("veinminer/mixins/veinminer"));
-        assert_eq!(found[1].horizon.as_deref(), Some(A));
+        assert_eq!(found[1].claudium.as_deref(), Some(A));
         assert_eq!(found[1].mixins.as_deref(), Some(B));
         assert_eq!(
-            (found[0].horizon.as_ref(), found[0].mixins.as_ref()),
+            (found[0].claudium.as_ref(), found[0].mixins.as_ref()),
             (None, None)
         );
     }
@@ -1100,7 +1100,7 @@ mod tests {
             let mut zip =
                 zip::ZipWriter::new(fs::File::create(home.join(INSTALLED).join(name)).unwrap());
             let options = zip::write::SimpleFileOptions::default();
-            for file in [NATIVE_MANIFEST, "mixins/veinminer/horizon-mixin.toml"] {
+            for file in [NATIVE_MANIFEST, "mixins/veinminer/claudium-mixin.toml"] {
                 zip.start_file(file, options).unwrap();
                 zip.write_all(&fs::read(d.join(file)).unwrap()).unwrap();
             }
@@ -1116,7 +1116,7 @@ mod tests {
         let out = installed_mods(&home).unwrap();
         let found = bundles(&out).unwrap();
         assert_eq!(
-            (found[0].id.as_str(), found[0].horizon.as_deref()),
+            (found[0].id.as_str(), found[0].claudium.as_deref()),
             ("veinminer", Some(A))
         );
         pack(
@@ -1135,17 +1135,17 @@ mod tests {
 
     #[test]
     fn the_mods_of_one_build_pin_one_revision() {
-        let pinned = |id: &str, horizon: Option<&str>| Bundle {
+        let pinned = |id: &str, claudium: Option<&str>| Bundle {
             id: id.into(),
             version: "1".into(),
             dir: PathBuf::new(),
-            horizon: horizon.map(str::to_owned),
+            claudium: claudium.map(str::to_owned),
             mixins: None,
             hooks: None,
         };
         let never = || -> Result<String, String> { panic!("a pin wins") };
         fn get(b: &Bundle) -> Option<&String> {
-            b.horizon.as_ref()
+            b.claudium.as_ref()
         }
         let same = [
             pinned("a", Some(A)),
@@ -1167,11 +1167,11 @@ mod tests {
 
     #[test]
     fn mods_made_for_different_revisions_build_on_the_newest() {
-        let pinned = |id: &str, horizon: Option<&str>, mixins: Option<&str>| Bundle {
+        let pinned = |id: &str, claudium: Option<&str>, mixins: Option<&str>| Bundle {
             id: id.into(),
             version: "1".into(),
             dir: PathBuf::new(),
-            horizon: horizon.map(str::to_owned),
+            claudium: claudium.map(str::to_owned),
             mixins: mixins.map(str::to_owned),
             hooks: None,
         };
@@ -1186,8 +1186,8 @@ mod tests {
             .into())
         };
         let never = || -> Result<String, String> { panic!("a pin wins") };
-        fn horizon(b: &Bundle) -> Option<&String> {
-            b.horizon.as_ref()
+        fn claudium(b: &Bundle) -> Option<&String> {
+            b.claudium.as_ref()
         }
         fn mixins(b: &Bundle) -> Option<&String> {
             b.mixins.as_ref()
@@ -1198,28 +1198,28 @@ mod tests {
             pinned("zoom", None, None),
         ];
         assert_eq!(
-            newest(&split, "Claudium", horizon, never, None, date).unwrap(),
+            newest(&split, "Claudium", claudium, never, None, date).unwrap(),
             B
         );
-        // horizon-mixins: never older than a pin, and the launcher's own when it is newer.
+        // claudium-mixins: never older than a pin, and the launcher's own when it is newer.
         assert_eq!(
-            newest(&split, "horizon-mixins", mixins, never, Some(B), date).unwrap(),
+            newest(&split, "claudium-mixins", mixins, never, Some(B), date).unwrap(),
             c
         );
         let older = [pinned("a", None, Some(A)), pinned("b", None, Some(B))];
         assert_eq!(
-            newest(&older, "horizon-mixins", mixins, never, Some(&c), date).unwrap(),
+            newest(&older, "claudium-mixins", mixins, never, Some(&c), date).unwrap(),
             c
         );
         // One pin, or the same one everywhere: that pin, and no date is asked for.
         let no_date = |_: &str| -> Result<String, String> { panic!("no date needed") };
         let same = [pinned("a", Some(A), None), pinned("b", Some(A), None)];
         assert_eq!(
-            newest(&same, "Claudium", horizon, never, None, no_date).unwrap(),
+            newest(&same, "Claudium", claudium, never, None, no_date).unwrap(),
             A
         );
         let offline = |_: &str| -> Result<String, String> { Err("offline".into()) };
-        let err = newest(&split, "Claudium", horizon, never, None, offline).unwrap_err();
+        let err = newest(&split, "Claudium", claudium, never, None, offline).unwrap_err();
         assert!(err.contains("offline"), "{err}");
         // What the player is shown: each mod made for another revision, and the build's.
         assert_eq!(
@@ -1241,11 +1241,11 @@ mod tests {
             Some(3)
         );
         assert_eq!(hooks_in("const NATIVE_HOOKS_API: u32 = 3;"), None);
-        let mod_ = |id: &str, horizon: &str, hooks: Option<u32>| Bundle {
+        let mod_ = |id: &str, claudium: &str, hooks: Option<u32>| Bundle {
             id: id.into(),
             version: "1".into(),
             dir: PathBuf::new(),
-            horizon: Some(horizon.into()),
+            claudium: Some(claudium.into()),
             mixins: None,
             hooks,
         };
@@ -1297,13 +1297,13 @@ mod tests {
         fs::write(d.join(NATIVE_MANIFEST), json).unwrap();
         let found = bundles(&d).unwrap();
         assert_eq!(
-            (found[0].hooks, found[0].horizon.as_deref()),
+            (found[0].hooks, found[0].claudium.as_deref()),
             (Some(1), Some(A))
         );
         repin(&found[0], B).unwrap();
         let again = bundle(&found[0].dir, None).unwrap();
         assert_eq!(
-            (again.id.as_str(), again.horizon.as_deref()),
+            (again.id.as_str(), again.claudium.as_deref()),
             ("zoom", Some(B))
         );
     }

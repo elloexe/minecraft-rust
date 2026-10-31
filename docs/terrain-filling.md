@@ -1,6 +1,6 @@
 # Noise-stage terrain filling
 
-Horizon now connects final-density sampling, aquifer selection, resident block
+Claudium now connects final-density sampling, aquifer selection, resident block
 sections, world-generation heightmaps and fluid postprocessing for the pinned
 Minecraft Java Edition **26.3**. This implements the initial noise fill, before
 the [surface stage](material-surfaces.md#chunk-surface-stage), features and

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check #1518: mobs and dropped items go through an End gateway.
 
-Build horizon-client and horizon-ctl with the fast profile first, then run:
+Build claudium-client and claudium-ctl with the fast profile first, then run:
   python3 tools/singleplayer_end_cargo_audit.py --case gateway
 Runs the in-frame singleplayer (and the server-thread one with --mode server):
 a cow and a seven-diamond stack stand in a gateway in the End, and both are
@@ -51,11 +51,11 @@ def run(bin_dir, resources, in_frame):
     with tempfile.TemporaryDirectory(prefix='hz-end-gateway-') as scratch:
         work = Path(scratch)
         env = lab.game_env({k: v for k, v in os.environ.items() if k not in (
-            'HORIZON_HOME', 'HORIZON_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME')})
-        home = Path(env['HORIZON_HOME'])
+            'CLAUDIUM_HOME', 'CLAUDIUM_LAUNCHER_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME')})
+        home = Path(env['CLAUDIUM_HOME'])
         socket = work / 'game.sock'
-        cli = Cli(bin_dir / 'horizon-ctl', socket, home, env)
-        args = [str(bin_dir / 'horizon-client'), '--resources', str(resources),
+        cli = Cli(bin_dir / 'claudium-ctl', socket, home, env)
+        args = [str(bin_dir / 'claudium-client'), '--resources', str(resources),
                 '--world', 'cargo', '--creative', '--seed', '4242', '--offscreen',
                 '--render-distance', '4', '--control', '--control-socket', str(socket)]
         if in_frame:
@@ -83,8 +83,8 @@ def run(bin_dir, resources, in_frame):
                 cli('command', command=(
                     f'execute in minecraft:the_end run setblock {x} {y} {z} minecraft:end_gateway'))
                 cli('command', command=(
-                    f'execute in minecraft:the_end run summon minecraft:cow {x}.5 {y}.5 {z}.5 {{NoAI:1b,Tags:["horizon_gateway_cow"]}}'))
-                nbt = '{Tags:["horizon_gateway_item"],Item:{id:"minecraft:diamond",count:' + str(DIAMONDS) + '}}'
+                    f'execute in minecraft:the_end run summon minecraft:cow {x}.5 {y}.5 {z}.5 {{NoAI:1b,Tags:["claudium_gateway_cow"]}}'))
+                nbt = '{Tags:["claudium_gateway_item"],Item:{id:"minecraft:diamond",count:' + str(DIAMONDS) + '}}'
                 cli('command', command=(
                     'execute in minecraft:the_end run summon minecraft:item '
                     + f'{x}.5 {y}.5 {z}.5 ' + nbt))
@@ -98,13 +98,13 @@ def run(bin_dir, resources, in_frame):
                 cli('command', command=f'execute in minecraft:the_end run tp @s {ex:.1f} 80 {ez:.1f}')
                 for _ in range(60):
                     cli('wait', ticks=20)
-                    cow = data_get(cli, '@e[type=cow,tag=horizon_gateway_cow,limit=1]', 'Pos')
+                    cow = data_get(cli, '@e[type=cow,tag=claudium_gateway_cow,limit=1]', 'Pos')
                     if 'entity data' in cow:
                         break
                 else:
                     raise AssertionError('the cow never arrived')
-                item = data_get(cli, '@e[type=item,tag=horizon_gateway_item,limit=1]', 'Pos')
-                count = numbers(data_get(cli, '@e[type=item,tag=horizon_gateway_item,limit=1]', 'Item.count'))
+                item = data_get(cli, '@e[type=item,tag=claudium_gateway_item,limit=1]', 'Pos')
+                count = numbers(data_get(cli, '@e[type=item,tag=claudium_gateway_item,limit=1]', 'Item.count'))
                 cow_at, item_at = numbers(cow), numbers(item)
                 print(f'cow at {cow_at}, item at {item_at}, count {count}')
                 assert len(cow_at) == 3, f'the cow has no position: {cow_at}'

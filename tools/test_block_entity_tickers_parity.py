@@ -7,7 +7,7 @@ entities, give jukeboxes a record and take it, and unload chunks, with ticks
 in between. `VanillaBlockEntityTickerOracle` runs them on real `LevelChunk`s
 of a server level and prints, after each tick, the positions of the live
 tickers in list order; `examples/probe/block_entity_tickers_fixture` runs the same
-on `horizon_client::block_entities::BlockEntities`. The block entities are
+on `claudium_client::block_entities::BlockEntities`. The block entities are
 the kinds the game ticks in that list (hoppers, furnaces, beacons, spawners,
 trial spawners, vaults, hives, crafters, brewing stands, jukebox), with chests and barrels,
 which have no ticker, among them.
@@ -23,7 +23,7 @@ except ImportError:
     import lab
     import test_rust_parity as base
 
-PARITY = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity'
+PARITY = lab.ROOT / 'mods/claudium/src/test/java/dev/claudiumlab/parity'
 TICKING = ['hopper', 'furnace', 'blast_furnace', 'smoker', 'beacon', 'spawner', 'trial_spawner', 'vault',
            'beehive', 'bee_nest', 'crafter', 'brewing_stand', 'jukebox_record']
 KINDS = TICKING + ['jukebox', 'chest', 'barrel']
@@ -118,8 +118,8 @@ def main():
          '-d', classes, *(PARITY / f'{n}.java' for n in ('ParityData', 'VanillaBlockEntityTickerOracle'))],
         'compile-java')
     run(['java', '-Xmx1G', '-cp', str(classes) + os.pathsep + dependencies,
-         'dev.horizonlab.parity.VanillaBlockEntityTickerOracle', inputs, build / 'vanilla.txt'], 'vanilla')
-    run(['cargo', 'run', '--quiet', '--profile', 'fast', '-p', 'horizon-client', '--example',
+         'dev.claudiumlab.parity.VanillaBlockEntityTickerOracle', inputs, build / 'vanilla.txt'], 'vanilla')
+    run(['cargo', 'run', '--quiet', '--profile', 'fast', '-p', 'claudium-client', '--example',
          'client_probe', '--', 'block_entity_tickers_fixture', inputs, build / 'rust.txt'], 'rust')
     matched = base.compare(build / 'vanilla.txt', build / 'rust.txt')
     ticks = sum(1 for line in lines if line == 'tick')

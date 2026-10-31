@@ -1,11 +1,11 @@
-//! The launcher's view of Horizon's design tokens (`crates/horizon-theme`, described in
-//! `docs/design-system.md`): the night look (`horizon_theme::night`, a night sky or a dawn with
-//! Horizon's violet) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
+//! The launcher's view of Claudium's design tokens (`crates/claudium-theme`, described in
+//! `docs/design-system.md`): the night look (`claudium_theme::night`, a night sky or a dawn with
+//! Claudium's violet) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
 //! Open Font License). Screens not rebuilt yet draw the Blocks parts in the night's colours.
+use claudium_launcher::backend::Appearance;
+use claudium_launcher::themes::Accent;
+use claudium_theme as tokens;
 use gpui::{rgb, Hsla, WindowAppearance};
-use horizon_launcher::backend::Appearance;
-use horizon_launcher::themes::Accent;
-use horizon_theme as tokens;
 use std::time::Duration;
 
 pub use tokens::night::{self, Night};
@@ -56,7 +56,7 @@ pub struct Theme {
     pub danger: Hsla,
     pub success: Hsla,
     pub warn: Hsla,
-    /// The blocky parts (`horizon_theme::Blocks`).
+    /// The blocky parts (`claudium_theme::Blocks`).
     pub side: Hsla,
     pub panel: Hsla,
     pub raised: Hsla,
@@ -80,10 +80,10 @@ fn c(hex: u32) -> Hsla {
 }
 
 /// Whether the launcher is pinned dark (`Some(true)`) or light, or follows the system (`None`):
-/// `HORIZON_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
+/// `CLAUDIUM_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
 /// choice in Settings.
 pub fn pinned_dark(choice: Appearance) -> Option<bool> {
-    match std::env::var("HORIZON_LAUNCHER_APPEARANCE").as_deref() {
+    match std::env::var("CLAUDIUM_LAUNCHER_APPEARANCE").as_deref() {
         Ok("light") => Some(false),
         Ok("dark") => Some(true),
         _ => match choice {
@@ -161,7 +161,7 @@ mod tests {
         channel(16) | channel(8) | channel(0)
     }
 
-    /// What the Servers page draws besides text (whose colours horizon-theme's own test holds to
+    /// What the Servers page draws besides text (whose colours claudium-theme's own test holds to
     /// WCAG AA on every background): the keyboard focus ring, the borders of a focused or refused
     /// field (WCAG 1.4.11 asks 3:1 for those), and text over a selected suggestion.
     #[test]

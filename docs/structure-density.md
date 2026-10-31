@@ -1,6 +1,6 @@
 # Structure terrain-adaptation density
 
-`horizon_core::density::Beardifier` implements the pinned Java Edition **26.3**
+`claudium_core::density::Beardifier` implements the pinned Java Edition **26.3**
 structure-density sampler from supplied ordered rigid pieces, jigsaw junctions
 and an affected bounding box. It supports `NONE`, `BURY`, `BEARD_THIN`, `BEARD_BOX`
 and `ENCAPSULATE` adjustments. Live structure discovery, filtering and placement
@@ -15,7 +15,7 @@ to `WorldField::Beardifier` and shared between worker contexts.
 Scalar reads return zero outside the affected box. Bulk reads clear the entire
 output, including an oversized tail, then scan the clipped strided volume.
 Vanilla floors the lower clipping index rather than rounding it upward, so a
-first bulk sample can be outside the scalar bounds. Horizon preserves this
+first bulk sample can be outside the scalar bounds. Claudium preserves this
 scalar/bulk distinction. A missing affected box produces zero even if component
 lists are nonempty. Bounds supplied to the Rust constructor must already be
 normalized; short output buffers return a typed error before mutation.

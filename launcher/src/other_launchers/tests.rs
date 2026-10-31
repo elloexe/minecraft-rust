@@ -2,7 +2,7 @@ use super::*;
 use serde_json::json;
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("horizon-other-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("claudium-other-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).unwrap();
     dir
@@ -70,7 +70,7 @@ fn prism_and_multimc_instances() {
         ]
     );
     assert_eq!(in_folder(&fabric, None)[0].name, "My Fabric");
-    // Fabric comes along at the same version; Forge isn't installed by Horizon yet.
+    // Fabric comes along at the same version; Forge isn't installed by Claudium yet.
     assert_eq!(
         loader(&found[0]),
         Some(crate::loaders::Loader {

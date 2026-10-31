@@ -1,6 +1,6 @@
-//! Settings' accent colour and Home background rows (`horizon_launcher::themes`).
+//! Settings' accent colour and Home background rows (`claudium_launcher::themes`).
 use super::*;
-use horizon_launcher::themes::{self, Accent};
+use claudium_launcher::themes::{self, Accent};
 use std::path::PathBuf;
 
 /// Each accent's swatch, in points.

@@ -10,13 +10,13 @@
 # would also let an admin merge without `verify`; here `verify` stays required for everyone, admins and Ludovic
 # included (enforce_admins stays on), and only the review requirement has an exception, for him alone.
 #
-# Apply it only once agents open, push and merge pull requests as the horizon-agent GitHub App, not as ludovic111:
+# Apply it only once agents open, push and merge pull requests as the claudium-agent GitHub App, not as ludovic111:
 # while agents use his token, his bypass is theirs too, and their changes to listed files would skip his review.
 #
 #   tools/ci/protect_pipeline.sh            # print the protection it would set, change nothing
 #   tools/ci/protect_pipeline.sh --apply    # set it (needs the maintainer's admin login)
 set -euo pipefail
-repo=${GITHUB_REPOSITORY:-horizon-rust/horizon}
+repo=${GITHUB_REPOSITORY:-elloexe/minecraft-rust}
 api="repos/$repo/branches/main/protection"
 body=$(gh api "$api" | jq '{
   required_status_checks: (.required_status_checks

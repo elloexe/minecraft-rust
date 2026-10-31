@@ -6,7 +6,7 @@
     parity_gaps.py readme --write   rewrites it (the block under "Project status" and the badge), then commit it
 
 The harness count says that what is tested passes; it can't say what isn't tested. The port ledger
-(tools/port_ledger.py) read every vanilla 26.3 method against Horizon's code, and the rows a player would notice went
+(tools/port_ledger.py) read every vanilla 26.3 method against Claudium's code, and the rows a player would notice went
 into ten issues, one per area, as a checklist: a row is ticked when it is fixed (or turns out wrong). The headline
 is the number of rows not ticked yet, and it goes down as gaps close. Run it after ticking rows, and in each weekly
 roadmap pass (roadmap/README.md).
@@ -21,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 README = ROOT / "README.md"
-REPO = "horizon-rust/horizon"
+REPO = "elloexe/minecraft-rust"
 # The gap lists, one per area, filed from the port ledger on 2026-10-28 (#3859 step 5).
 ISSUES = list(range(3512, 3522))
 # The block is one paragraph, found by its first words: no HTML comment markers, which the website would print.
@@ -62,8 +62,8 @@ def block(lists: list[dict]) -> str:
     parts = "; ".join(f"{l['area']} [{l['open']}](https://github.com/{REPO}/issues/{l['number']})"
                       for l in sorted(lists, key=lambda l: -l["open"]))
     return (f"**Player-visible gaps: {still} open** of the {total} the [port ledger](tools/port_ledger.py) found, "
-            "reading every vanilla 26.3 method against Horizon's code: vanilla behaviour a player would notice that "
-            f"Horizon doesn't have yet. By area: {parts}. This number goes down as gaps close "
+            "reading every vanilla 26.3 method against Claudium's code: vanilla behaviour a player would notice that "
+            f"Claudium doesn't have yet. By area: {parts}. This number goes down as gaps close "
             "(`tools/parity_gaps.py`); the harness results below say that what is tested matches.")
 
 

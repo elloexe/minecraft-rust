@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Package a built horizon-client with its prepared resources into a private
+"""Package a built claudium-client with its prepared resources into a private
 tarball for one of your own Linux or macOS machines. The resources are Mojang
 assets: keep the archive in ignored .local/ and never publish or commit it.
 
-    cargo build --release -p horizon-client --bins
+    cargo build --release -p claudium-client --bins
     python3 tools/package_native_client.py
 """
 import argparse
@@ -26,37 +26,37 @@ LOCAL = ROOT / '.local'
 SKIP = {'classes', 'client-classes', 'export.log', 'model-state-export.log'}
 
 LAUNCHER = r'''#!/bin/sh
-# Starts Horizon. Saves and options.txt live in $HORIZON_HOME
-# (default ~/.local/share/horizon), so unpacking an update keeps them.
+# Starts Claudium. Saves and options.txt live in $CLAUDIUM_HOME
+# (default ~/.local/share/claudium), so unpacking an update keeps them.
 here=$(cd "$(dirname "$0")" && pwd)
 if [ "$1" = "--install" ]; then
     apps="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
     mkdir -p "$apps"
-    cat > "$apps/horizon.desktop" <<EOF
+    cat > "$apps/claudium.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Horizon
+Name=Claudium
 Comment=Minecraft Java Edition @MINECRAFT@ in Rust
-Exec="$here/horizon.sh"
-Icon=$here/horizon.png
+Exec="$here/claudium.sh"
+Icon=$here/claudium.png
 Terminal=false
 Categories=Game;
 EOF
-    echo "Added Horizon to the application menu ($apps/horizon.desktop)"
+    echo "Added Claudium to the application menu ($apps/claudium.desktop)"
     exit 0
 fi
-home="${HORIZON_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/horizon}"
+home="${CLAUDIUM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/claudium}"
 mkdir -p "$home"
 cd "$home" || exit 1
-exec "$here/horizon-client" "$@"
+exec "$here/claudium-client" "$@"
 '''
 
-README = '''Horizon {version} ({commit}) for {platform}
+README = '''Claudium {version} ({commit}) for {platform}
 
-Run ./horizon.sh (add --help for options, e.g. --render-distance 24 or --creative).
-./horizon.sh --install adds Horizon to the application menu.
+Run ./claudium.sh (add --help for options, e.g. --render-distance 24 or --creative).
+./claudium.sh --install adds Claudium to the application menu.
 
-Saves and options.txt are kept in ~/.local/share/horizon (override with HORIZON_HOME).
+Saves and options.txt are kept in ~/.local/share/claudium (override with CLAUDIUM_HOME).
 Esc pauses and releases the mouse; F3 shows the debug screen.
 
 The resources folder contains Mojang's game assets for personal use only;
@@ -77,7 +77,7 @@ def add_bytes(tar, name, data, mode=0o644):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--binary', type=Path, help='built horizon-client (default: cargo release target)')
+    parser.add_argument('--binary', type=Path, help='built claudium-client (default: cargo release target)')
     parser.add_argument('--resources', type=Path, default=lab.RESOURCES)
     parser.add_argument('--out', type=Path, default=LOCAL / 'dist')
     args = parser.parse_args()
@@ -86,38 +86,38 @@ def main():
         metadata = json.loads(subprocess.run(
             ['cargo', 'metadata', '--format-version', '1', '--no-deps'],
             cwd=ROOT, check=True, capture_output=True, text=True).stdout)
-        args.binary = Path(metadata['target_directory']) / 'release/horizon-client'
+        args.binary = Path(metadata['target_directory']) / 'release/claudium-client'
     if not args.binary.is_file():
-        raise SystemExit(f'missing {args.binary}: run cargo build --release -p horizon-client')
-    if not (args.resources / 'horizon-resources.json').is_file():
-        raise SystemExit(f'missing prepared resources in {args.resources}: run horizon-prepare --prepare (cargo run --release -p horizon-prepare -- --prepare)')
+        raise SystemExit(f'missing {args.binary}: run cargo build --release -p claudium-client')
+    if not (args.resources / 'claudium-resources.json').is_file():
+        raise SystemExit(f'missing prepared resources in {args.resources}: run claudium-prepare --prepare (cargo run --release -p claudium-prepare -- --prepare)')
     if not (args.resources / 'assets/minecraft/sounds.json').is_file():
-        print('warning: no sound assets; run cargo run -p horizon-prepare -- sounds for audio')
+        print('warning: no sound assets; run cargo run -p claudium-prepare -- sounds for audio')
 
     system = {'Linux': 'linux', 'Darwin': 'macos'}.get(platform.system())
     if system is None:
-        raise SystemExit(f'unsupported platform {platform.system()}: Horizon targets Linux and macOS')
+        raise SystemExit(f'unsupported platform {platform.system()}: Claudium targets Linux and macOS')
     machine = {'AMD64': 'x86_64', 'arm64': 'aarch64'}.get(platform.machine(), platform.machine())
     plat = f'{system}-{machine}'
     commit = git('rev-parse', '--short', 'HEAD') + ('-dirty' if git('status', '--porcelain', '--untracked-files=no') else '')
     version = '0.1.0'
-    name = f'horizon-{version}-{commit}-{plat}'
+    name = f'claudium-{version}-{commit}-{plat}'
 
     args.out.mkdir(parents=True, exist_ok=True)
     archive = args.out / f'{name}.tar.gz'
     with tarfile.open(archive, 'w:gz', compresslevel=1) as tar:
-        tar.add(args.binary, 'horizon/horizon-client')
-        tar.add(ROOT / 'LICENSE', 'horizon/LICENSE')
-        tar.add(ROOT / 'THIRD_PARTY_NOTICES.md', 'horizon/THIRD_PARTY_NOTICES.md')
-        ctl = args.binary.with_name('horizon-ctl')  # built with --bins: scripts and agents play through it
+        tar.add(args.binary, 'claudium/claudium-client')
+        tar.add(ROOT / 'LICENSE', 'claudium/LICENSE')
+        tar.add(ROOT / 'THIRD_PARTY_NOTICES.md', 'claudium/THIRD_PARTY_NOTICES.md')
+        ctl = args.binary.with_name('claudium-ctl')  # built with --bins: scripts and agents play through it
         if ctl.is_file():
-            tar.add(ctl, 'horizon/horizon-ctl')
-        add_bytes(tar, 'horizon/horizon.sh', LAUNCHER.replace('@MINECRAFT@', lab.VERSION).encode(), 0o755)
-        tar.add(ROOT / 'docs/media/icon-256.png', 'horizon/horizon.png')
-        add_bytes(tar, 'horizon/README.txt', README.format(version=version, commit=commit, platform=plat).encode())
+            tar.add(ctl, 'claudium/claudium-ctl')
+        add_bytes(tar, 'claudium/claudium.sh', LAUNCHER.replace('@MINECRAFT@', lab.VERSION).encode(), 0o755)
+        tar.add(ROOT / 'docs/media/icon-256.png', 'claudium/claudium.png')
+        add_bytes(tar, 'claudium/README.txt', README.format(version=version, commit=commit, platform=plat).encode())
         for path in sorted(args.resources.iterdir()):
             if path.name not in SKIP:
-                tar.add(path, f'horizon/resources/{path.name}')
+                tar.add(path, f'claudium/resources/{path.name}')
 
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     (args.out / f'{archive.name}.sha256').write_text(f'{digest}  {archive.name}\n')

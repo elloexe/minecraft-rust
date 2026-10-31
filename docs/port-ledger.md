@@ -1,10 +1,10 @@
 # Port ledger
 
-`tools/port_ledger.py` lists every vanilla method next to the Horizon functions that port it, both ways, and
+`tools/port_ledger.py` lists every vanilla method next to the Claudium functions that port it, both ways, and
 points at the places where a port exists but isn't wired like vanilla. It answers the questions every parity
 fix starts with, without searching:
 
-- where is vanilla's `Class.method` in Horizon (`where`), and which vanilla method does this Rust function
+- where is vanilla's `Class.method` in Claudium (`where`), and which vanilla method does this Rust function
   port (`what`);
 - which vanilla code and which Rust functions a bug report is about (`issue`);
 - what a branch touches, and which gaps it opens or closes (`check`).
@@ -18,7 +18,7 @@ Rust function with its line span.
 python3 tools/port_ledger.py build                                   # about 20 s; again after pulling
 python3 tools/port_ledger.py where KineticWeapon.damageEntities       # its ports, callees, callers, gaps
 python3 tools/port_ledger.py where ShulkerBulletRenderer              # every method of a class, with status
-python3 tools/port_ledger.py what crates/horizon-client/src/game/spear.rs:150
+python3 tools/port_ledger.py what crates/claudium-client/src/game/spear.rs:150
 python3 tools/port_ledger.py class IronGolem                          # method by method: where, or missing
 python3 tools/port_ledger.py issue 3123                               # a GitHub issue (or the report's text)
 python3 tools/port_ledger.py check --base origin/main                 # what this branch touches
@@ -49,10 +49,10 @@ method, Rust function or file), the gaps by kind, and coverage by package.
 2. **Named:** a function with the method's own name (`tickRain` → `tick_rain`) in a file that cites the class,
    in an `impl` of a type named for the class (`impl ShulkerBullet`), or in a file named for it
    (`shulker_bullet.rs`). A function in `impl HurtByTarget` is never taken for `AvoidEntityGoal.canUse`: its
-   type must be named for the class, a sub- or superclass of it, or be one of Horizon's own containers
+   type must be named for the class, a sub- or superclass of it, or be one of Claudium's own containers
    (`Game`, `Sim`, `MotionWorld`).
 3. **Mapped, skipped, absent:** a row in the verdict map (below) says where it is, why it needs no port, or
-   that Horizon doesn't do it.
+   that Claudium doesn't do it.
 4. **Mentioned:** the method appears in some other comment of a function (often a caller explaining a step).
 5. **Linked:** where `X` is ported as `A`, a callee of `X` with no port and a callee of `A` nothing cites,
    whose names agree less Java's `get` (`getFlyingSpeed` → `flying_speed`).
@@ -107,8 +107,8 @@ file per batch, tab-separated:
 
 ```
 Class.method	verdict	where	note
-XoroshiroRandomSource.nextInt	port	crates/horizon-core/src/random.rs::XoroshiroRandom::next_int_bound	bounded form
-ArmadilloAi.initIdleActivity	inline	crates/horizon-client/src/mobs/armadillo.rs::register	gap: no AnimalMakeLove, so armadillos never breed
+XoroshiroRandomSource.nextInt	port	crates/claudium-core/src/random.rs::XoroshiroRandom::next_int_bound	bounded form
+ArmadilloAi.initIdleActivity	inline	crates/claudium-client/src/mobs/armadillo.rs::register	gap: no AnimalMakeLove, so armadillos never breed
 MushroomCow.addAdditionalSaveData	missing		Type is not saved: a mooshroom turned brown by lightning loads red
 NoiseRouterData	skip:data		a class row covers the class's methods without a row of their own
 ```
@@ -126,7 +126,7 @@ directory, so several people can check their own rows at once.
 ## Parity harness coverage
 
 A mapped method says where the port is, not that it behaves like vanilla; the parity harnesses check that
-(`tools/test_*_parity.py`: a vanilla oracle in `mods/horizon/src/test/java/dev/horizonlab/parity/` and a Rust
+(`tools/test_*_parity.py`: a vanilla oracle in `mods/claudium/src/test/java/dev/claudiumlab/parity/` and a Rust
 fixture or probe under `crates/*/examples/` run on the same inputs). The ledger links them: a harness covers a
 ported method when its fixture reaches the port and the vanilla side is in reach (the oracle calls into the
 method, or the harness or oracle names its class). `where` lists a method's harnesses, and
@@ -137,7 +137,7 @@ own that no harness covers, most-called first: where a new harness would catch t
 
 `issue N` reads a GitHub issue (`gh issue view`), or takes the report's text (`-` reads stdin), drops the
 bug-report template, and ranks the vanilla classes it names the way players write them ("shulker bullet",
-"eye of ender", and registry names from the entity, block and item registries: "mooshroom" is `MushroomCow`), then the methods its words name in those classes. For each class it lists where Horizon ports
+"eye of ender", and registry names from the entity, block and item registries: "mooshroom" is `MushroomCow`), then the methods its words name in those classes. For each class it lists where Claudium ports
 it and the gaps around it: on #3123 ("an iron golem you built no longer attacks you") it points at
 `IronGolem.isPlayerCreated` and `setPlayerCreated`, both missing.
 

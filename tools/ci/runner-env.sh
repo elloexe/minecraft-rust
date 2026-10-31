@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# The tools the vanilla harnesses need, on a self-hosted runner (label horizon-game): the Mac mini's, whose service
+# The tools the vanilla harnesses need, on a self-hosted runner (label claudium-game): the Mac mini's, whose service
 # starts with a bare PATH, and the Linux ones (tools/ci/linux-runner.sh: NixOS, Ubuntu). Python 3.13 and the JDK pinned by
 # research-lock.json come from the machine, never from a download. Writes them to $GITHUB_PATH and $GITHUB_ENV for
 # the next steps.
 set -euo pipefail
 java_major=$(sed -n 's/.*"java_major": *\([0-9]*\).*/\1/p' research-lock.json | head -1)
-bin="$RUNNER_TEMP/horizon-bin"
+bin="$RUNNER_TEMP/claudium-bin"
 mkdir -p "$bin"
 if [ "$(uname)" = Darwin ]; then
   ln -sfn /opt/homebrew/bin/python3.13 "$bin/python3"
@@ -15,8 +15,8 @@ if [ "$(uname)" = Darwin ]; then
   echo "JAVA_HOME=$java_home" >> "$GITHUB_ENV"
   # Builds go through the machine's sccache (shared with ~/fleet/rbuild), so the build folders runner-gc.sh
   # removes come back from the cache instead of compiling cold.
-  # Not for a release (HORIZON_NO_SCCACHE=1, game-build.yml's trusted builds): pull requests' jobs write that cache.
-  if [ -x /opt/homebrew/bin/sccache ] && [ -z "${HORIZON_NO_SCCACHE:-}" ]; then
+  # Not for a release (CLAUDIUM_NO_SCCACHE=1, game-build.yml's trusted builds): pull requests' jobs write that cache.
+  if [ -x /opt/homebrew/bin/sccache ] && [ -z "${CLAUDIUM_NO_SCCACHE:-}" ]; then
     { echo "RUSTC_WRAPPER=/opt/homebrew/bin/sccache"; echo "CARGO_INCREMENTAL=0"; } >> "$GITHUB_ENV"
   fi
 else
@@ -41,8 +41,8 @@ else
   [ -n "$java_home" ] || { echo "::error::no JDK $java_major on this runner"; exit 1; }
   { echo "$bin"; echo "$java_home/bin"; } >> "$GITHUB_PATH"
   echo "JAVA_HOME=$java_home" >> "$GITHUB_ENV"
-  if [ -z "${HORIZON_NO_SCCACHE:-}" ] && sccache=$(command -v sccache); then
+  if [ -z "${CLAUDIUM_NO_SCCACHE:-}" ] && sccache=$(command -v sccache); then
     { echo "RUSTC_WRAPPER=$sccache"; echo "CARGO_INCREMENTAL=0"; } >> "$GITHUB_ENV"
   fi
 fi
-echo "HORIZON_NO_AUDIO=1" >> "$GITHUB_ENV"
+echo "CLAUDIUM_NO_AUDIO=1" >> "$GITHUB_ENV"

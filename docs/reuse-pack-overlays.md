@@ -35,11 +35,11 @@ Pack downloads were verified against publisher SHA-512 metadata. Exact versions,
 
 ```sh
 export CARGO_INCREMENTAL=0
-export HORIZON_OVERLAY_BENCH_VANILLA=/path/to/prepared/26.3
-export HORIZON_OVERLAY_BENCH_PACKS='["/path/to/Faithful.zip","/path/to/DefaultHD.zip","/path/to/FPBR.zip"]'
-cargo test -p horizon-client --lib --profile fast packs::cache::tests::benchmark_real_resource_root -- --ignored --nocapture --test-threads=1
-cargo test -p horizon-client --lib --profile fast packs:: -- --nocapture
-cargo clippy -p horizon-client --lib --tests --profile fast -- -D warnings
+export CLAUDIUM_OVERLAY_BENCH_VANILLA=/path/to/prepared/26.3
+export CLAUDIUM_OVERLAY_BENCH_PACKS='["/path/to/Faithful.zip","/path/to/DefaultHD.zip","/path/to/FPBR.zip"]'
+cargo test -p claudium-client --lib --profile fast packs::cache::tests::benchmark_real_resource_root -- --ignored --nocapture --test-threads=1
+cargo test -p claudium-client --lib --profile fast packs:: -- --nocapture
+cargo clippy -p claudium-client --lib --tests --profile fast -- -D warnings
 cargo fmt --all -- --check
 ```
 

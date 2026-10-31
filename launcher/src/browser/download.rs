@@ -7,15 +7,15 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 /// Hosts a file may come from: Modrinth's and CurseForge's file servers, and the release assets
-/// of Horizon's registry (and, see [`github_release_asset`], of the repository a registry entry
+/// of Claudium's registry (and, see [`github_release_asset`], of the repository a registry entry
 /// names).
 const HOSTS: [&str; 5] = [
     "https://cdn.modrinth.com/",
     "https://edge.forgecdn.net/",
     "https://mediafilez.forgecdn.net/",
-    horizon_mods::index::FILE_HOST,
-    // The registry's files at their address before the move to horizon-rust (GitHub redirects it).
-    "https://github.com/ludovic111/horizon-mods/releases/download/",
+    claudium_mods::index::FILE_HOST,
+    // The registry's files at their address before the move to elloexe (GitHub redirects it).
+    "https://github.com/ludovic111/claudium-mods/releases/download/",
 ];
 /// `https://github.com/<owner>/<repo>/releases/download/<tag>/<name>`: a release asset of a mod's
 /// own repository, which the registry's index lists once its release passed the registry's checks
@@ -47,10 +47,10 @@ const MAX: u64 = 1 << 30;
 /// be a handshake per file, and a modpack brings hundreds.
 pub(super) fn agent(url: &str) -> ureq::Agent {
     let spec = crate::proxy::spec_for(url);
-    horizon_port_pack::net::keep("browser", spec.as_deref(), |proxy| {
+    claudium_port_pack::net::keep("browser", spec.as_deref(), |proxy| {
         let builder = ureq::AgentBuilder::new()
             .user_agent(&format!(
-                "horizon-rust/horizon horizon-launcher/{} (github.com/horizon-rust/horizon)",
+                "elloexe/minecraft-rust claudium-launcher/{} (github.com/elloexe/minecraft-rust)",
                 crate::backend::VERSION
             ))
             .timeout_connect(std::time::Duration::from_secs(15))

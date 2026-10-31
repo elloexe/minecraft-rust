@@ -11,7 +11,7 @@ indices and values a section had already checked. All three are addressed.
 
 ## Changes
 
-`BlockSection::set` (`crates/horizon-world/src/chunk.rs`) previously resolved the
+`BlockSection::set` (`crates/claudium-world/src/chunk.rs`) previously resolved the
 old cell through `get` and then probed the section's palette map three times for
 one non-trivial write: once to key the old state by id (`local_ids[&old]`), once
 to test the incoming state (`contains_key`), and once to find it (`get`). The
@@ -22,14 +22,14 @@ encoded palette, counts, free list and NBT output stay identical.
 
 `BlockSection::get` and `set` validate the section index and the state id once,
 then read and write through `PackedStorage::read`/`write`
-(`crates/horizon-core/src/storage.rs`). These skip the storage-level bounds and
+(`crates/claudium-core/src/storage.rs`). These skip the storage-level bounds and
 value checks and the `Result` that `PackedStorage::get`/`set` keep for external
 callers: a section index is below 4,096 and a palette id always fits the width
 `bits_for_palette` chose. Both new methods `debug_assert` their contract and are
 used for the hot read, the hot write and the palette-growth re-encode.
 
 `PalettedContainer::unpack` and `unpack_u16`
-(`crates/horizon-core/src/paletted.rs`) matched on the palette variant inside the
+(`crates/claudium-core/src/paletted.rs`) matched on the palette variant inside the
 per-cell loop. `Single`, `List` and `Global` are now dispatched once before the
 loop, leaving each arm a branch-free indexed loop.
 
@@ -38,8 +38,8 @@ No allocation, layout or wire format changes.
 ## Reproduce
 
 ```sh
-cargo test -p horizon-world --lib --profile fast benchmark_section_get_set -- --ignored --nocapture
-cargo test -p horizon-core  --lib --profile fast benchmark_unpack            -- --ignored --nocapture
+cargo test -p claudium-world --lib --profile fast benchmark_section_get_set -- --ignored --nocapture
+cargo test -p claudium-core  --lib --profile fast benchmark_unpack            -- --ignored --nocapture
 ```
 
 The ignored tests compare the new code against copies of the pre-optimization

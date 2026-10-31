@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Horizon's client joins vanilla's online-mode server and Horizon's, with no real account.
+"""Claudium's client joins vanilla's online-mode server and Claudium's, with no real account.
 
 A small mock of the Minecraft services (dev only: the discovery document and
 the session service's join and hasJoined endpoints) stands in for Mojang's.
 The pinned vanilla 26.3 dedicated server runs in online mode and finds the
 mock through authlib's own override, `-Dminecraft.api.discovery.host`;
-Horizon's client finds it through `HORIZON_API_DISCOVERY` and signs in with a
+Claudium's client finds it through `CLAUDIUM_API_DISCOVERY` and signs in with a
 session file holding a mock token, as the launcher hands it over.
 
 The client must answer the server's encryption request: generate the shared
@@ -26,8 +26,8 @@ Also checked, with vanilla's messages:
   and let in; another name is looked up through the services' profile lookup,
   and one with no account is refused ("That player does not exist").
 
-Horizon's dedicated server then runs the same steps in online mode
-(`HORIZON_API_DISCOVERY` points it at the mock too): it must give the client
+Claudium's dedicated server then runs the same steps in online mode
+(`CLAUDIUM_API_DISCOVERY` points it at the mock too): it must give the client
 the same answers and log the same lines about the player as vanilla's
 ("UUID of player ...", "Disconnecting ...", "... lost connection: ...").
 
@@ -184,7 +184,7 @@ def run_client(binary, build, port, label, token, discovery):
     shutil.rmtree(directory, ignore_errors=True)
     directory.mkdir()
     report = directory / 'report.json'
-    env = lab.game_env(HORIZON_NET_REPORT=report, HORIZON_API_DISCOVERY=discovery)
+    env = lab.game_env(CLAUDIUM_NET_REPORT=report, CLAUDIUM_API_DISCOVERY=discovery)
     command = [binary, '--resources', lab.RESOURCES, '--render-distance', 2,
                '--server', f'127.0.0.1:{port}', '--name', PLAYER]
     if token:
@@ -251,7 +251,7 @@ def run_side(label, command, binary, build, services, discovery):
     props = dict(PROPERTIES, **{'server-port': str(port)})
     (directory / 'server.properties').write_text(''.join(f'{k}={v}\n' for k, v in props.items()))
     (directory / 'eula.txt').write_text('eula=true\n')
-    os.environ.update(lab.game_env(HORIZON_API_DISCOVERY=discovery))
+    os.environ.update(lab.game_env(CLAUDIUM_API_DISCOVERY=discovery))
     server = Server(command, directory, f'{label}-online')
     checks = []
     starts = []
@@ -282,7 +282,7 @@ def run_side(label, command, binary, build, services, discovery):
         check('signed-in: joined the session service once', [(e[1], e[3]) for e in joins], [(PLAYER_UUID, True)])
         check('signed-in: server verified the same hash',
               [(e[1], e[2], e[3]) for e in verifies], [(PLAYER, joins[0][2] if joins else None, True)])
-        check('signed-in: own chat shown', any('<Tester> hello from the horizon client' in c for c in got['chat']), True)
+        check('signed-in: own chat shown', any('<Tester> hello from the claudium client' in c for c in got['chat']), True)
         check('signed-in: /list reply shown',
               any('There are 1 of a max of 5 players online: Tester' in c for c in got['chat']), True)
         check('signed-in: chunks received', got['chunks'] > 0, True)
@@ -290,10 +290,10 @@ def run_side(label, command, binary, build, services, discovery):
         lines = '\n'.join(server.lines)
         check('signed-in: server log', [k for k in [f'UUID of player Tester is {dashed(PLAYER_UUID)}',
                                                     'Tester joined the game',
-                                                    '<Tester> hello from the horizon client',
+                                                    '<Tester> hello from the claudium client',
                                                     'Tester left the game'] if k in lines], [
             f'UUID of player Tester is {dashed(PLAYER_UUID)}', 'Tester joined the game',
-            '<Tester> hello from the horizon client', 'Tester left the game'])
+            '<Tester> hello from the claudium client', 'Tester left the game'])
 
         # 2. A token the session service rejects: vanilla's message, no key sent.
         mark = len(server.lines)
@@ -312,7 +312,7 @@ def run_side(label, command, binary, build, services, discovery):
         # 4. No account: refused by the client before anything is sent to the services.
         got = login('no-account', None)
         check('no account: client message', got['error'] or '', 'disconnected: This server is in online mode. '
-              'Sign in with your Microsoft account in the Horizon launcher to join it.')
+              'Sign in with your Microsoft account in the Claudium launcher to join it.')
         check('no account: no service calls', services.take_log(), [])
         check('no player joined after the first', 'joined the game' in '\n'.join(server.lines[mark:]), False)
 
@@ -354,30 +354,30 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     report = build / 'report.json'
     report.unlink(missing_ok=True)
-    oh.run_logged(['cargo', 'build', '--profile', 'fast', '-p', 'horizon-client', '--bin', 'horizon-client'], build,
+    oh.run_logged(['cargo', 'build', '--profile', 'fast', '-p', 'claudium-client', '--bin', 'claudium-client'], build,
                   'compile-rust')
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'],
                                                   cwd=lab.ROOT, text=True))
-    binary = Path(metadata['target_directory']) / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    binary = Path(metadata['target_directory']) / 'fast' / ('claudium-client.exe' if os.name == 'nt' else 'claudium-client')
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
 
     services = Services()
     discovery = services.url + '/minecraft/client'
     vanilla = ['java', '-Xmx2g', '-Duser.timezone=UTC', f'-Dminecraft.api.discovery.host={discovery}',
                '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon = [binary, '--resources', lab.LOCAL / 'horizon-client/26.3', '--dedicated', '--nogui']
+    claudium = [binary, '--resources', lab.LOCAL / 'claudium-client/26.3', '--dedicated', '--nogui']
     checks, transcripts = [], {}
     try:
-        for label, command in [('vanilla', vanilla), ('horizon', horizon)]:
+        for label, command in [('vanilla', vanilla), ('claudium', claudium)]:
             side_checks, transcripts[label] = run_side(label, command, binary, build, services, discovery)
             checks += [f'{label}: {c}' for c in side_checks]
     finally:
         services.stop()
     for label in transcripts:
         (build / f'{label}.txt').write_text('\n'.join(transcripts[label]) + '\n', encoding='utf-8')
-    if 'horizon' in transcripts:
+    if 'claudium' in transcripts:
         import difflib
-        diff = [l for l in difflib.unified_diff(transcripts['vanilla'], transcripts['horizon'], 'vanilla', 'horizon',
+        diff = [l for l in difflib.unified_diff(transcripts['vanilla'], transcripts['claudium'], 'vanilla', 'claudium',
                                                 n=0, lineterm='') if l[:1] in '+-' and l[:3] not in ('+++', '---')]
         checks.append('server log about the player: ' + ('ok' if not diff else 'differs:\n  ' + '\n  '.join(diff)))
 
@@ -389,7 +389,7 @@ def main():
     lab.write_json(report, dict(
         schema=1, minecraft=lock['minecraft']['version'], platform=platform.platform(),
         java=subprocess.check_output(['java', '--version'], text=True).splitlines()[0], checks=len(checks),
-        scope='Online-mode login against vanilla\'s dedicated server and Horizon\'s, with a mock session service: '
+        scope='Online-mode login against vanilla\'s dedicated server and Claudium\'s, with a mock session service: '
               'server hash, RSA key packet, AES/CFB8, session join and verify, play; rejected token, forgotten '
               'join, no account, whitelist, whitelist add by account name; the servers\' log lines about the player.'))
     print(f'online mode: {len(checks)} checks ok')

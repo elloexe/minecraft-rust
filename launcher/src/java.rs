@@ -78,7 +78,7 @@ impl Need {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Source {
-    /// Mojang's, downloaded by Horizon.
+    /// Mojang's, downloaded by Claudium.
     Mojang,
     /// Installed on this computer (JAVA_HOME, the PATH, the usual folders).
     Installed,
@@ -139,7 +139,7 @@ pub fn runtimes_dir() -> PathBuf {
 
 /// The runtimes in a Mojang `runtime` folder.
 pub fn mojang_runtimes(dir: &Path) -> Vec<Runtime> {
-    horizon_prepare::java::minecraft_runtimes(dir)
+    claudium_prepare::java::minecraft_runtimes(dir)
         .into_iter()
         .filter_map(|home| runtime(home, Source::Mojang))
         .collect()

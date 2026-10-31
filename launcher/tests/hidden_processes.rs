@@ -2,7 +2,7 @@
 #![cfg(windows)]
 
 mod support;
-use horizon_launcher::{
+use claudium_launcher::{
     backend::{self, Job, Msg},
     process,
 };
@@ -56,7 +56,7 @@ fn exporters_write_to_their_log_file_without_a_console() {
     let root = probe().parent().unwrap();
     let path = root.join("exporter.log");
     let log = fs::File::create(&path).unwrap();
-    let jdk = horizon_prepare::java::Jdk {
+    let jdk = claudium_prepare::java::Jdk {
         java: probe().into(),
         javac: probe().into(),
     };
@@ -79,7 +79,7 @@ fn cli_keeps_redirected_stdout_and_stderr() {
         .output()
         .unwrap();
     assert!(version.status.success());
-    assert!(String::from_utf8_lossy(&version.stdout).starts_with("horizon-launcher "));
+    assert!(String::from_utf8_lossy(&version.stdout).starts_with("claudium-launcher "));
     let invalid = process::command(executable)
         .arg("--unknown-option")
         .output()
@@ -91,7 +91,7 @@ fn cli_keeps_redirected_stdout_and_stderr() {
 #[test]
 fn mcp_keeps_its_stdio_transport() {
     let executable = Path::new(env!("CARGO_BIN_EXE_claudium-launcher"));
-    assert!(horizon_launcher::agents::self_test(executable).unwrap() > 0);
+    assert!(claudium_launcher::agents::self_test(executable).unwrap() > 0);
 }
 
 #[test]

@@ -1,6 +1,6 @@
 {
   "scope": "Assets + block facts + behaviours loader only; excludes full startup",
-  "resources": ".local/horizon-client/26.3",
+  "resources": ".local/claudium-client/26.3",
   "repeats": 5,
   "comparison": "historical cf837118 release binary",
   "reference_binary": "target/release/examples/shared_json_startup_profile-cf837118",

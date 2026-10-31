@@ -1,10 +1,10 @@
 //! The Servers page's "Friends over the internet" panel: Tailscale on this computer, the address friends
 //! type, inviting a friend to this one computer, and keeping shared friends to the server's port
-//! (`horizon_launcher::tailscale`). Signing in is always the player's, in Tailscale's own app or page;
+//! (`claudium_launcher::tailscale`). Signing in is always the player's, in Tailscale's own app or page;
 //! the launcher reads `tailscale status` and, with the player's own access token, calls the API.
 use super::servers_page::Field;
 use super::*;
-use horizon_launcher::tailscale::{self, Api, Invite, Reach, State};
+use claudium_launcher::tailscale::{self, Api, Invite, Reach, State};
 use serde_json::Value;
 
 /// How often Tailscale's state is read while the panel shows.

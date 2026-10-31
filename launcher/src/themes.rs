@@ -1,11 +1,11 @@
 //! The player's own look, on top of Dark, Light or System: an accent colour and a picture behind
 //! Home.
 //!
-//! An accent is a hue. Horizon's violet is the default; another hue turns the violet tokens
-//! (`horizon_theme::Blocks`' accent and the main action's face, bevel and lip) to it, keeping
+//! An accent is a hue. Claudium's violet is the default; another hue turns the violet tokens
+//! (`claudium_theme::Blocks`' accent and the main action's face, bevel and lip) to it, keeping
 //! their saturation and lightness, then darkens or lightens each just enough to read as well as
 //! the violet does: white on the face at 4.5:1, the accent at 3:1 on every background.
-use horizon_theme::{contrast, Blocks};
+use claudium_theme::{contrast, Blocks};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

@@ -1,8 +1,8 @@
 """A tool or harness that starts the game must not write into a real player's folders.
 
-The game logs into HORIZON_HOME and falls back to the player's own game folder when it is unset, so every
+The game logs into CLAUDIUM_HOME and falls back to the player's own game folder when it is unset, so every
 spawn goes through lab.game_env, which sets fresh scratch folders. This test fails for a script in tools/
-that starts the game (or horizon-ctl, the launcher or the dedicated server) without it."""
+that starts the game (or claudium-ctl, the launcher or the dedicated server) without it."""
 
 import ast
 import os
@@ -17,14 +17,14 @@ TOOLS = Path(lab.ROOT) / "tools"
 
 # Strings that mean "this script starts the game": a binary a harness runs, or the audio switch every game run sets.
 SPAWN_MARKERS = {
-    "HORIZON_NO_AUDIO", "horizon-ctl", "horizon-ctl.exe", "horizon-server", "horizon-server.exe",
-    "horizon-client.exe", "release/horizon-client", "fast/horizon-client", "debug/horizon-client",
+    "CLAUDIUM_NO_AUDIO", "claudium-ctl", "claudium-ctl.exe", "claudium-server", "claudium-server.exe",
+    "claudium-client.exe", "release/claudium-client", "fast/claudium-client", "debug/claudium-client",
 }
 
 # Scripts that mention those strings without starting a game themselves, and why.
 EXEMPT = {
     "lab.py": "defines game_env",
-    "parity.py": "runs the harnesses and gives each its own HORIZON_HOME",
+    "parity.py": "runs the harnesses and gives each its own CLAUDIUM_HOME",
     "package_native_client.py": "packs the binaries into an archive",
     "build_release.py": "builds and packs the release",
     "release_train.py": "release bookkeeping",
@@ -52,26 +52,26 @@ def uses_game_env(tree):
 
 
 def sets_audio_by_hand(tree):
-    return "HORIZON_NO_AUDIO" in set(constants(tree))
+    return "CLAUDIUM_NO_AUDIO" in set(constants(tree))
 
 
 class GameEnvTests(unittest.TestCase):
     def test_gives_every_game_scratch_folders(self):
         with mock.patch.dict(os.environ, {}, clear=False):
-            for key in ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
+            for key in ("CLAUDIUM_HOME", "CLAUDIUM_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
                 os.environ.pop(key, None)
             first, second = lab.game_env(), lab.game_env()
-        self.assertEqual(first["HORIZON_NO_AUDIO"], "1")
-        self.assertEqual(first["HORIZON_LAUNCHER_NO_SELF_UPDATE"], "1")
-        for key in ("HORIZON_HOME", "HORIZON_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
+        self.assertEqual(first["CLAUDIUM_NO_AUDIO"], "1")
+        self.assertEqual(first["CLAUDIUM_LAUNCHER_NO_SELF_UPDATE"], "1")
+        for key in ("CLAUDIUM_HOME", "CLAUDIUM_LAUNCHER_HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
             self.assertTrue(Path(first[key]).is_dir(), key)
             self.assertNotEqual(first[key], second[key], key)
 
     def test_keeps_the_callers_folders(self):
         with tempfile.TemporaryDirectory() as temp:
-            env = lab.game_env({"PATH": "x", "HORIZON_HOME": "/from/base"}, HORIZON_LAUNCHER_HOME=Path(temp), A=1)
-        self.assertEqual(env["HORIZON_HOME"], "/from/base")
-        self.assertEqual(env["HORIZON_LAUNCHER_HOME"], temp)
+            env = lab.game_env({"PATH": "x", "CLAUDIUM_HOME": "/from/base"}, CLAUDIUM_LAUNCHER_HOME=Path(temp), A=1)
+        self.assertEqual(env["CLAUDIUM_HOME"], "/from/base")
+        self.assertEqual(env["CLAUDIUM_LAUNCHER_HOME"], temp)
         self.assertEqual((env["PATH"], env["A"]), ("x", "1"))
 
     def test_does_not_touch_the_process_environment(self):
@@ -89,7 +89,7 @@ class SpawnerTests(unittest.TestCase):
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
             if SPAWN_MARKERS & set(constants(tree)) and not uses_game_env(tree):
                 offenders.append(str(path.relative_to(lab.ROOT)))
-        self.assertEqual(offenders, [], "these start the game without lab.game_env (HORIZON_HOME falls back to a "
+        self.assertEqual(offenders, [], "these start the game without lab.game_env (CLAUDIUM_HOME falls back to a "
                                         "real player's folder); use it, or list the script in EXEMPT")
 
     def test_nobody_sets_the_audio_switch_by_hand(self):

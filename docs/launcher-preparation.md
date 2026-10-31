@@ -1,7 +1,7 @@
 # Launcher resource preparation
 
 Release folders include `exporters/server`, `exporters/client` and an integrity manifest.
-These contain only Horizon's original Java exporter classes. Minecraft jars, libraries,
+These contain only Claudium's original Java exporter classes. Minecraft jars, libraries,
 assets and generated resources remain local and are verified against `research-lock.json`.
 The same platform-independent class bundle is used in game and dedicated-server releases.
 
@@ -12,11 +12,11 @@ pinned jars. The release job also compares two fresh isolated preparations with 
 batched preparation using a runtime-only Java home:
 
 ```sh
-cargo build --release -p horizon-prepare
+cargo build --release -p claudium-prepare
 # Requires already imported Minecraft files in .local/minecraft/<version>.
-target/release/horizon-prepare compile-exporters
+target/release/claudium-prepare compile-exporters
 # Copy server/, client/ and manifest.json from the printed folder into exporters/.
-python3 tools/check_prepare_exporters.py --binary target/release/horizon-prepare
+python3 tools/check_prepare_exporters.py --binary target/release/claudium-prepare
 ```
 
 Development checkouts and changed sources compile on demand, into
@@ -37,7 +37,7 @@ components as well as tags. The data generator also remains separate. Inspection
 its providers. Calling it inside a worker would shut down shared executors; incorporating
 its providers directly needs a separate comparison of registry and executor lifetimes.
 Fresh release preparation therefore starts five exporter/data-generator JVMs, down from 18,
-and invokes no compiler. `HORIZON_PREPARE_ISOLATED=1` retains separate exporter JVMs for
+and invokes no compiler. `CLAUDIUM_PREPARE_ISOLATED=1` retains separate exporter JVMs for
 output comparisons and diagnosis.
 
 `tools/check_prepare_exporters.py` requires identical resource file sets and identical bytes

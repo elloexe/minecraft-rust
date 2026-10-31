@@ -1,10 +1,10 @@
 # Release flow
 
 How a change gets from a pull request to players: the checks a pull request passes, how it merges, and the
-automatic releases that follow. Releases are automatic and frequent so the latest Horizon is always playable.
-Since 2026-10-28 Horizon ships only the **Nightly** (Ludovic's decision; the Team proposed it): the batch train builds
+automatic releases that follow. Releases are automatic and frequent so the latest Claudium is always playable.
+Since 2026-10-28 Claudium ships only the **Nightly** (Ludovic's decision; the Team proposed it): the batch train builds
 a Nightly instead of a `vX.Y.Z` release, it is published once its smoke test passed and no `release-blocker` is open,
-and every launcher and `horizon-server update` install it ([Nightly only](#nightly-only)).
+and every launcher and `claudium-server update` install it ([Nightly only](#nightly-only)).
 
 ## Pull request checks
 
@@ -14,7 +14,7 @@ reopened; labels never start it):
 | Job | Runs on | What | Time |
 | --- | --- | --- | --- |
 | `verify` | GitHub `ubuntu-latest` | Public-tree check, Python tests, rustfmt, clippy with warnings denied, Rust tests. Dependencies and the workspace build come from a cache saved by main's runs | ~4 min cold, less warm |
-| `parity / parity` | A runner with the label `horizon-game`: the Mac mini's and playhorizon's (below) | Only for a change to a harness, an oracle, a probe or the runner (or the `run-parity` label): the vanilla harnesses the change can affect (`tools/parity.py --changed <base>`). Other pull requests skip it: [parity-main](#parity-on-main) checks them on main | seconds when nothing is affected; minutes per affected harness |
+| `parity / parity` | A runner with the label `claudium-game`: the Mac mini's and playclaudium's (below) | Only for a change to a harness, an oracle, a probe or the runner (or the `run-parity` label): the vanilla harnesses the change can affect (`tools/parity.py --changed <base>`). Other pull requests skip it: [parity-main](#parity-on-main) checks them on main | seconds when nothing is affected; minutes per affected harness |
 
 Pushes to main run `verify` only; the nightly audit covers main's harnesses.
 
@@ -30,12 +30,12 @@ repository, `run-parity.yml` for a fork's pull request a maintainer labels `run-
 
 A pull request every harness reaches (a crate split moves files every probe links: #2160 ran all 352 harnesses, 71
 minutes on a Mac mini runner, while five other pull requests' jobs queued behind it) carries the `full-parity` label:
-its job runs on playhorizon's runner only (4 harnesses at a time), and waits for it while that runner is busy
+its job runs on playclaudium's runner only (4 harnesses at a time), and waits for it while that runner is busy
 instead of taking the Mac mini's. Labels don't start `checks`: add it when opening the pull request
 (`gh pr create --label full-parity`), or before the next push.
 
-Horizon never downloads the game, so harnesses that compare with vanilla run only where the maintainer's own
-copy is: the Mac mini and playhorizon (below). Their runners run as the maintainer's account and keep their checkout
+Claudium never downloads the game, so harnesses that compare with vanilla run only where the maintainer's own
+copy is: the Mac mini and playclaudium (below). Their runners run as the maintainer's account and keep their checkout
 between runs (`clean: false`), so the probes build incrementally into `.local/parity-target` and earlier passes
 stand.
 
@@ -49,15 +49,15 @@ alone, with a warning. The check is still reported on the head.
    (Homebrew and `java_home` on the Mac; on Linux what `linux-runner.sh` pinned, else nixpkgs), and sccache when
    the machine has it.
 2. `tools/ci/vanilla-data.sh` links `.local/` to the runner's copy of the vanilla data, cloned once from
-   `~/code/horizon-parity/shared-local` into `~/.actions-runners/horizon/_work/horizon/shared-local`, and
-   prepares `.local/horizon-client` with the pull request's own `horizon-prepare` once per preparer version
-   (its sources, the exporters in `mods/horizon/src/test/java` and `research-lock.json`). The game's sounds, which
+   `~/code/claudium-parity/shared-local` into `~/.actions-runners/claudium/_work/claudium/shared-local`, and
+   prepares `.local/claudium-client` with the pull request's own `claudium-prepare` once per preparer version
+   (its sources, the exporters in `mods/claudium/src/test/java` and `research-lock.json`). The game's sounds, which
    depend only on the Minecraft version, are kept once in `shared-local/sounds/<version>/` (copied from a folder
-   `horizon-prepare sounds` made from the maintainer's own game; the Mac mini has no official launcher of its own)
+   `claudium-prepare sounds` made from the maintainer's own game; the Mac mini has no official launcher of its own)
    and cloned into each preparation (not linked: vanilla's packs refuse symbolic links), for the audio harnesses.
-   `tools/prepare_output.py check` then compares what was prepared with `crates/horizon-prepare/output-versions.txt`:
+   `tools/prepare_output.py check` then compares what was prepared with `crates/claudium-prepare/output-versions.txt`:
    launchers keep a player's prepared resources across releases whose preparer declares the same `OUTPUT_VERSION`
-   (`crates/horizon-prepare/src/lib.rs`), so a change to the prepared files fails here until it bumps the number
+   (`crates/claudium-prepare/src/lib.rs`), so a change to the prepared files fails here until it bumps the number
    and appends the new digest (the error gives both lines).
 3. `tools/parity.py --changed <base sha>` picks the harnesses whose traced dependencies (their script, Python
    modules, Java oracles and every Rust source their probes compile) changed since the merge base, plus any
@@ -67,10 +67,10 @@ alone, with a warning. The check is still reported on the head.
 Failed harnesses' logs are uploaded as the `parity-logs` artifact.
 
 **Platform-specific harnesses.** A harness listed under `linux_only` in `tools/parity_hosts.json` gives
-different results on macOS for a reason that is not a Horizon bug (the reason is printed). `parity.py` skips it on
+different results on macOS for a reason that is not a Claudium bug (the reason is printed). `parity.py` skips it on
 other platforms unless it is named on the command line. Today it holds only `save_roundtrip` (it needs `vscreen`):
 `options`, `chunk_generation`, `world_border_render` and `mob_ai`, which once differed on macOS through the
-platform's libm, pass on the Mac mini since `horizon_core::jmath` computes what HotSpot computes (checked
+platform's libm, pass on the Mac mini since `claudium_core::jmath` computes what HotSpot computes (checked
 2026-10-14).
 
 **Pull requests from forks** never run code on the Mac mini by themselves. A maintainer who has read the change
@@ -78,44 +78,44 @@ adds the `run-parity` label: that runs the job once, on the commit the pull requ
 after new pushes, remove the label and add it again.
 
 **Two runners.** The Mac mini has two runners for this repository, `ludovics-mac-mini`
-(`~/.actions-runners/horizon`, `CARGO_BUILD_JOBS=10`) and `ludovics-mac-mini-2` (`~/.actions-runners/horizon-2`,
+(`~/.actions-runners/claudium`, `CARGO_BUILD_JOBS=10`) and `ludovics-mac-mini-2` (`~/.actions-runners/claudium-2`,
 `CARGO_BUILD_JOBS=6`), with the same labels, so the 30-minute nightly audit or a long parity job never holds a
 release's macOS build back. Each keeps its own checkout, `target/` and Rust install; the second's
-`_work/horizon/shared-local` links to the first's, so they share the vanilla data, the preparations (one at a
+`_work/claudium/shared-local` links to the first's, so they share the vanilla data, the preparations (one at a
 time, under a lock) and the parity passes and slots.
 
 **The desktop's runner (retired).** On 2026-10-26 the maintainer asked that CI stop using his desktop: its services are
-stopped and `ludodesktop-horizon` has no label a job asks for (only `self-hosted`, `Linux`, `X64`), so nothing waits for
+stopped and `ludodesktop-claudium` has no label a job asks for (only `self-hosted`, `Linux`, `X64`), so nothing waits for
 it. What follows describes it as it ran. It ran on the maintainer's Linux desktop while nobody used it: its
 screen locked, or untouched for 15 minutes (his rule, 2026-10-26). `tools/ci/linux-runner.sh install`, run there as
-him, registers it and installs two systemd user services: `horizon-runner` (the runner, in
-`~/.actions-runners/horizon`, nice 19, in `horizon-ci.slice` with CPU and I/O weight 20, half the threads (on all of
+him, registers it and installs two systemd user services: `claudium-runner` (the runner, in
+`~/.actions-runners/claudium`, nice 19, in `claudium-ci.slice` with CPU and I/O weight 20, half the threads (on all of
 them the CPU package reached 92–96 °C) and memory capped at two thirds of the RAM; `CARGO_BUILD_JOBS` and the harness slots at 8, after the machine froze under ~7 cold cargo
 builds on 2026-10-14; its own Rust install; the JDK, sccache and the build libraries from nixpkgs; its own
-`vscreen` so no game it starts reaches his screen) and `horizon-runner-pause` (`tools/ci/runner_pause.py`), the
+`vscreen` so no game it starts reaches his screen) and `claudium-runner-pause` (`tools/ci/runner_pause.py`), the
 only thing that starts the runner. The watcher stops it at once on keyboard, mouse or gamepad input (read from
 `/dev/input`: only whether bytes came, never what), while an unlocked session has had input in the last 15 minutes,
 while the CPU package is at 90 °C or more, while a game runs (Steam, gamescope, Wine, Proton or Minecraft
 processes, fleet-load's own detection, or a process outside the CI slice using the GPU at 50 % or more), or while
-`~/.actions-runners/horizon/pause` exists, and starts it again 5 minutes after the last such sign. A job already
+`~/.actions-runners/claudium/pause` exists, and starts it again 5 minutes after the last such sign. A job already
 under way is throttled to 2 threads at the lowest weight and the runner stops after it: freezing the job would make
 GitHub drop it as lost and the harnesses time out. Old pull requests' `runner-env.sh` know only the Mac: the
-runner's `.env` and `.path` give their jobs Python, the JDK and the vanilla data (`HORIZON_SHARED_SOURCE`) all the
+runner's `.env` and `.path` give their jobs Python, the JDK and the vanilla data (`CLAUDIUM_SHARED_SOURCE`) all the
 same. The nightly audit and parity-main stay on the Mac mini's runners: the audit compares with the previous night,
 so it stays on one platform, and a parity-main job slowed down on the desktop because he came back could time out,
 and its failures bisect and comment on merges.
 
-**playhorizon's runner.** `playhorizon-horizon` runs on a server a hosting partner lends the project (Ubuntu, 8
+**playclaudium's runner.** `playclaudium-claudium` runs on a server a hosting partner lends the project (Ubuntu, 8
 AMD EPYC threads, 30 GB, in Detroit; reachable only through the maintainer's tailnet). Nobody sits at it, so the
 watcher never pauses it except by hand. It gets half the machine: `RUNNER_MEMORY=24`, `CARGO_BUILD_JOBS` and the
-harness slots at 4, and a drop-in (`~/.config/systemd/user/horizon-runner.service.d/cpus.conf`) that starts it under
+harness slots at 4, and a drop-in (`~/.config/systemd/user/claudium-runner.service.d/cpus.conf`) that starts it under
 `taskset -c 4-7` (the user slice can't set `AllowedCPUs`: systemd doesn't delegate the cpuset controller to it).
 Agents' `tools/remote.sh` runs and benchmarks share CPUs 0-3, so they never slow a pull request's job.
 Without Nix, `linux-runner.sh` takes the build libraries, the JDK, sccache, Xvfb and Mesa's software Vulkan
 (lavapipe; there is no GPU) from apt, and Python 3.13 from uv. The partner can reach the machine, so gh is not
 logged in there: the registration token comes from another machine (`RUNNER_TOKEN`), and no job with secrets may
-run there (parity has none). It is also a parity host (`playhorizon` in `tools/parity_hosts.json`, 3 jobs on CPUs 0-3). Since
-2026-10-26 it has the `horizon-game` label: pull requests' parity jobs run there or on the Mac mini, and `full-parity`
+run there (parity has none). It is also a parity host (`playclaudium` in `tools/parity_hosts.json`, 3 jobs on CPUs 0-3). Since
+2026-10-26 it has the `claudium-game` label: pull requests' parity jobs run there or on the Mac mini, and `full-parity`
 ones only there.
 
 ## Merging
@@ -125,7 +125,7 @@ requires `verify` for everyone, and Ludovic's review for the files `.github/CODE
 and ships releases). Branches don't have to be up to date with main: main's own `checks` run catches the rare
 semantic conflict.
 
-**Who merges.** The Horizon Team (GitHub team `horizon-team`: kacpherek, levzzz5154, rdbtCVS, Online5277) and
+**Who merges.** The Claudium Team (GitHub team `claudium-team`: kacpherek, levzzz5154, rdbtCVS, Online5277) and
 Ludovic. The orchestrator's agents prove only the risky pull requests (below), so a contributor's ordinary pull
 request doesn't wait for them.
 
@@ -145,7 +145,7 @@ paths, `lan_e2e`, a screenshot for anything visible) before it merges. Risky mea
 
 - it changes what is saved or loaded (`save.rs`, `entity_nbt.rs`, `block_entity_nbt.rs`, `region.rs`, `datafix/`):
   a bug there damages players' worlds;
-- the network or the server thread: `horizon-protocol`, `net.rs`, `remote*.rs`, `lan/`, `lan*.rs`,
+- the network or the server thread: `claudium-protocol`, `net.rs`, `remote*.rs`, `lan/`, `lan*.rs`,
   `integrated.rs`, `levels.rs`, `dedicated*`;
 - world generation (`worldgen/`): seeds must keep generating the same terrain;
 - the launcher's installs and updates, or the mod runtime;
@@ -157,7 +157,7 @@ Unsure? Add `needs-proof`: it costs a few hours, a broken release costs more.
 `parity` becomes required once it has run green on pull requests for a while (a week without a false failure):
 
 ```sh
-gh api -X POST repos/horizon-rust/horizon/branches/main/protection/required_status_checks/contexts -f 'contexts[]=parity / parity'
+gh api -X POST repos/elloexe/minecraft-rust/branches/main/protection/required_status_checks/contexts -f 'contexts[]=parity / parity'
 ```
 
 A skipped `parity` (a fork's pull request without the label) counts as passed, so requiring it never blocks a
@@ -183,7 +183,7 @@ which runs them on main a batch of merges at a time, on the Mac mini's runner:
   starts when a parity-main run finishes. A forced run (`force=true`) doesn't wait for parity-main.
 
 A pull request still runs its own parity job when it changes a harness script, an oracle
-(`mods/horizon/src/test/`), a probe (`crates/*/examples/`, `game/*_fixture.rs`, `game/*_harness.rs`), the runner
+(`mods/claudium/src/test/`), a probe (`crates/*/examples/`, `game/*_fixture.rs`, `game/*_harness.rs`), the runner
 (`tools/parity*.py`, `tools/lab.py`, `tools/parity_hosts.json`, `parity*.yml`), or carries the `run-parity` label
 (`run-parity.yml` runs it when the label is added).
 
@@ -217,8 +217,8 @@ flowchart LR
 commits) since the commit the published Nightly was built on:
 
 - A pull request counts when it changed what players run: `crates/` (not `examples/`, `tests/`, `benches/`),
-  `xtask/`, `packaging/`, `Cargo.toml`, `Cargo.lock`, `research-lock.json`, or an exporter `horizon-prepare`
-  compiles (the `mods/horizon/src/test/java/dev/horizonlab/parity/*.java` files its sources name). Markdown never
+  `xtask/`, `packaging/`, `Cargo.toml`, `Cargo.lock`, `research-lock.json`, or an exporter `claudium-prepare`
+  compiles (the `mods/claudium/src/test/java/dev/claudiumlab/parity/*.java` files its sources name). Markdown never
   counts.
 - It goes in batches, so players get a few Nightlies a day rather than one per merge: once 5 pull requests count
   and the newest of them merged at least 5 minutes ago (a wave of merges becomes one Nightly), or once the oldest has
@@ -235,7 +235,7 @@ commits) since the commit the published Nightly was built on:
 
 ### Nightly only
 
-Ludovic decided on 2026-10-28 that Horizon ships only the Nightly. No `vX.Y.Z` game release is made any more:
+Ludovic decided on 2026-10-28 that Claudium ships only the Nightly. No `vX.Y.Z` game release is made any more:
 the last one stays GitHub's *latest*, so launchers and servers from before the switch (which don't read Nightlies)
 keep a working build until they update themselves. `.github/release-line.txt` still numbers the launcher's releases
 (`launcher@X.Y.Z`).
@@ -246,7 +246,7 @@ keep a working build until they update themselves. `.github/release-line.txt` st
   instance stays. Worlds are in the game's folder, never in a version's, so nothing touches them. The "Nightly
   builds" setting is gone. The last week's Nightlies (`nightly-<date>`) and the old releases stay on the Versions
   page.
-- **Servers** (#3331): `horizon-server update`, `install.sh` and `install.ps1` follow the Nightly the same way.
+- **Servers** (#3331): `claudium-server update`, `install.sh` and `install.ps1` follow the Nightly the same way.
 - **Kira** posts each Nightly in #releases; the bug template asks for the version the game shows.
 - **Everyone gets the reviewers' picks.** A Nightly is main plus the pull requests the trusted reviewers picked
   ([below](#trusted-reviewers-pick-the-nightlys-pull-requests)), so a pick reaches every player with the next
@@ -260,7 +260,7 @@ keep a working build until they update themselves. `.github/release-line.txt` st
 | `release-now` | A Nightly as soon as main's checks and parity-main pass, past the batch rule and the day's cap |
 | `skip-release` | Doesn't trigger a Nightly or a launcher release and isn't listed in the notes |
 | `run-parity` | Runs the parity job once on a fork's pull request |
-| `full-parity` | Runs the pull request's parity job on playhorizon's runner only (a change every harness reaches) |
+| `full-parity` | Runs the pull request's parity job on playclaudium's runner only (a change every harness reaches) |
 | `parity-regression` | Opened by the nightly audit for a harness that fails on main |
 | `release-blocker` | On an issue: no Nightly is published while it is open ([When it releases](#when-it-releases)) |
 
@@ -271,12 +271,12 @@ the notes.
 
 | Archive | Runs on | Checks |
 | --- | --- | --- |
-| `horizon-linux-x86_64.tar.gz` | GitHub `ubuntu-22.04` (an older glibc, so it runs on any recent distribution) | the standard loader and libraries only (`tools/check_imports.py`) |
-| `horizon-server-linux-x86_64.tar.gz` | the same Linux job, after the client archive: `horizon-server`, `horizon-prepare` and the game built with `--no-default-features` as `horizon-engine` (docs/server.md) | as above, and neither `libasound.so.2` nor `libudev.so.1` (`tools/check_imports.py --server`) |
-| `horizon-windows-x64.zip` | GitHub `windows-latest`, C runtime linked in | system DLLs only (`tools/check_imports.py`) |
-| `horizon-macos-arm64.zip` | The Mac mini's runner (`vars.MAC_RUNNER=macos-latest` sends it to GitHub) | system libraries only (`otool -L`); a 1500-frame offscreen run of a new world (about 12 s; 300 frames end before the world has loaded) with resources prepared from the runner's own Minecraft (`--offscreen --world smoke --frames 1500 --smoke-report`: frames drawn, chunks generated and meshed, a player, no error) |
+| `claudium-linux-x86_64.tar.gz` | GitHub `ubuntu-22.04` (an older glibc, so it runs on any recent distribution) | the standard loader and libraries only (`tools/check_imports.py`) |
+| `claudium-server-linux-x86_64.tar.gz` | the same Linux job, after the client archive: `claudium-server`, `claudium-prepare` and the game built with `--no-default-features` as `claudium-engine` (docs/server.md) | as above, and neither `libasound.so.2` nor `libudev.so.1` (`tools/check_imports.py --server`) |
+| `claudium-windows-x64.zip` | GitHub `windows-latest`, C runtime linked in | system DLLs only (`tools/check_imports.py`) |
+| `claudium-macos-arm64.zip` | The Mac mini's runner (`vars.MAC_RUNNER=macos-latest` sends it to GitHub) | system libraries only (`otool -L`); a 1500-frame offscreen run of a new world (about 12 s; 300 frames end before the world has loaded) with resources prepared from the runner's own Minecraft (`--offscreen --world smoke --frames 1500 --smoke-report`: frames drawn, chunks generated and meshed, a player, no error) |
 
-Each builds `horizon-client`, `horizon-ctl` and `horizon-prepare` in release mode, checks all three exist, starts
+Each builds `claudium-client`, `claudium-ctl` and `claudium-prepare` in release mode, checks all three exist, starts
 each one (`--help`, `--version`), packages the folder with `cargo run -p xtask -- package` and archives it. The
 GitHub jobs keep their Cargo caches (`Swatinem/rust-cache`); the Mac mini keeps its `target/`. Only the Mac
 runs the game: GitHub's runners have neither a GPU worth the name nor the game files.
@@ -304,7 +304,7 @@ Nightly was opt-in beside it. Since 2026-10-28 the one channel is the Nightly ([
 ### Signed checksums
 
 Every game and launcher release carries `SHA256SUMS` (the archives' SHA-256, `sha256sum`'s format) and
-`SHA256SUMS.sig`: one base64 Ed25519 signature per line over `horizon release <tag>\n` followed by SHA256SUMS,
+`SHA256SUMS.sig`: one base64 Ed25519 signature per line over `claudium release <tag>\n` followed by SHA256SUMS,
 so a signed list can't be reused under another tag.
 
 - A `sign` job of its own makes them: `tools/ci/sign_release.sh` runs the runner's `sha256sum` and OpenSSL and
@@ -313,18 +313,18 @@ so a signed list can't be reused under another tag.
   runs, which sign with a throwaway key). No code from the repository runs beside the key, so no pull request
   can read it by changing what a build compiles; the key is in no file, no log and no password vault, and nobody
   needs to read it.
-- The publish job then checks the signature the way launchers do (`horizon-release-sign verify --publishing`,
-  crates/horizon-release-sign), against the public keys built in from
-  `crates/horizon-release-sign/release-keys.txt`. While that file lists no key, releases go out with SHA256SUMS
+- The publish job then checks the signature the way launchers do (`claudium-release-sign verify --publishing`,
+  crates/claudium-release-sign), against the public keys built in from
+  `crates/claudium-release-sign/release-keys.txt`. While that file lists no key, releases go out with SHA256SUMS
   alone and a warning (today's releases keep working). Once it lists one, a missing secret or a key it doesn't
   list fails the release before anything is published, instead of publishing something launchers would refuse.
-- Making the key: `tools/ci/new_release_key.sh` pipes a new key from `horizon-release-sign keygen` straight into
+- Making the key: `tools/ci/new_release_key.sh` pipes a new key from `claudium-release-sign keygen` straight into
   `gh secret set RELEASE_SIGNING_KEY --env release` and prints only the public key, which then goes into
   release-keys.txt by pull request.
 
-**Releases from before signing.** The launcher and `horizon-server update` install only signed releases, with
+**Releases from before signing.** The launcher and `claudium-server update` install only signed releases, with
 one exception, so a player or a server can still go back to an older version: every release published before
-signing began has its archives' SHA-256 pinned in `crates/horizon-release-sign/legacy-releases.txt`, built into
+signing began has its archives' SHA-256 pinned in `crates/claudium-release-sign/legacy-releases.txt`, built into
 both. Those releases install only with exactly those files, whatever GitHub serves for them later. The file was
 written once by `tools/ci/legacy_releases.py` from the SHA-256s GitHub computed at upload; it lists no signed
 release and never changes again (`--check` says whether it is complete).
@@ -367,13 +367,13 @@ open `release-blocker`. The reviewers' `/nightly` and the 20:17 UTC build still 
 To stop the next Nightlies while a problem is fixed, label an issue about it `release-blocker`. The way out is
 forward: revert the pull request (or `/nightly remove` a pick), label the revert `release-now`, and a fixed Nightly
 is out as soon as main's checks and parity-main pass. Meanwhile a player can pick an earlier build on the launcher's
-Versions page (the last week's `nightly-<date>`, or a `vX.Y.Z`), and `horizon-server update --version <tag>` does
+Versions page (the last week's `nightly-<date>`, or a `vX.Y.Z`), and `claudium-server update --version <tag>` does
 the same for a server.
 
 ## Launcher releases
 
 `.github/workflows/launcher.yml` releases the launcher the same way. It starts on a push to main that changes
-`launcher/`, `crates/horizon-prepare/` or `crates/horizon-theme/` (what the launcher builds in), every hour at :47,
+`launcher/`, `crates/claudium-prepare/` or `crates/claudium-theme/` (what the launcher builds in), every hour at :47,
 and by hand; pushes to `launcher` and `launcher-*` branches only build.
 
 - `tools/release_train.py decide --kind launcher` counts the pull requests merged since the last published
@@ -383,8 +383,8 @@ and by hand; pushes to `launcher` and `launcher-*` branches only build.
   patches separately). Without `.github/release-line.txt`, `launcher-vX.Y.Z`: the patch after the last launcher tag,
   or the next minor (`X.Y+1.0`) when one of those pull requests is labelled `feature`. `launcher-v0.2.0` was taken
   long before 0.2, hence the new prefix.
-- No version-bump commits: the build gets the version in `HORIZON_LAUNCHER_VERSION` and the tag in
-  `HORIZON_LAUNCHER_TAG`, which `launcher/src/backend.rs` reads with `option_env!` (falling back to `Cargo.toml`'s),
+- No version-bump commits: the build gets the version in `CLAUDIUM_LAUNCHER_VERSION` and the tag in
+  `CLAUDIUM_LAUNCHER_TAG`, which `launcher/src/backend.rs` reads with `option_env!` (falling back to `Cargo.toml`'s),
   so `--version`, the window, the User-Agent and the self-update comparison all use them. Each build checks
   `--version` says it.
 - Linux on GitHub `ubuntu-22.04`, Windows on `windows-latest`, macOS on the Mac mini's runner; each runs the
@@ -392,10 +392,10 @@ and by hand; pushes to `launcher` and `launcher-*` branches only build.
 - Published with `--latest=false`: the repository's latest release stays a game release. Notes list the pull
   requests under New and Fixed; Kira posts launcher releases without pinging.
 
-Making a launcher release GitHub's latest instead would break servers: every `horizon-server` already installed,
+Making a launcher release GitHub's latest instead would break servers: every `claudium-server` already installed,
 `install.sh` and `install.ps1` ask for `releases/latest` and expect the game's archives there, and a server that
 can't update can't fetch the fix either. So the game release stays the latest, and it sends people to the launcher
-(#1647): its notes open with a "Want to play? Download the Horizon launcher" block (`PLAYERS` in
+(#1647): its notes open with a "Want to play? Download the Claudium launcher" block (`PLAYERS` in
 `tools/release_train.py`: raw HTML, which GitHub shows and launchers' notes skip; the site's Releases page leaves
 it out too), and its archives carry labels ("Game files the
 launcher installs: Linux (…)") that GitHub shows in place of the file names. Everything that downloads matches
@@ -421,7 +421,7 @@ approving review at the exact head that is built, from a trusted reviewer or fro
 agents' review), never its author's (Ludovic, 2026-10-28). A push after the review needs a new one: until then the
 scheduled build keeps the approved head. `/nightly dry-run` needs no review: it publishes nothing.
 
-Every Nightly ships its exact source. Its notes name the commit; `horizon-source.tar.gz` on the release is that
+Every Nightly ships its exact source. Its notes name the commit; `claudium-source.tar.gz` on the release is that
 commit's `git archive`, signed with the builds in `SHA256SUMS`; and `nightly.py keep-source` tags the commit
 `nightly-source/<date>-<short>`. That tag is never pruned, unlike the `nightly-<date>` release and the
 `nightly/build-*` branch (7 days each), because native mods pin a Nightly's commit and the launcher downloads that
@@ -502,8 +502,8 @@ comment on any issue or pull request (`.github/workflows/nightly-command.yml`, `
   Fixed, as a release's notes), then each picked pull request with its title, author and who picked it, the known
   issues and the thanks. `build` is
   `game-build.yml`, the same builds and smoke test as a release, with the version `nightly-<date>` and
-  `HORIZON_NIGHTLY="<date> <short sha>"` built in, macOS signed ad hoc. `sign` signs SHA256SUMS for the channel
-  (the message says `horizon release nightly`, so a nightly's signature never passes for a release's). `publish`
+  `CLAUDIUM_NIGHTLY="<date> <short sha>"` built in, macOS signed ad hoc. `sign` signs SHA256SUMS for the channel
+  (the message says `claudium release nightly`, so a nightly's signature never passes for a release's). `publish`
   checks the signature, the smoke test and that no `release-blocker` is open (as a release; a dry run only warns, so
   `/nightly dry-run <pr>` still tries a blocker's fix), renames the
   previous `nightly` pre-release to `nightly-<its date>`, publishes the new one as the `nightly` pre-release (never
@@ -514,13 +514,13 @@ comment on any issue or pull request (`.github/workflows/nightly-command.yml`, `
   merge with a read-only token that isn't kept in the checkout and no secrets; the runner's Developer ID keychain
   stays locked. `sign` is the only job with the key, and checks out only main's `tools/ci/sign_release.sh`, which
   hashes the archives with the runner's `sha256sum` and signs with its OpenSSL: it never runs what `build` made.
-  `publish` runs main's `horizon-release-sign`, never the archives. Nothing a nightly's build leaves reaches a
+  `publish` runs main's `claudium-release-sign`, never the archives. Nothing a nightly's build leaves reaches a
   release either: `game-build.yml`'s `trusted` input is true only for `release.yml`. An untrusted build runs its
-  macOS jobs on the Mac mini's nightly runner (`horizon-nightly`, its own so a nightly never waits behind pull
-  requests' parity queue; same machine and trust as the `horizon-game` runner), never the release runner
+  macOS jobs on the Mac mini's nightly runner (`claudium-nightly`, its own so a nightly never waits behind pull
+  requests' parity queue; same machine and trust as the `claudium-game` runner), never the release runner
   (`MAC_RUNNER`), and its Rust cache has its own key and is never saved. A trusted build doesn't use the machine's
-  shared sccache, which pull requests' jobs write (`HORIZON_NO_SCCACHE`, `tools/ci/runner-env.sh`).
-- **Players.** Every launcher and `horizon-server update` install the `nightly` pre-release
+  shared sccache, which pull requests' jobs write (`CLAUDIUM_NO_SCCACHE`, `tools/ci/runner-env.sh`).
+- **Players.** Every launcher and `claudium-server update` install the `nightly` pre-release
   ([Nightly only](#nightly-only)). It is never GitHub's latest: the last `vX.Y.Z` stays that, for launchers,
   servers and `install.sh` from before the switch.
 
@@ -552,7 +552,7 @@ Releases ship often, so nothing they leave behind may grow without bound.
 
 - **Artifacts:** every upload keeps 3 days (nightly parity logs 7); a release's assets live on the release itself.
 - **Mac runners:** `tools/ci/runner-gc.sh` runs every 6 hours from launchd on the Mac mini, as a copy taken from main
-  (`~/.actions-runners/runner-gc.sh`, plist `dev.horizon.runner-gc`), never from a pull request's checkout. It skips a
+  (`~/.actions-runners/runner-gc.sh`, plist `dev.claudium.runner-gc`), never from a pull request's checkout. It skips a
   runner in a job, removes a checkout's cargo build folders past 12 GB (`MAX_TARGET_GB`) and harness work folders
   under `.local/` untouched for 3 days (`STALE_DAYS`), and keeps the 2 newest shared preparations (`KEEP_PREPARED`)
   while no runner works. It also stops harness JVMs (vanilla servers, oracles) left orphaned for 3 hours
@@ -560,4 +560,4 @@ Releases ship often, so nothing they leave behind may grow without bound.
   stops its own harnesses on SIGTERM and SIGHUP (a cancelled job), so these come only from a SIGKILL or a harness run
   by hand. Runner builds go through the machine's sccache (`tools/ci/runner-env.sh`), so what it removes
   comes back from the cache. Update the copy after changing the script:
-  `ssh macmini 'curl -fsSL https://raw.githubusercontent.com/horizon-rust/horizon/main/tools/ci/runner-gc.sh -o ~/.actions-runners/runner-gc.sh'`.
+  `ssh macmini 'curl -fsSL https://raw.githubusercontent.com/elloexe/minecraft-rust/main/tools/ci/runner-gc.sh -o ~/.actions-runners/runner-gc.sh'`.

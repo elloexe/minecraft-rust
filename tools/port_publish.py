@@ -6,7 +6,7 @@ update; --yes does it (labels, issues, the Kira card). The maintainer approves t
 `version-port` label.
 
 - One issue per work item of rank 1, of rank 2 when a harness newly fails on NEW (or its oracle no longer
-  compiles), and of rank 3 when Horizon's comments name a changed method, titled "[NEW] <item>" and labelled `version-port` and `port-NEW`. An open issue with
+  compiles), and of rank 3 when Claudium's comments name a changed method, titled "[NEW] <item>" and labelled `version-port` and `port-NEW`. An open issue with
   the same title is updated: only the generated part of its body (between the markers) is replaced, so what people
   wrote around it stays.
 - One tracking issue, "[NEW] Port to Minecraft NEW", listing those issues and every other item (rank-2 leads no
@@ -15,7 +15,7 @@ update; --yes does it (labels, issues, the Kira card). The maintainer approves t
   adds one Kira card for the port itself, linking the tracking issue.
 
 Bodies hold names and signatures only: vanilla classes, methods with their descriptors, fields, registry entries,
-packets, harness names, javac's one-line errors (about Horizon's own oracles), Horizon file paths and the local
+packets, harness names, javac's one-line errors (about Claudium's own oracles), Claudium file paths and the local
 path of the diff. Never decompiled code: `assert_no_code` refuses a body with a line that reads like Java source.
 """
 
@@ -33,7 +33,7 @@ except ImportError:
 
 LABEL = "version-port"
 START, END = "<!-- version-port: generated -->", "<!-- /version-port -->"
-KIRA = Path(os.environ.get("HORIZON_KIRA", Path.home() / "code/horizon-parity/tools/kira.mjs"))
+KIRA = Path(os.environ.get("CLAUDIUM_KIRA", Path.home() / "code/claudium-parity/tools/kira.mjs"))
 RANKS = {1: "blocks the switch", 2: "proved by a harness", 3: "ported, no harness", 4: "new content",
          5: "not ported"}
 # A line of Java source: a declaration, a statement, an import (what decompiled code looks like).
@@ -45,7 +45,7 @@ QUOTED_CODE = re.compile(r"[{}]|;\s+\S|\s=\s|\breturn\s|\bnew\s+[A-Z]")
 
 
 def published(item):
-    """Whether an item gets its own issue: rank 1; rank 2 when a harness newly fails; rank 3 when Horizon's
+    """Whether an item gets its own issue: rank 1; rank 2 when a harness newly fails; rank 3 when Claudium's
     comments name one of the changed methods (the others are leads, listed in the tracking issue)."""
     if item["rank"] == 3:
         return any(info.get("named") for info in (item.get("classes") or {}).values())
@@ -84,7 +84,7 @@ def body(item, report, diff, store_path, limit=25):
     if item.get("harnesses"):
         lines.append("Harnesses that prove it: " + ", ".join(f"`{h}`" for h in item["harnesses"][:limit]))
     if item.get("files"):
-        lines.append("Horizon: " + ", ".join(f"`{f}`" for f in item["files"][:limit])
+        lines.append("Claudium: " + ", ".join(f"`{f}`" for f in item["files"][:limit])
                      + (f" (+{len(item['files']) - limit})" if len(item["files"]) > limit else ""))
     classes = item.get("classes")
     if isinstance(classes, dict):
@@ -92,7 +92,7 @@ def body(item, report, diff, store_path, limit=25):
         changed = (diff.get("classes") or {}).get("changed", {})
         for name, info in list(classes.items())[:limit]:
             what = "removed" if info["removed"] else f"{info['methods']} methods changed"
-            named = f"; Horizon's comments name {', '.join(info['named'])}" if info["named"] else ""
+            named = f"; Claudium's comments name {', '.join(info['named'])}" if info["named"] else ""
             lines.append(f"- `{name.replace('/', '.')}`: {what}{named}")
             lines += signatures(name, changed.get(name, {}))
     elif classes:
@@ -147,7 +147,7 @@ def merged(existing, generated):
 
 
 def tracking_body(report, issues, others, limit=200):
-    lines = [START, f"Port of Horizon to Minecraft {report['new']} (from {report['old']}): `tools/version_port.py "
+    lines = [START, f"Port of Claudium to Minecraft {report['new']} (from {report['old']}): `tools/version_port.py "
              f"report {report['old']} {report['new']}` (docs/version-ports.md).", ""]
     summary = report["summary"]
     lines += [f"- {key}: {a} → {b}" for key, (a, b) in summary["facts"].items()]
@@ -211,7 +211,7 @@ def apply(actions, report, open_issues):
     new = report["new"]
     for label in missing_labels(new):
         gh("label", "create", label, "--color", "5319e7",
-           "--description", "Work to port Horizon to a new Minecraft release (tools/version_port.py publish)")
+           "--description", "Work to port Claudium to a new Minecraft release (tools/version_port.py publish)")
     *items, tracking = actions
     urls = {name: issue(action, name, text, number, new) for action, name, text, number in items}
     refs = [(name, "#" + urls[name].rsplit("/", 1)[-1]) for _, name, _, _ in items]
@@ -250,5 +250,5 @@ def kira_card(new, url):
     board = kira("board_list", {"label": LABEL, "kind": "card", "limit": 100}) or {}
     if any(card.get("url") == url or url in json.dumps(card.get("url")) for card in board.get("cards", [])):
         return None
-    return kira("card_add", {"title": f"Port Horizon to Minecraft {new}", "url": url, "column": "todo",
+    return kira("card_add", {"title": f"Port Claudium to Minecraft {new}", "url": url, "column": "todo",
                              "labels": [LABEL]})

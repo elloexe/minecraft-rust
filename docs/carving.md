@@ -1,6 +1,6 @@
 # Carving
 
-Horizon implements Java Edition **26.3** carving-mask storage and traversal.
+Claudium implements Java Edition **26.3** carving-mask storage and traversal.
 `CarvingMask` packs cells in Y/Z/X order into 64-bit words. Its column iterator
 finds contiguous marked runs and splits them into inclusive vertical intervals,
 using word scans without allocating a list of individual cells or columns.

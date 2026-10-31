@@ -9,7 +9,7 @@ All direct examples use the same application function.
 ## Reproduce
 
 ```sh
-CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/home/bob/Documents/horizon/target cargo test -p horizon-client --lib --profile fast benchmark_worker_light_results -- --ignored --nocapture
+CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/home/bob/Documents/claudium/target cargo test -p claudium-client --lib --profile fast benchmark_worker_light_results -- --ignored --nocapture
 ```
 
 The ignored test invokes the production `pack_lighting` and `apply_lighting`

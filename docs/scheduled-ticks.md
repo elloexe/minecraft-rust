@@ -1,4 +1,4 @@
-# Horizon scheduled ticks
+# Claudium scheduled ticks
 
 The Rust scheduler targets the repository-pinned **Minecraft Java Edition
 26.3**. It implements scheduled block/fluid queue mechanics and saved tick
@@ -7,7 +7,7 @@ redstone behavior and a running game world remain unimplemented.
 
 ## Behavior
 
-`horizon_core::ticks` supplies `TickPriority`, `ScheduledTick`, `SavedTick`,
+`claudium_core::ticks` supplies `TickPriority`, `ScheduledTick`, `SavedTick`,
 `ChunkTicks` and `LevelTicks`. A numeric `TickTypeId` represents a registry-owned
 block or fluid type. Block and fluid scheduling use separate `LevelTicks`
 instances. Callers supply identities, game time, sub-tick counters, eligibility,
@@ -57,7 +57,7 @@ Pending saved entries precede active entries. Unpacking assigns orders from
 does not deduplicate a saved list during unpack; duplicate entries and their
 membership behavior are retained.
 
-`horizon_world::tick_data` bridges the vanilla `i`, `x`, `y`, `z`, `t`, `p`
+`claudium_world::tick_data` bridges the vanilla `i`, `x`, `y`, `z`, `t`, `p`
 fields to type IDs through caller-supplied names. `ChunkData::saved_ticks`
 loads a pending container and filters out positions belonging to other chunks;
 `set_saved_ticks` writes packed entries while preserving unrelated root data.
@@ -65,14 +65,14 @@ The separate block/fluid name lookup is required because their IDs are not
 the resident section's block-state IDs.
 
 ```rust
-use horizon_core::{position::ChunkPos, ticks::{LevelTicks, ScheduledTick}};
-use horizon_world::{chunk::ChunkData, tick_data::TickKind};
+use claudium_core::{position::ChunkPos, ticks::{LevelTicks, ScheduledTick}};
+use claudium_world::{chunk::ChunkData, tick_data::TickKind};
 
 fn run_saved_blocks(
     chunk: &mut ChunkData,
     now: i64,
-    resolve: impl FnMut(&str) -> Option<horizon_core::ticks::TickTypeId>,
-    name: impl FnMut(horizon_core::ticks::TickTypeId) -> Option<String>,
+    resolve: impl FnMut(&str) -> Option<claudium_core::ticks::TickTypeId>,
+    name: impl FnMut(claudium_core::ticks::TickTypeId) -> Option<String>,
     run: impl FnMut(&mut LevelTicks, ScheduledTick),
 ) -> Result<(), Box<dyn std::error::Error>> {
     let pos: ChunkPos = chunk.position();

@@ -336,7 +336,7 @@ fn curseforge_answers() {
 }
 
 fn scratch(name: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("horizon-browser-{name}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("claudium-browser-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     dir
 }
@@ -446,6 +446,6 @@ fn live_modrinth_search_pick_and_download() {
 #[test]
 fn curseforge_is_coming_soon_and_never_searched() {
     let ids: Vec<SourceId> = sources().iter().map(|s| s.id()).collect();
-    assert_eq!(ids, [SourceId::Modrinth, SourceId::Horizon]);
+    assert_eq!(ids, [SourceId::Modrinth, SourceId::Claudium]);
     assert!(source(SourceId::CurseForge).is_none());
 }

@@ -1,6 +1,6 @@
 # Numeric material conditions
 
-Horizon evaluates the pinned Java Edition **26.3** hole, steepness, height,
+Claudium evaluates the pinned Java Edition **26.3** hole, steepness, height,
 water, stone-depth, vertical-gradient, noise-threshold, biome-membership, temperature
 preliminary-surface and negated material conditions.
 `MaterialConditions` owns each worker's context and compiled conditions, keeping

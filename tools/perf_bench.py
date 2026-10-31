@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fair Horizon vs vanilla 26.3 benchmark (methodology: docs/benchmark.md).
+"""Fair Claudium vs vanilla 26.3 benchmark (methodology: docs/benchmark.md).
 
 Runs one game per render distance, each from a fresh world (seed 1234,
 creative), through the same steps: start to the title screen, create the
@@ -8,30 +8,30 @@ settle and fly a fixed straight path at constant speed. Every frame time of
 every flight is kept and the statistics are computed here, by one function,
 for every game. RSS is sampled from outside the process for every game too.
 
-    python3 tools/perf_bench.py --game horizon --label horizon-m4
+    python3 tools/perf_bench.py --game claudium --label claudium-m4
     python3 tools/perf_bench.py --game vanilla --label vanilla-m4
     python3 tools/perf_bench.py --game vanilla-mods --label mods-m4
-    python3 tools/perf_bench.py --table horizon-m4 vanilla-m4 mods-m4
+    python3 tools/perf_bench.py --table claudium-m4 vanilla-m4 mods-m4
 
 A ported mod pack against the same mods on their own loader (docs/modpacks.md, "Measured"):
 
-    python3 tools/perf_bench.py --game horizon --port-work WORK --label pack-horizon
+    python3 tools/perf_bench.py --game claudium --port-work WORK --label pack-claudium
     python3 tools/perf_bench.py --game neoforge --mod-jars JARS --deps DEPS --label pack-neoforge
 
 Games:
-  horizon       target/release/horizon-client, driven over its control socket
+  claudium       target/release/claudium-client, driven over its control socket
   vanilla       your own 26.3 client.jar + Fabric Loader + a dev-only driver
-                mod (mods/horizon/src/bench), built here; nothing of the game
+                mod (mods/claudium/src/bench), built here; nothing of the game
                 is redistributed
   vanilla-mods  the same + Sodium, Lithium, FerriteCore and ImmediatelyFast
                 (pinned in tools/benchmark-deps/mods.lock.json)
   neoforge      Minecraft 1.21.1 on NeoForge (dev-only, tools/neoforge_oracle.py
                 installs it under .local/neoforge-oracle) + a driver mod
-                (mods/horizon/src/neoforge-bench) + the jars of --mod-jars and
+                (mods/claudium/src/neoforge-bench) + the jars of --mod-jars and
                 --deps, the user's own; 26.3 options it does not know are ignored
 
---port-work loads the mods a horizon-port-pack work folder carried over into
-Horizon as dev mods.
+--port-work loads the mods a claudium-port-pack work folder carried over into
+Claudium as dev mods.
 
 Results: benchmarks/perf/<label>-rd<N>.json, one benchmark report per render
 distance (docs/benchmark-report.md), over --repeats games. Games run with no
@@ -75,7 +75,7 @@ SCENES = [
     ("ocean", (-300.0, 85.0, -420.0), (-300.0, 85.0, -228.0), 10.0),
     ("mountain", (560.0, 260.0, 860.0), (752.0, 260.0, 860.0), 30.0),
 ]
-# One options.txt for every game: vanilla's own keys, which Horizon reads too.
+# One options.txt for every game: vanilla's own keys, which Claudium reads too.
 # The graphics settings are those of vanilla's default preset (Fancy) with the
 # preset set to Custom, so the render distance is the one asked for (a preset
 # would replace it on load). maxFps 260 is "Unlimited"; inactivityFpsLimit
@@ -123,9 +123,9 @@ PERF_MODS = ["sodium", "lithium", "ferrite-core", "immediatelyfast"]
 NEOFORGE_DATA_VERSION = "3955"
 
 
-# The benchmark report format, version 1 (docs/benchmark-report.md). crates/horizon-bench is the
+# The benchmark report format, version 1 (docs/benchmark-report.md). crates/claudium-bench is the
 # reference: these functions compute the same figures, with the same rounding, for every game.
-REPORT_FORMAT, REPORT_VERSION = "horizon-benchmark-report", 1
+REPORT_FORMAT, REPORT_VERSION = "claudium-benchmark-report", 1
 HISTOGRAM_EDGES_MS = [0, 1, 2, 3, 4.17, 5, 6, 7, 8.33, 10, 12, 14, 16.67, 20, 25, 33.33, 40,
                       50, 66.67, 100, 150, 250, 500, 1000]
 # Two-sided 95% critical values of Student's t for 1..30 degrees of freedom.
@@ -140,7 +140,7 @@ def rnd(v):
 
 
 def frames(phase, repeat, frame_ms, cpu_ms=(), gpu_ms=()):
-    """Every figure of a flight, from its frame times in milliseconds (horizon_bench::Frames::of).
+    """Every figure of a flight, from its frame times in milliseconds (claudium_bench::Frames::of).
 
     The x% low is the average frame time of the slowest x% of frames, as
     frames per second (so a single 2-second freeze shows in the 0.1% low of a
@@ -173,7 +173,7 @@ def frames(phase, repeat, frame_ms, cpu_ms=(), gpu_ms=()):
 
 
 def summary(values):
-    """A measurement over repeats (horizon_bench::Summary::of); None for no values."""
+    """A measurement over repeats (claudium_bench::Summary::of); None for no values."""
     values = [v for v in values if v is not None]
     n = len(values)
     if n == 0:
@@ -223,7 +223,7 @@ def windows_working_set(pid):
 
 
 def load_average():
-    """The one-minute load average; None on Windows, which has none (horizon_bench::hardware::load_average)."""
+    """The one-minute load average; None on Windows, which has none (claudium_bench::hardware::load_average)."""
     return os.getloadavg()[0] if hasattr(os, "getloadavg") else None
 
 
@@ -310,7 +310,7 @@ def parse_sizes(text):
 
 
 def size_label(label, width, height):
-    """Reports at 1280x720 keep the plain label; other sizes add theirs: horizon-m4-1080p, or -2560x1080."""
+    """Reports at 1280x720 keep the plain label; other sizes add theirs: claudium-m4-1080p, or -2560x1080."""
     if (width, height) == SIZES[0]:
         return label
     return f"{label}-{height}p" if width * 9 == height * 16 else f"{label}-{width}x{height}"
@@ -325,14 +325,14 @@ def yaw(start, end):
     return math.degrees(math.atan2(-(end[0] - start[0]), end[2] - start[2]))
 
 
-# Horizon -------------------------------------------------------------------
+# Claudium -------------------------------------------------------------------
 
 def control_path():
-    """Where the game opens its control endpoint (crates/horizon-client/src/control.rs): a Unix socket, or,
+    """Where the game opens its control endpoint (crates/claudium-client/src/control.rs): a Unix socket, or,
     where Python has none (Windows), a JSON file in which the game names a localhost TCP port and a token."""
     if hasattr(socket, "AF_UNIX"):
-        return Path("/tmp") / f"horizon-bench-{os.getpid()}.sock"
-    return Path(tempfile.gettempdir()) / f"horizon-bench-{os.getpid()}.json"
+        return Path("/tmp") / f"claudium-bench-{os.getpid()}.sock"
+    return Path(tempfile.gettempdir()) / f"claudium-bench-{os.getpid()}.json"
 
 
 def read_line(s):
@@ -393,7 +393,7 @@ QUIET_MESHES_PER_S = 100
 
 
 def view_chunks(distance):
-    """80% of the view circle (pi x RD^2): Horizon keeps 637 columns at RD 12 and 3725 at RD 32."""
+    """80% of the view circle (pi x RD^2): Claudium keeps 637 columns at RD 12 and 3725 at RD 32."""
     return int(0.8 * math.pi * distance ** 2)
 
 
@@ -410,7 +410,7 @@ def wait_loaded(control, near, limit, min_chunks=0):
     already taken, and sections waiting for their neighbours' light.)"""
     deadline = time.time() + limit
     last, changed, previous, meshing = None, time.time(), None, time.time()
-    # Right after a teleport (and at spawn) Horizon reports nothing queued and steady counts for over a second
+    # Right after a teleport (and at spawn) Claudium reports nothing queued and steady counts for over a second
     # before it starts loading: the counts must change once, or stay full for 5 s, and the resident chunks reach
     # min_chunks, before "steady" means loaded.
     first, moved, began = None, False, time.time()
@@ -451,28 +451,28 @@ def wait_loaded(control, near, limit, min_chunks=0):
     raise TimeoutError(f"not loaded after {limit} s")
 
 
-def run_horizon(args, distance):
-    game_dir = WORK / "horizon"
+def run_claudium(args, distance):
+    game_dir = WORK / "claudium"
     shutil.rmtree(game_dir, ignore_errors=True)
     options = write_options(game_dir, distance)
     sock = control_path()
     sock.unlink(missing_ok=True)
-    client = Path(args.build).resolve() / ("horizon-client.exe" if sys.platform == "win32" else "horizon-client")
+    client = Path(args.build).resolve() / ("claudium-client.exe" if sys.platform == "win32" else "claudium-client")
     command = [str(client), "--resources", str(Path(args.resources).resolve()),
                "--control-socket", str(sock), "--no-pause", "--weather", "clear", "--time", "6000"]
     if (args.width, args.height) != SIZES[0]:
-        # 1280x720 is Horizon's own window; builds before --width open only that one.
+        # 1280x720 is Claudium's own window; builds before --width open only that one.
         command += ["--width", str(args.width), "--height", str(args.height)]
     if args.offscreen:
         command.append("--offscreen")
     for carry in dev_mods(args):
         command += ["--dev-mod", str(carry)]
     # Benchmark runs stay out of the live count and send nothing (docs/telemetry.md).
-    env = lab.game_env(HORIZON_TELEMETRY_URL="off")
+    env = lab.game_env(CLAUDIUM_TELEMETRY_URL="off")
     if args.warm:
         # A first start to the title screen builds what later starts reuse (the content-mod
         # root, the block behaviour snapshot). It is not measured: players see it once.
-        with (WORK / f"horizon-rd{distance}-warm.log").open("w") as log:
+        with (WORK / f"claudium-rd{distance}-warm.log").open("w") as log:
             proc = subprocess.Popen(command, cwd=game_dir, env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
                 poll(Control(sock), lambda s: s.get("screen") == "title", 600)
@@ -483,7 +483,7 @@ def run_horizon(args, distance):
             finally:
                 stop(proc)
                 sock.unlink(missing_ok=True)
-    log = (WORK / f"horizon-rd{distance}.log").open("w")
+    log = (WORK / f"claudium-rd{distance}.log").open("w")
     started = time.time()
     proc = subprocess.Popen(command, cwd=game_dir, env=env, stdout=log, stderr=subprocess.STDOUT)
     sampler = Sampler(proc.pid)
@@ -507,7 +507,7 @@ def run_horizon(args, distance):
             control(f"look {yaw(start, end):.3f} {pitch}")
             near = lambda p: sum((a - b) ** 2 for a, b in zip(p, start)) < 4.0
             scene = {"load_s": wait_loaded(control, near, args.timeout, view_chunks(distance)) - tp}
-            # Section meshes built while loading and while flying (Horizon only).
+            # Section meshes built while loading and while flying (Claudium only).
             loaded_meshes = control("status")["meshed_sections"]
             scene["meshes_load"] = loaded_meshes - meshed
             time.sleep(args.settle)
@@ -531,30 +531,30 @@ def run_horizon(args, distance):
         sampler.stop.set()
         sock.unlink(missing_ok=True)
     result["memory"] = sampler.summary(windows)
-    args.release = release_version(WORK / f"horizon-rd{distance}.log")
+    args.release = release_version(WORK / f"claudium-rd{distance}.log")
     return result
 
 
 def release_version(log):
-    """A release's or nightly's version, from the first line it logs ("Horizon v0.2.97"); None for a dev build
-    ("Horizon 0.1.0", or "Horizon v0.2.97 (client 0.1.0)" in a release's folder)."""
+    """A release's or nightly's version, from the first line it logs ("Claudium v0.2.97"); None for a dev build
+    ("Claudium 0.1.0", or "Claudium v0.2.97 (client 0.1.0)" in a release's folder)."""
     first = log.read_text(errors="replace").partition("\n")[0].strip() if log.exists() else ""
-    m = re.fullmatch(r"Horizon ((?:v\d|nightly-)\S*)", first)
+    m = re.fullmatch(r"Claudium ((?:v\d|nightly-)\S*)", first)
     return m and m.group(1)
 
 
 def dev_mods(args):
-    """The carried-over mods of a horizon-port-pack work folder (docs/modpacks.md), loaded as dev mods."""
+    """The carried-over mods of a claudium-port-pack work folder (docs/modpacks.md), loaded as dev mods."""
     if not args.port_work:
         return []
-    return sorted(p for p in (Path(args.port_work) / "mods").glob("*/carry") if (p / "horizon-mod.toml").exists())
+    return sorted(p for p in (Path(args.port_work) / "mods").glob("*/carry") if (p / "claudium-mod.toml").exists())
 
 
 # Vanilla -------------------------------------------------------------------
 
 def vanilla_manifest():
     if not (VANILLA / "manifest.json").exists():
-        sys.exit(f"{VANILLA} missing: prepare Horizon first (tools/prepare_native_client.py)")
+        sys.exit(f"{VANILLA} missing: prepare Claudium first (tools/prepare_native_client.py)")
     return json.loads((VANILLA / "manifest.json").read_text())
 
 
@@ -588,7 +588,7 @@ def extract_natives(jars, target):
 
 def build_bench_mod(jars):
     """Compiles the dev-only driver mod against your own client.jar."""
-    source = ROOT / "mods/horizon/src/bench"
+    source = ROOT / "mods/claudium/src/bench"
     build = WORK / "mod"
     classes = build / "classes"
     shutil.rmtree(classes, ignore_errors=True)
@@ -597,7 +597,7 @@ def build_bench_mod(jars):
     javac = Path(os.environ["JAVA_HOME"]) / "bin/javac" if os.environ.get("JAVA_HOME") else "javac"
     subprocess.run([str(javac), "--release", "25", "-proc:none", "-encoding", "UTF-8", "-d", str(classes),
                     "-classpath", os.pathsep.join(map(str, jars)), *sources], check=True)
-    output = build / "horizon-bench.jar"
+    output = build / "claudium-bench.jar"
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(classes.rglob("*.class")):
             archive.write(path, path.relative_to(classes).as_posix())
@@ -639,7 +639,7 @@ def run_vanilla(args, distance):
     mods = game_dir / "mods"
     mods.mkdir()
     shutil.copy(mod, mods)
-    loaded_mods = ["horizon-bench"]
+    loaded_mods = ["claudium-bench"]
     if args.game == "vanilla-mods":
         for jar in perf_mod_jars():
             shutil.copy(jar, mods)
@@ -660,7 +660,7 @@ def run_vanilla(args, distance):
                *runtime.conditional_client_jvm_options(manifest), *manifest_jvm_flags(manifest),
                "--enable-native-access=ALL-UNNAMED",
                f"-Djava.library.path={natives}", f"-Dorg.lwjgl.system.SharedLibraryExtractPath={natives}",
-               f"-Dhorizon.bench.script={script}", f"-Dhorizon.bench.out={events}",
+               f"-Dclaudium.bench.script={script}", f"-Dclaudium.bench.out={events}",
                "-Dfabric.log.disableAnsi=true",
                "-cp", os.pathsep.join(map(str, game_jars + fabric)),
                "net.fabricmc.loader.impl.launch.knot.KnotClient",
@@ -733,7 +733,7 @@ def run_neoforge(args, distance):
     mods = game_dir / "mods"
     mods.mkdir()
     shutil.copy(mod, mods)
-    loaded_mods = ["horizon-bench"]
+    loaded_mods = ["claudium-bench"]
     for folder in filter(None, (args.mod_jars, args.deps)):
         for jar in sorted(Path(folder).glob("*.jar")):
             shutil.copy(jar, mods)
@@ -751,7 +751,7 @@ def run_neoforge(args, distance):
     java = Path(os.environ["JAVA_HOME"]) / "bin/java" if os.environ.get("JAVA_HOME") else "java"
     _, command = neoforge_oracle.client_command(
         java, args.heap, game_dir, natives, assets,
-        jvm=[*LAUNCHER_JVM, f"-Dhorizon.bench.script={script}", f"-Dhorizon.bench.out={events}"],
+        jvm=[*LAUNCHER_JVM, f"-Dclaudium.bench.script={script}", f"-Dclaudium.bench.out={events}"],
         game=["--width", str(args.width), "--height", str(args.height)])
     natives.mkdir(parents=True, exist_ok=True)
     extract_natives(neoforge_oracle.client()[3], natives)
@@ -789,7 +789,7 @@ def print_scene(game, distance, name, scene):
 # Report --------------------------------------------------------------------
 
 def hardware():
-    """horizon_bench::Hardware::detect: the machine, without its name."""
+    """claudium_bench::Hardware::detect: the machine, without its name."""
     info = {"os": {"darwin": "macos", "win32": "windows"}.get(sys.platform, sys.platform),
             "arch": {"arm64": "aarch64", "AMD64": "x86_64"}.get(platform.machine(), platform.machine()),
             "cpu_threads": os.cpu_count()}
@@ -811,7 +811,7 @@ def hardware():
 
 
 def windows_version():
-    """"Microsoft Windows [Version 10.0.26200.8037]", as horizon_bench reports it (`ver`)."""
+    """"Microsoft Windows [Version 10.0.26200.8037]", as claudium_bench reports it (`ver`)."""
     out = subprocess.run(["cmd", "/C", "ver"], capture_output=True, text=True).stdout.strip()
     return out or f"Windows {platform.version()}"
 
@@ -926,7 +926,7 @@ def table(labels):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--game", choices=["horizon", "vanilla", "vanilla-mods", "neoforge"], default="horizon")
+    p.add_argument("--game", choices=["claudium", "vanilla", "vanilla-mods", "neoforge"], default="claudium")
     p.add_argument("--label", help="result name (default <game>-<host>)")
     p.add_argument("--distances", default="8,16,32")
     p.add_argument("--scenes", help="comma-separated subset of " + ",".join(s[0] for s in SCENES))
@@ -937,13 +937,13 @@ def main():
                    help="window sizes, each a set of reports (default 1280x720 and 1920x1080)")
     p.add_argument("--heap", default="2G", help="vanilla -Xmx (the official launcher's default is 2G)")
     p.add_argument("--offscreen", action="store_true",
-                   help="Horizon renders into a texture and does not wait for the window (locked macOS sessions)")
+                   help="Claudium renders into a texture and does not wait for the window (locked macOS sessions)")
     p.add_argument("--resources", default=str(lab.RESOURCES))
     p.add_argument("--build", default=str(ROOT / "target/release"))
     p.add_argument("--repeats", type=int, default=3, help="games per render distance; the report gives means and 95%% CIs")
-    p.add_argument("--port-work", help="horizon: also load the mods carried over in this horizon-port-pack work folder")
+    p.add_argument("--port-work", help="claudium: also load the mods carried over in this claudium-port-pack work folder")
     p.add_argument("--warm", action="store_true",
-                   help="horizon: measure a later start, after one start to the title screen built the caches")
+                   help="claudium: measure a later start, after one start to the title screen built the caches")
     p.add_argument("--mod-jars", help="neoforge: the mod jars to load (the user's own; never committed)")
     p.add_argument("--deps", help="neoforge: their required libraries")
     p.add_argument("--table", nargs="+", metavar="LABEL", help="print markdown tables of saved runs, and exit")
@@ -953,7 +953,7 @@ def main():
         return
     args.label = args.label or f"{args.game}-{platform.node().split('.')[0]}"
     WORK.mkdir(parents=True, exist_ok=True)
-    run = {"horizon": run_horizon, "neoforge": run_neoforge}.get(args.game, run_vanilla)
+    run = {"claudium": run_claudium, "neoforge": run_neoforge}.get(args.game, run_vanilla)
     label = args.label
     for args.width, args.height in parse_sizes(args.sizes):
         args.label = size_label(label, args.width, args.height)
@@ -971,16 +971,16 @@ def main():
 
 
 def app(args):
-    if args.game == "horizon":
+    if args.game == "claudium":
         commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
                                 capture_output=True, text=True).stdout.strip() or None
-        manifest = (ROOT / "crates/horizon-client/Cargo.toml").read_text()
+        manifest = (ROOT / "crates/claudium-client/Cargo.toml").read_text()
         version = next(l.split('"')[1] for l in manifest.splitlines() if l.startswith("version"))
         mods = [{"name": p.parent.name, "version": "carried"} for p in dev_mods(args)]
         if getattr(args, "release", None):
             # A release binary (--build of an installed version) is not this checkout: report its own version.
             version, commit = args.release, None
-        return {"name": "horizon-client", "version": version, "commit": commit, **({"mods": mods} if mods else {})}
+        return {"name": "claudium-client", "version": version, "commit": commit, **({"mods": mods} if mods else {})}
     if args.game == "neoforge":
         import neoforge_oracle
         jars = [j.name for f in filter(None, (args.mod_jars, args.deps)) for j in sorted(Path(f).glob("*.jar"))]

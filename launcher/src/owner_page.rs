@@ -1,4 +1,4 @@
-//! The owner gate in the window (`horizon_launcher::account::launch`): the screen that asks for a
+//! The owner gate in the window (`claudium_launcher::account::launch`): the screen that asks for a
 //! Microsoft account that owns Minecraft: Java Edition. It covers the launcher once for players
 //! without one (those who played offline before the gate), and again whenever Play is refused.
 //! The sign-in runs on it, code and all.
@@ -243,11 +243,11 @@ enum Shown<'a> {
     Error(&'a str),
 }
 
-/// `HORIZON_LAUNCHER_PAGE=sign-in` opens the sheet with a made-up code, for screenshots: nothing
+/// `CLAUDIUM_LAUNCHER_PAGE=sign-in` opens the sheet with a made-up code, for screenshots: nothing
 /// asks Microsoft, and the gate itself is as it was (no account, no Play).
 pub(super) fn sign_in_preview() -> bool {
     static PREVIEW: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *PREVIEW.get_or_init(|| std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() == Ok("sign-in"))
+    *PREVIEW.get_or_init(|| std::env::var("CLAUDIUM_LAUNCHER_PAGE").as_deref() == Ok("sign-in"))
 }
 
 /// `https://www.microsoft.com/link` as `microsoft.com/link`.

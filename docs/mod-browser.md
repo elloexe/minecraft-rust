@@ -1,23 +1,23 @@
 # The launcher's mod browser
 
-Search Modrinth (CurseForge support is coming soon) for Java mods, modpacks, resource packs and data packs, and Horizon's
-registry for Horizon's own mods, modpacks, resource packs and shader packs; see how well each one runs before installing it, and install it with its checksum checked. This is item 16 of the roadmap and issue #577. The code is in
+Search Modrinth (CurseForge support is coming soon) for Java mods, modpacks, resource packs and data packs, and Claudium's
+registry for Claudium's own mods, modpacks, resource packs and shader packs; see how well each one runs before installing it, and install it with its checksum checked. This is item 16 of the roadmap and issue #577. The code is in
 `launcher/src/browser.rs` and `launcher/src/browser/`.
 
 ## What it offers
 
-Horizon doesn't run Java code ([mods.md](mods.md)). It ports what a Java mod
-carries as data (blocks, items, recipes, loot tables, tags, worldgen, textures, names) with `horizon-port-pack`, and
-says before install which of the mod's features that leaves out. Horizon's own mods (content mods, `.hmod`, and native
-mods, `.hnmod`) aren't on Modrinth or CurseForge yet (Modrinth has no `horizon` loader).
+Claudium doesn't run Java code ([mods.md](mods.md)). It ports what a Java mod
+carries as data (blocks, items, recipes, loot tables, tags, worldgen, textures, names) with `claudium-port-pack`, and
+says before install which of the mod's features that leaves out. Claudium's own mods (content mods, `.hmod`, and native
+mods, `.hnmod`) aren't on Modrinth or CurseForge yet (Modrinth has no `claudium` loader).
 
 | Kind | Goes to | How well it runs |
 |---|---|---|
-| Java mods (Fabric, NeoForge, Forge, Quilt) | ported into `horizon-mods/<mod id>/` and turned on | Checked from its jar before install: **Works**, **Partly** or **Doesn't run** ([below](#java-mods)) |
-| Resource packs | `resourcepacks/` beside `options.txt` | **Works** when made for 26.3 ([resource-packs.md](resource-packs.md) lists what Horizon reads). Older packs are **Partly**: they load with vanilla's compatibility warning |
-| Modpacks (`.mrpack`, CurseForge zip) | the Modpacks page's import | **Partly**: Horizon runs the mods it can port, from the player's own downloads ([modpacks.md](modpacks.md)) |
-| Shader packs (`.hshader`, Horizon's registry only) | `shaderpacks/` beside `options.txt` | **Works** when made for 26.3: checked by the game's own check before install ([shaders.md](shaders.md)). The `shaders/`-format packs on Modrinth and CurseForge are not offered |
-| Data packs (Modrinth) | `datapacks/` of the world picked on the **Data packs** tab (`mods install <pack> --world <world>`); not in the Installed list: each world's list on Home has them | **Partly**: Horizon runs a data pack's functions, function tags, predicates and item modifiers, not yet its recipes, loot tables, advancements, other tags or worldgen. The install reads the zip and says what of it runs; a pack with none of those (worldgen only, such as Tectonic) is refused |
+| Java mods (Fabric, NeoForge, Forge, Quilt) | ported into `claudium-mods/<mod id>/` and turned on | Checked from its jar before install: **Works**, **Partly** or **Doesn't run** ([below](#java-mods)) |
+| Resource packs | `resourcepacks/` beside `options.txt` | **Works** when made for 26.3 ([resource-packs.md](resource-packs.md) lists what Claudium reads). Older packs are **Partly**: they load with vanilla's compatibility warning |
+| Modpacks (`.mrpack`, CurseForge zip) | the Modpacks page's import | **Partly**: Claudium runs the mods it can port, from the player's own downloads ([modpacks.md](modpacks.md)) |
+| Shader packs (`.hshader`, Claudium's registry only) | `shaderpacks/` beside `options.txt` | **Works** when made for 26.3: checked by the game's own check before install ([shaders.md](shaders.md)). The `shaders/`-format packs on Modrinth and CurseForge are not offered |
+| Data packs (Modrinth) | `datapacks/` of the world picked on the **Data packs** tab (`mods install <pack> --world <world>`); not in the Installed list: each world's list on Home has them | **Partly**: Claudium runs a data pack's functions, function tags, predicates and item modifiers, not yet its recipes, loot tables, advancements, other tags or worldgen. The install reads the zip and says what of it runs; a pack with none of those (worldgen only, such as Tectonic) is refused |
 
 Mods, resource packs and shader packs go into the game folder of the instance selected in the sidebar, and the
 Installed list, updates and Remove are that instance's: picking another instance reads its list. The page says which
@@ -31,8 +31,8 @@ never offered for install.
 
 Before a mod is offered for install, the launcher reads its jar. For each result it picks the version it would
 install (the newest for 26.3; with **Show everything**, else the newest for 1.21 or later, the versions port-pack
-upgrades from), downloads that file with the checks below, and runs `horizon-port-pack check` on it
-([modpacks.md](modpacks.md#the-pipeline-horizon-port-pack)): the jar is carried over into a folder content mod and its
+upgrades from), downloads that file with the checks below, and runs `claudium-port-pack check` on it
+([modpacks.md](modpacks.md#the-pipeline-claudium-port-pack)): the jar is carried over into a folder content mod and its
 class files are read, not run, for what the carry can't take. Two checks run at once; the row says **Checking** until
 its answer comes.
 
@@ -43,13 +43,13 @@ its answer comes.
   mod's own types, block entities (machines, containers), menus, mobs and entities, blocks and items with behaviour
   of their own, worldgen written in Java, Mixins, the game events it reacts to.
 - **Doesn't run**: nothing to port (performance mods, libraries, everything in code), a jar made for 1.20 or older,
-  or a mod id with characters Horizon mods can't use (`fabric-api`). Never offered for install.
+  or a mod id with characters Claudium mods can't use (`fabric-api`). Never offered for install.
 
 The answer is kept in `mod-browser/checks-1/<checksum>/` under the game folder, with the carry when something
 ports; the jar itself isn't kept. A file is checked once. On ten 26.3 jars a check took 0.2 to 3 s (24 s for an
 18 MB jar with 9,360 recipes).
 
-**Install** copies the carry into `horizon-mods/<mod id>/`, turns it on in `horizon-mods.txt` (the game's Options >
+**Install** copies the carry into `claudium-mods/<mod id>/`, turns it on in `claudium-mods.txt` (the game's Options >
 Mods lists it) and records it in `mod-browser.json` with its verdict and what didn't port, which the Installed list
 shows. Its required mods that port are installed with it; one with nothing to port (a library such as Cloth Config
 or GeckoLib) is listed as not ported. A mod that shares its id or a namespace with an installed one is refused. The
@@ -60,9 +60,9 @@ off.
 
 `tools/mod_browser_harness.py [--mod SLUG] [--query TEXT] [--keep]` runs the whole path a player takes, in a scratch
 game folder: the launcher's `mods search --kind mod`, `mods check` and `mods install` (Modrinth), then the game
-opens a survival world with the mod offscreen (horizon-ctl), places one of its blocks, and crafts one of its recipes
+opens a survival world with the mod offscreen (claudium-ctl), places one of its blocks, and crafts one of its recipes
 from vanilla ingredients on a crafting table and takes the result. It times the world's load with and without the
-mod and prints a JSON summary; it exits 1 when a step fails. It needs the launcher, the game and horizon-ctl built
+mod and prints a JSON summary; it exits 1 when a step fails. It needs the launcher, the game and claudium-ctl built
 and the prepared 26.3 resources in `.local`.
 
 On the Mac mini (M4 Pro, offscreen) with Macaw's Fences and Walls (the default): check 4.0 s, install 3.1 s, world
@@ -82,7 +82,7 @@ start); the hedge places and its recipe crafts 4.
 ## The Mods page
 
 The launcher's **Mods** page has the four kinds as tabs (Mods, Modpacks, Resource packs, Shader packs; the last
-searches Horizon's registry), a search field (Enter searches), **Show everything** and
+searches Claudium's registry), a search field (Enter searches), **Show everything** and
 the source: Modrinth, with **CurseForge (coming soon)** beside it, disabled. Each result is an index row: its summary, author,
 downloads, source and licence, how well it runs (and why), **Page** (the project's page on its source) and
 **Install** (**Import** for a modpack). The Modpacks tab lists the imported packs first, with their coverage
@@ -133,14 +133,14 @@ and the checksum it was checked against. The browser replaces or removes only th
 same name the player put there is never overwritten.
 
 - **Install** picks the newest version that runs, then its required dependencies, checked before any download: a
-  dependency that isn't a pack Horizon loads (a Java mod) stops the install. Dependencies go in first. A resource
+  dependency that isn't a pack Claudium loads (a Java mod) stops the install. Dependencies go in first. A resource
   pack still has to be turned on in the game's Resource Packs screen, as in vanilla, and a shader pack picked in
   the game's Shader Packs page.
 - **Update** installs the newer version and removes the old file.
-- **Update all** does the same for each pack with a newer version (`horizon-launcher mods update` with no pack name).
+- **Update all** does the same for each pack with a newer version (`claudium-launcher mods update` with no pack name).
 - **Remove** deletes the file and its entry. Packs installed as dependencies stay.
 - **A modpack** is downloaded (checked the same way) into `ports/downloads/`, imported, and ported straight away
-  for the selected version when it is prepared (`modpacks::import_and_port`): the jars of the mods Horizon can carry
+  for the selected version when it is prepared (`modpacks::import_and_port`): the jars of the mods Claudium can carry
   over come from the pack's links or Modrinth, and the message says how many of its files play. **Play** on the
   Modpacks tab starts it with every ported mod on together. A ported mod that owns a namespace an earlier one owns
   (the game would refuse it) is left off before the game starts and listed under the pack ("Left off: ..."); the
@@ -150,43 +150,43 @@ same name the player put there is never overwritten.
 From a terminal (or an agent):
 
 ```sh
-horizon-launcher mods search faithful                 # --kind mod|modpack|resource|shader, --everything, --source
-horizon-launcher mods check macaws-fences-and-walls   # a Java mod's verdict, what ports and what doesn't (--json)
-horizon-launcher mods install faithful-32x            # id or slug; a Java mod is ported, a modpack imported and ported
-horizon-launcher mods list                            # --json
-horizon-launcher mods update [faithful-32x] [--check]
-horizon-launcher mods remove faithful-32x
+claudium-launcher mods search faithful                 # --kind mod|modpack|resource|shader, --everything, --source
+claudium-launcher mods check macaws-fences-and-walls   # a Java mod's verdict, what ports and what doesn't (--json)
+claudium-launcher mods install faithful-32x            # id or slug; a Java mod is ported, a modpack imported and ported
+claudium-launcher mods list                            # --json
+claudium-launcher mods update [faithful-32x] [--check]
+claudium-launcher mods remove faithful-32x
 ```
 
 ## Sources
 
-**Horizon's registry.** Content mods (`.hmod`), native mods (`.hnmod`), modpacks (`.hpack`), resource packs and shader packs (`.hshader`) made for Horizon, reviewed as pull requests in
-[horizon-rust/horizon-mods](https://github.com/horizon-rust/horizon-mods) ([api/mod-index.md](api/mod-index.md)). The
-launcher reads its `index.json` (`browser/horizon.rs`; `HORIZON_MOD_INDEX=<file or https address>` reads a test
+**Claudium's registry.** Content mods (`.hmod`), native mods (`.hnmod`), modpacks (`.hpack`), resource packs and shader packs (`.hshader`) made for Claudium, reviewed as pull requests in
+[elloexe/claudium-mods](https://github.com/elloexe/claudium-mods) ([api/mod-index.md](api/mod-index.md)). The
+launcher reads its `index.json` (`browser/claudium.rs`; `CLAUDIUM_MOD_INDEX=<file or https address>` reads a test
 registry instead, whose files may then be on disk) at most every ten minutes, and keeps the last copy in
-`mod-browser/horizon-index.json`. Before a result is installed it shows whether its files are signed and, for a mod,
+`mod-browser/claudium-index.json`. Before a result is installed it shows whether its files are signed and, for a mod,
 what it may do, in the words of the game's Options > Mods. A download goes to `mod-browser/downloads/` and is moved
-into place only after `horizon_mods::index::check_file` passes (size, SHA-256, the author's signature when the project
-has a key, the file's own manifest against the index). A content mod becomes `horizon-mods/<id>.hmod`, turned on; a native mod becomes
-`horizon-native-mods/<id>.hnmod`, and the launcher builds it into the game ([native-mods.md](native-mods.md));
-`mods disable` and `mods enable` switch it in `horizon-mods.txt`. When the index takes a file down, the launcher turns
+into place only after `claudium_mods::index::check_file` passes (size, SHA-256, the author's signature when the project
+has a key, the file's own manifest against the index). A content mod becomes `claudium-mods/<id>.hmod`, turned on; a native mod becomes
+`claudium-native-mods/<id>.hnmod`, and the launcher builds it into the game ([native-mods.md](native-mods.md));
+`mods disable` and `mods enable` switch it in `claudium-mods.txt`. When the index takes a file down, the launcher turns
 it off the next time it reads the index or starts the game, says why, and refuses to install it or turn it back on.
-A Horizon modpack (`.hpack`) installs as its own profile (`browser/horizon/pack.rs`): `horizon-packs/<id>/` holds the
+A Claudium modpack (`.hpack`) installs as its own profile (`browser/claudium/pack.rs`): `claudium-packs/<id>/` holds the
 checked pack, `pack.json` and `home/`, the profile's game folder, where each of the pack's mods is downloaded and checked
 like any registry mod and turned on or off as the pack says; its overrides (settings, resource packs, a mod's saved
 settings) are copied in on the first install only, so the player's changes survive updates. A pack whose mod was taken
 down installs nothing. It is listed on the Modpacks tab with **Play** and **Remove**, and plays like an imported pack
 (`modpacks::apply_profile`). A shader pack goes to `shaderpacks/<file>` once `check_file` has run the game's own
-check on it (`horizon_shader_api::check`); a taken-down one is named, for the player to remove.
+check on it (`claudium_shader_api::check`); a taken-down one is named, for the player to remove.
 A registry `.hmod` with any capability besides `registries` is neither listed nor installed alone. A modpack that
 requires one still installs, and the launcher lists the mod as not running, with that reason, and leaves out its code.
 
 ```sh
-horizon-launcher mods search --source horizon --kind mod <words>   # with whether it is signed and what it may do
-horizon-launcher mods install --source horizon <id>
-horizon-launcher mods disable <id>
-horizon-launcher mods install --source horizon cozy               # a modpack: its own profile
-horizon-launcher modpack play cozy
+claudium-launcher mods search --source claudium --kind mod <words>   # with whether it is signed and what it may do
+claudium-launcher mods install --source claudium <id>
+claudium-launcher mods disable <id>
+claudium-launcher mods install --source claudium cozy               # a modpack: its own profile
+claudium-launcher modpack play cozy
 ```
 
 
@@ -197,7 +197,7 @@ Modrinth asks.
 
 CurseForge support is coming soon. Its API (`api.curseforge.com/v1`) needs a paid key, so for now the launcher
 doesn't use it: the Mods page shows **CurseForge (coming soon)** beside the Modrinth switch, disabled, and no search
-or install goes to CurseForge (`browser::sources()` is Modrinth only; `horizon-launcher mods ... --source curseforge`
+or install goes to CurseForge (`browser::sources()` is Modrinth only; `claudium-launcher mods ... --source curseforge`
 says it is coming soon). The CurseForge source (`browser/curseforge.rs`) is kept for when it comes.
 
 A CurseForge modpack zip or instance the player already has still imports, since that needs no key: its jars come

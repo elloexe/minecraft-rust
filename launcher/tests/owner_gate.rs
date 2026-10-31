@@ -1,5 +1,5 @@
 //! The owner gate from the outside: with no account that owns Minecraft: Java Edition in the
-//! launcher, neither `horizon-launcher play` nor the MCP server's play starts the game.
+//! launcher, neither `claudium-launcher play` nor the MCP server's play starts the game.
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
@@ -10,7 +10,7 @@ const REFUSED: &str = "Sign in with a Microsoft account that owns Minecraft: Jav
 /// played offline before the gate has.
 fn home(name: &str) -> PathBuf {
     let root =
-        std::env::temp_dir().join(format!("horizon-owner-gate-{name}-{}", std::process::id()));
+        std::env::temp_dir().join(format!("claudium-owner-gate-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     let version = root.join("launcher/versions/v2026.10.27.01");
     std::fs::create_dir_all(&version).unwrap();
@@ -26,16 +26,16 @@ fn home(name: &str) -> PathBuf {
 fn launcher(root: &Path, args: &[&str]) -> Command {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_claudium-launcher"));
     cmd.args(args)
-        .env("HORIZON_HOME", root.join("game"))
-        .env("HORIZON_LAUNCHER_HOME", root.join("launcher"))
+        .env("CLAUDIUM_HOME", root.join("game"))
+        .env("CLAUDIUM_LAUNCHER_HOME", root.join("launcher"))
         .env("XDG_DATA_HOME", root.join("data"))
         .env("XDG_CONFIG_HOME", root.join("config"))
-        .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-        .env("HORIZON_NO_AUDIO", "1")
-        .env("HORIZON_TELEMETRY_URL", "off")
+        .env("CLAUDIUM_LAUNCHER_NO_SELF_UPDATE", "1")
+        .env("CLAUDIUM_NO_AUDIO", "1")
+        .env("CLAUDIUM_TELEMETRY_URL", "off")
         // Memory only: the test never reads the player's keychain.
-        .env("HORIZON_NO_KEYCHAIN", "1")
-        .env("HORIZON_MSA_CLIENT_ID", "test-client");
+        .env("CLAUDIUM_NO_KEYCHAIN", "1")
+        .env("CLAUDIUM_MSA_CLIENT_ID", "test-client");
     cmd
 }
 
@@ -50,7 +50,7 @@ fn the_cli_refuses_to_play_without_an_owner() {
     let said = text(&out);
     assert!(!out.status.success(), "{said}");
     assert!(said.contains(REFUSED), "{said}");
-    assert!(said.contains("horizon-launcher account sign-in"), "{said}");
+    assert!(said.contains("claudium-launcher account sign-in"), "{said}");
     // Nothing of the game ran, and the offline name is still there.
     assert!(!root.join("game/sessions").exists());
     let accounts = std::fs::read_to_string(root.join("launcher/accounts.json")).unwrap();

@@ -67,9 +67,9 @@ def main():
         "sequences; PositionMoveRotation.calculateAbsolute velocity with every "
         "relative-delta/rotate-delta combination. World simulation, connection "
         "scheduling and live anticheat behaviour are outside this harness.",
-        sources=[lab.ROOT / "crates/horizon-client/src/player_sync.rs",
-                 lab.ROOT / "crates/horizon-client/src/game/remote.rs",
-                 lab.ROOT / "crates/horizon-client/src/net.rs"])
+        sources=[lab.ROOT / "crates/claudium-client/src/player_sync.rs",
+                 lab.ROOT / "crates/claudium-client/src/game/remote.rs",
+                 lab.ROOT / "crates/claudium-client/src/net.rs"])
 
 
 if __name__ == "__main__":

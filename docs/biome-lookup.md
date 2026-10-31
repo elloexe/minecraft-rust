@@ -1,6 +1,6 @@
 # Biome lookup
 
-Horizon implements Java Edition **26.3** block-to-quart biome lookup. `BiomeZoom`
+Claudium implements Java Edition **26.3** block-to-quart biome lookup. `BiomeZoom`
 accepts the obfuscated biome seed and chooses among eight jittered quart corners
 in vanilla order, retaining strict distance ties and signed coordinate wrapping.
 The caller resolves the selected quart coordinate through its biome provider.

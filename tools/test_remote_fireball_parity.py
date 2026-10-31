@@ -80,16 +80,16 @@ def check_thrown(host, guest, out):
 
 
 def main():
-    subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'horizon-client',
-                    '--bin', 'horizon-client', '--bin', 'horizon-ctl'], cwd=lab.ROOT, check=True)
+    subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'claudium-client',
+                    '--bin', 'claudium-client', '--bin', 'claudium-ctl'], cwd=lab.ROOT, check=True)
     metadata = json.loads(subprocess.check_output(
         ['cargo', 'metadata', '--format-version', '1', '--no-deps'], cwd=lab.ROOT, text=True))
-    ctl = lab.ROOT / metadata['target_directory'] / 'fast' / 'horizon-ctl'
+    ctl = lab.ROOT / metadata['target_directory'] / 'fast' / 'claudium-ctl'
     lan.CHECK_FNS['remote-fireball'] = check_motion
     lan.CHECK_FNS['remote-thrown'] = check_thrown
     # Use the runner's current display (xvfb on Linux), with fresh isolated homes.
     lan.game_env = lambda _screen, home: lab.game_env(
-        HORIZON_HOME=home, HORIZON_TELEMETRY_URL='off')
+        CLAUDIUM_HOME=home, CLAUDIUM_TELEMETRY_URL='off')
     reports = {}
     for threaded in (True, False):
         lan.SERVER_THREAD = threaded

@@ -16,7 +16,7 @@ is additional and bounded by the entry limit.
 
 ## Reproduce
 
-Use prepared 26.3 resources at `.local/horizon-client/26.3`. All block/item
+Use prepared 26.3 resources at `.local/claudium-client/26.3`. All block/item
 textures are loaded, including static layers that set the shared array size
 (the 64px straw-bed texture). The Python driver
 compiles the production `gfx.rs` functions and actual sprite/mipmap loaders into
@@ -29,13 +29,13 @@ Build first, then release the lock before the paired measurement session. Keep
 all measurement pairs in one lock acquisition so other heavy work cannot overlap:
 
 ```sh
-flock /tmp/horizon-optimizations-20261015-heavy.lock bash -c '
+flock /tmp/claudium-optimizations-20261015-heavy.lock bash -c '
   set -e
   export CARGO_BUILD_JOBS=2
   python3 tools/bench_sprite_mips.py --ref 89b58991bbc02eb79b6965fc4ca56357fe2297d9 --label baseline --build-only
   python3 tools/bench_sprite_mips.py --label candidate --build-only
 '
-flock /tmp/horizon-optimizations-20261015-heavy.lock bash -c '
+flock /tmp/claudium-optimizations-20261015-heavy.lock bash -c '
   set -e
   export CARGO_BUILD_JOBS=2
   for round in 1 2 3; do
@@ -44,7 +44,7 @@ flock /tmp/horizon-optimizations-20261015-heavy.lock bash -c '
     for variant in $variants; do
       python3 -c "import resource, subprocess, sys; subprocess.run(sys.argv[1:], check=True); print(\"max_rss_kib=\" + str(resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss), file=sys.stderr)" \
         .local/sprite-mips-bench/target/release/sprite-mips-$variant \
-        .local/horizon-client/26.3 .local/sprite-mips-bench/$variant/names.txt
+        .local/claudium-client/26.3 .local/sprite-mips-bench/$variant/names.txt
     done
   done
 '

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 fn scratch(name: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
-        "horizon-launcher-instances-{name}-{}",
+        "claudium-launcher-instances-{name}-{}",
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&root);
@@ -40,12 +40,12 @@ fn player_home(home: &Path) {
     put(&home.join("saves/World/region/r.0.0.mca"), "region");
     put(&home.join("saves/Other/level.dat"), "other");
     put(&home.join("options.txt"), "fov:90\n");
-    put(&home.join("horizon-player.txt"), "name:Player123\n");
+    put(&home.join("claudium-player.txt"), "name:Player123\n");
     put(&home.join("resourcepacks/faithful.zip"), "pack");
     put(&home.join("logs/latest.log"), "log");
     put(&home.join("sessions/a.json"), "token");
     put(&home.join("telemetry/consent.json"), "{}");
-    let pack = horizon_port_pack::import::Pack {
+    let pack = claudium_port_pack::import::Pack {
         name: "Small Pack".into(),
         ..Default::default()
     };
@@ -58,11 +58,11 @@ fn player_home(home: &Path) {
         "modded",
     );
     put(
-        &home.join("horizon-packs/cozy/pack.json"),
+        &home.join("claudium-packs/cozy/pack.json"),
         r#"{"id":"cozy","name":"Cozy","version":"1.0.0","sha256":"00","mods":[]}"#,
     );
     put(
-        &home.join("horizon-packs/cozy/home/saves/Cozy/level.dat"),
+        &home.join("claudium-packs/cozy/home/saves/Cozy/level.dat"),
         "cozy",
     );
 }
@@ -70,24 +70,24 @@ fn player_home(home: &Path) {
 #[test]
 fn a_new_player_name_replaces_the_kept_one_everywhere() {
     let root = scratch("newname");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("claudium"), root.join("launcher"));
     player_home(&home);
     // An own instance that has the old name, and one with no file yet.
     put(
-        &home.join("instances/one/horizon-player.txt"),
+        &home.join("instances/one/claudium-player.txt"),
         "name:Player123\n",
     );
     fs::create_dir_all(home.join("instances/two")).unwrap();
     let name = new_player_name_in(&home, &data).unwrap();
     assert_ne!(name, "Player123");
     assert!(name.starts_with("Player") && name.len() == 11);
-    let kept = |home: &Path| fs::read_to_string(home.join("horizon-player.txt")).unwrap();
+    let kept = |home: &Path| fs::read_to_string(home.join("claudium-player.txt")).unwrap();
     for h in [
         &home,
         &home.join("instances/one"),
         &home.join("instances/two"),
         &home.join("ports/small-pack/home"),
-        &home.join("horizon-packs/cozy/home"),
+        &home.join("claudium-packs/cozy/home"),
     ] {
         assert_eq!(kept(h), format!("name:{name}\n"), "{}", h.display());
     }
@@ -97,7 +97,7 @@ fn a_new_player_name_replaces_the_kept_one_everywhere() {
 #[test]
 fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
     let root = scratch("migrate");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("claudium"), root.join("launcher"));
     player_home(&home);
     let before = files(&home);
 
@@ -107,7 +107,7 @@ fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
     assert_eq!(ids, [DEFAULT, "pack:cozy", "port:small-pack"]);
     assert_eq!(all[0].name, "Claudium");
     assert_eq!(all[0].home, home);
-    assert_eq!(all[1].home, home.join("horizon-packs/cozy/home"));
+    assert_eq!(all[1].home, home.join("claudium-packs/cozy/home"));
     assert_eq!(all[2].name, "Small Pack");
     assert_eq!(all[2].home, home.join("ports/small-pack/home"));
 
@@ -132,7 +132,7 @@ fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
     let empty_files: Vec<PathBuf> = files(&empty.home).into_keys().collect();
     assert_eq!(
         empty_files,
-        [PathBuf::from("horizon-player.txt"), "options.txt".into()]
+        [PathBuf::from("claudium-player.txt"), "options.txt".into()]
     );
     let copied = files(&copy.home);
     for kept in [
@@ -158,7 +158,7 @@ fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
 #[test]
 fn names_stay_unique_and_packs_are_not_copied() {
     let root = scratch("names");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("claudium"), root.join("launcher"));
     player_home(&home);
     create_in(&home, &data, "Survival", None, None).unwrap();
     assert!(create_in(&home, &data, "survival", None, None).is_err());
@@ -196,9 +196,9 @@ fn an_instance_follows_the_players_answers() {
     let root = scratch("follow");
     let (main, own) = (root.join("main"), root.join("own"));
     put(&main.join("options.txt"), "fov:90\n");
-    put(&main.join("horizon-player.txt"), "name:Player123\n");
+    put(&main.join("claudium-player.txt"), "name:Player123\n");
     put(&main.join("telemetry/consent.json"), r#"{"version":1}"#);
-    horizon_core::no_ai::set(&main, true).unwrap();
+    claudium_core::no_ai::set(&main, true).unwrap();
     put(&own.join("options.txt"), "fov:70\n");
     follow_player(&main, &own);
     assert_eq!(
@@ -206,17 +206,17 @@ fn an_instance_follows_the_players_answers() {
         "fov:70\n"
     );
     assert_eq!(
-        fs::read_to_string(own.join("horizon-player.txt")).unwrap(),
+        fs::read_to_string(own.join("claudium-player.txt")).unwrap(),
         "name:Player123\n"
     );
     assert_eq!(
         fs::read_to_string(own.join("telemetry/consent.json")).unwrap(),
         r#"{"version":1}"#
     );
-    assert!(horizon_core::no_ai::is_on(&own));
-    horizon_core::no_ai::set(&main, false).unwrap();
+    assert!(claudium_core::no_ai::is_on(&own));
+    claudium_core::no_ai::set(&main, false).unwrap();
     follow_player(&main, &own);
-    assert!(!horizon_core::no_ai::is_on(&own));
+    assert!(!claudium_core::no_ai::is_on(&own));
     fs::remove_dir_all(&root).unwrap();
 }
 
@@ -244,7 +244,7 @@ fn icons_are_a_texture_name_or_a_colour() {
 #[test]
 fn an_instance_keeps_its_own_version_until_it_follows_updates_again() {
     let root = scratch("version");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("claudium"), root.join("launcher"));
     player_home(&home);
     create_in(&home, &data, "Old world", None, None).unwrap();
     let pinned = edit_in(&home, &data, "Old world", |m| {
@@ -285,7 +285,7 @@ fn play_time_adds_up_per_instance_and_survives_a_rename() {
     );
     // Never played: nothing written for it.
     let text = fs::read_to_string(data.join(FILE)).unwrap();
-    assert!(!text.contains("horizon"), "{text}");
+    assert!(!text.contains("claudium"), "{text}");
     fs::remove_dir_all(&root).unwrap();
 }
 
@@ -300,11 +300,11 @@ fn play_time_reads_as_minutes_then_hours() {
 
 /// A Java instance: an empty folder of its own (the real game keeps its own options), its
 /// version in instances.json, kept by a copy, and refused by Play until the launcher starts
-/// the real game; Horizon instances' entries stay as they were.
+/// the real game; Claudium instances' entries stay as they were.
 #[test]
 fn a_java_instance_plays_one_minecraft_version_in_its_own_folder() {
     let root = scratch("java");
-    let (home, data) = (root.join("horizon"), root.join("launcher"));
+    let (home, data) = (root.join("claudium"), root.join("launcher"));
     player_home(&home);
     let java = create_in(&home, &data, "Vanilla 1.21.4", None, Some("1.21.4")).unwrap();
     assert_eq!(java.home, home.join(OWN).join("vanilla-1-21-4"));
@@ -312,8 +312,8 @@ fn a_java_instance_plays_one_minecraft_version_in_its_own_folder() {
     assert_eq!(java.java.as_ref().unwrap().minecraft, "1.21.4");
     let copy = create_in(&home, &data, "Second", Some(&java), None).unwrap();
     assert_eq!(copy.java, java.java);
-    let horizon = create_in(&home, &data, "Claudium two", None, None).unwrap();
-    assert_eq!(horizon.java, None);
+    let claudium = create_in(&home, &data, "Claudium two", None, None).unwrap();
+    assert_eq!(claudium.java, None);
     let store = fs::read_to_string(data.join(FILE)).unwrap();
     assert_eq!(
         store.matches("\"minecraft\": \"1.21.4\"").count(),
@@ -336,7 +336,7 @@ fn a_java_instance_plays_one_minecraft_version_in_its_own_folder() {
 }
 
 /// Delete moves an instance's folder to the Trash and forgets it; one deleted outside the
-/// launcher is forgotten when the list is next read (#horizon-bugs: an instance that stayed).
+/// launcher is forgotten when the list is next read (#claudium-bugs: an instance that stayed).
 #[test]
 fn deleted_instances_go_to_the_trash_and_are_forgotten() {
     let root = scratch("delete");

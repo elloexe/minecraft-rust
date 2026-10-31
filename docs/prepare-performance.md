@@ -24,10 +24,10 @@ Minecraft imports also passes the verified artifact/library results directly to 
 ## An immutable store across releases
 
 The official launcher's SHA-1 object store already provides an immutable source for indexed
-assets. Independent filesystem clones let installed Horizon releases share physical blocks
+assets. Independent filesystem clones let installed Claudium releases share physical blocks
 where supported, without sharing writable inodes. Ordinary copies remain the fallback.
 
-A separate Horizon store could additionally share complete preparations on filesystems without
+A separate Claudium store could additionally share complete preparations on filesystems without
 cloning. Its key would need the pinned client/server hashes, the preparer's output version (or
 the legacy source/exporter fingerprint), and the actual asset-index digest: Mojang republishes
 translations without changing the Minecraft release. Two preparations with different optional

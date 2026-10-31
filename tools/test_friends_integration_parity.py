@@ -15,14 +15,14 @@ from integration_env import suite_lock
 
 
 if __name__ == '__main__':
-    subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'horizon-client',
-                    '-p', 'horizon-relay', '--bin', 'horizon-client', '--bin', 'horizon-ctl',
-                    '--bin', 'horizon-relay'], cwd=lab.ROOT, check=True)
+    subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'claudium-client',
+                    '-p', 'claudium-relay', '--bin', 'claudium-client', '--bin', 'claudium-ctl',
+                    '--bin', 'claudium-relay'], cwd=lab.ROOT, check=True)
     metadata = json.loads(subprocess.check_output(
         ['cargo', 'metadata', '--format-version', '1', '--no-deps'], cwd=lab.ROOT, text=True))
     bins = Path(metadata['target_directory']) / 'fast'
-    sys.argv = [sys.argv[0], '--client', str(bins / 'horizon-client'),
-                '--relay', str(bins / 'horizon-relay'), '--baseline',
+    sys.argv = [sys.argv[0], '--client', str(bins / 'claudium-client'),
+                '--relay', str(bins / 'claudium-relay'), '--baseline',
                 *(['--offscreen'] if sys.platform == 'darwin' else [])]
     with suite_lock():
         # The wrapper only selects binaries; test_friends isolates each game

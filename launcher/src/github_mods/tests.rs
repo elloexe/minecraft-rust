@@ -199,7 +199,7 @@ fn write(path: &Path, text: &str) {
 
 fn mixin(id: &str, pin: bool) -> String {
     let compat = match pin {
-        true => format!("[compatibility]\nhorizon_revision = \"{SHA}\"\n"),
+        true => format!("[compatibility]\nclaudium_revision = \"{SHA}\"\n"),
         false => String::new(),
     };
     format!("[mod]\nid = \"{id}\"\nversion = \"0.1.0\"\n{compat}")
@@ -209,23 +209,23 @@ fn mixin(id: &str, pin: bool) -> String {
 fn mod_folders_are_found_wherever_they_are_and_not_searched_inside() {
     let root = tree("find");
     write(
-        &root.join("native/zoom/horizon-mixin.toml"),
+        &root.join("native/zoom/claudium-mixin.toml"),
         &mixin("zoom", true),
     );
     write(
-        &root.join("native/zoom/src/horizon-mixin.toml"),
+        &root.join("native/zoom/src/claudium-mixin.toml"),
         &mixin("inner", true),
     );
     write(
-        &root.join("native/keys/horizon-mixin.toml"),
+        &root.join("native/keys/claudium-mixin.toml"),
         &mixin("keys", true),
     );
     write(
-        &root.join("target/debug/horizon-mixin.toml"),
+        &root.join("target/debug/claudium-mixin.toml"),
         &mixin("built", true),
     );
     write(
-        &root.join(".git/x/horizon-mixin.toml"),
+        &root.join(".git/x/claudium-mixin.toml"),
         &mixin("hidden", true),
     );
     let ids: Vec<String> = find_mods(&root)
@@ -241,7 +241,7 @@ fn mod_folders_are_found_wherever_they_are_and_not_searched_inside() {
 #[test]
 fn a_mod_folder_packs_into_a_bundle_the_registry_checks_accept() {
     let root = tree("pack");
-    write(&root.join("horizon-mixin.toml"), &mixin("zoom", true));
+    write(&root.join("claudium-mixin.toml"), &mixin("zoom", true));
     write(&root.join("src/zoom.rs"), "pub fn f() {}");
     write(&root.join("data/a.json"), "{}");
     write(&root.join("README.md"), "not shipped");
@@ -262,11 +262,11 @@ fn a_mod_folder_packs_into_a_bundle_the_registry_checks_accept() {
 }
 
 #[test]
-fn a_mod_with_no_pinned_horizon_commit_is_refused_with_the_fix() {
+fn a_mod_with_no_pinned_claudium_commit_is_refused_with_the_fix() {
     let root = tree("unpinned");
-    write(&root.join("horizon-mixin.toml"), &mixin("zoom", false));
+    write(&root.join("claudium-mixin.toml"), &mixin("zoom", false));
     let err = pack(&find_mods(&root).unwrap()[0]).unwrap_err();
-    assert!(err.contains("horizon_revision"), "{err}");
+    assert!(err.contains("claudium_revision"), "{err}");
     let _ = fs::remove_dir_all(root);
 }
 
@@ -275,11 +275,11 @@ fn an_unpacked_hnmod_keeps_its_pins_and_hook_points_and_ships_only_sources() {
     let root = tree("unpacked");
     let manifest = json!({
         "schema": 1, "id": "zoom", "version": "0.1.0", "game": "26.3",
-        "horizon": SHA, "mixins": SHA2, "hooks": 3,
+        "claudium": SHA, "mixins": SHA2, "hooks": 3,
     });
-    write(&root.join("horizon-native.json"), &manifest.to_string());
+    write(&root.join("claudium-native.json"), &manifest.to_string());
     write(
-        &root.join("mixins/zoom/horizon-mixin.toml"),
+        &root.join("mixins/zoom/claudium-mixin.toml"),
         &mixin("zoom", true),
     );
     let bundle = &find_mods(&root).unwrap()[0];
@@ -288,7 +288,7 @@ fn an_unpacked_hnmod_keeps_its_pins_and_hook_points_and_ships_only_sources() {
     let read = format::Bundle::read(&packed.file).unwrap();
     assert_eq!(
         (
-            read.manifest.horizon.as_str(),
+            read.manifest.claudium.as_str(),
             read.manifest.mixins.as_str()
         ),
         (SHA, SHA2)
@@ -300,9 +300,9 @@ fn an_unpacked_hnmod_keeps_its_pins_and_hook_points_and_ships_only_sources() {
     assert_eq!(again.sha256, packed.sha256);
     // A manifest and a mixin file that pin different commits are refused when found.
     write(
-        &root.join("mixins/zoom/horizon-mixin.toml"),
+        &root.join("mixins/zoom/claudium-mixin.toml"),
         &format!(
-            "{}[compatibility]\nhorizon_revision = \"{SHA2}\"\n",
+            "{}[compatibility]\nclaudium_revision = \"{SHA2}\"\n",
             mixin("zoom", false)
         ),
     );
@@ -334,7 +334,7 @@ fn several_mods_list_and_ask_which() {
 fn installing_records_the_origin_and_updates_follow_releases_or_the_head() {
     let home = tree("install");
     let source = tree("install-src");
-    write(&source.join("horizon-mixin.toml"), &mixin("zoom", true));
+    write(&source.join("claudium-mixin.toml"), &mixin("zoom", true));
     let bytes = pack(&find_mods(&source).unwrap()[0]).unwrap();
     let ready = checked(&bytes, &source.join("out")).unwrap();
     let found = Resolved {

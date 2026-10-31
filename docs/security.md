@@ -1,6 +1,6 @@
 # Security
 
-How Horizon keeps its code and its downloads safe while most of the work is done by AI agents and releases go out
+How Claudium keeps its code and its downloads safe while most of the work is done by AI agents and releases go out
 by themselves, including when Ludovic isn't at his computer. In plain words: what someone could have done before,
 what stops them now, and what still needs Ludovic.
 
@@ -57,8 +57,8 @@ and some are waiting for Ludovic:
   install by themselves, so the release run publishes it only after its smoke test passed (the game started and
   drew a world on the Mac mini) and only while no issue labelled `release-blocker` is open; otherwise nothing is
   published.
-- **Signed updates.** Each release carries a list of its files' checksums, signed with Horizon's release key. The
-  launcher (for the game and for itself) and `horizon-server update` check that signature against the public key
+- **Signed updates.** Each release carries a list of its files' checksums, signed with Claudium's release key. The
+  launcher (for the game and for itself) and `claudium-server update` check that signature against the public key
   built into them, then check the download against the list. Anything unsigned, signed with another key, signed
   for another version, or changed in any way is refused with a message saying why. Releases from before signing
   stay installable, for going back to an older version, but only with the exact files they had when signing
@@ -69,7 +69,7 @@ and some are waiting for Ludovic:
 - **The release machinery needs Ludovic.** The workflows, the release and signing tools, the update-checking code
   and the installers are listed in `.github/CODEOWNERS`. Once main's protection requires code owners' reviews, a
   change to any of them waits for Ludovic's approval. Everything else still merges as soon as its checks pass.
-- **Agents get their own, smaller identity** (prepared, switched on by Ludovic). The `horizon-agent` GitHub App
+- **Agents get their own, smaller identity** (prepared, switched on by Ludovic). The `claudium-agent` GitHub App
   can read and write code, pull requests and issues, and read the checks. It cannot change settings, workflows,
   secrets or members, and its tokens last an hour. Once agents use it, their pull requests are the app's, and
   Ludovic approves the rare pipeline change with one tap.
@@ -87,7 +87,7 @@ and some are waiting for Ludovic:
 
 ## What this doesn't solve
 
-- **Code that merges is code that ships.** Signing proves a build came from Horizon's pipeline, not that the code
+- **Code that merges is code that ships.** Signing proves a build came from Claudium's pipeline, not that the code
   is good. Against a bad change, the safety nets are the checks and harnesses, review, the release smoke test and
   the release-blocker label. Since the single channel there is no 6-hour beta: a change reaches every player
   within minutes of merging.

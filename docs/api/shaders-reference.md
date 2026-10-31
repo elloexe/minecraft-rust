@@ -1,15 +1,15 @@
 # Shader API reference (0.1)
 
-Generated from `crates/horizon-shader-api` (`HORIZON_WRITE_DOCS=1 cargo test -p horizon-shader-api --test reference`
+Generated from `crates/claudium-shader-api` (`CLAUDIUM_WRITE_DOCS=1 cargo test -p claudium-shader-api --test reference`
 rewrites it; the test fails when it drifts). The API's design and pack format: [shaders.md](shaders.md).
 
 A stage is a function your WGSL defines, with the signature below; Claudium puts the prelude (these structs, the
 resources and helpers) before your files and calls the function from its own pass. Your files declare no
-bindings and no entry points, and no names starting with `horizon_`.
+bindings and no entry points, and no names starting with `claudium_`.
 
 ## Stages
 
-| Stage | In `horizon-shaders.toml` | Your function |
+| Stage | In `claudium-shaders.toml` | Your function |
 | --- | --- | --- |
 | sky | `[sky]` | `fn sky(input: SkyInput) -> vec4<f32>` |
 | material | `[material]` | `fn material(input: MaterialInput) -> Surface` |
@@ -112,7 +112,7 @@ The frame, as `frame` in every stage. Positions and directions are in world axes
 | `projection_inverse` | `mat4x4<f32>` | 192 | Clip to view space. |
 | `camera_position` | `vec3<f32>` | 256 | The camera's world position, in blocks (about a millimetre of precision 10 000 blocks out). |
 | `time` | `f32` | 268 | Seconds since the pack was loaded, wrapping to 0 every hour. |
-| `sun_direction` | `vec3<f32>` | 272 | Unit vector toward the sun (below the horizon at night). |
+| `sun_direction` | `vec3<f32>` | 272 | Unit vector toward the sun (below the claudium at night). |
 | `day_time` | `f32` | 284 | The time of day, 0..1: 0 sunrise, 0.25 noon, 0.5 sunset, 0.75 midnight. |
 | `moon_direction` | `vec3<f32>` | 288 | Unit vector toward the moon. |
 | `game_time` | `f32` | 300 | Vanilla's GameTime: (game time % 24000 + partial tick) / 24000, 0..1. |
@@ -155,7 +155,7 @@ Each `[[options]]` entry sets the WGSL `override` of the same name when the pipe
 
 ## The check
 
-A pack runs only after it passes `horizon_shader_api::check` (the game when it loads a pack, the launcher before it
+A pack runs only after it passes `claudium_shader_api::check` (the game when it loads a pack, the launcher before it
 installs one, the registry's CI): each stage is parsed and validated by naga, checked against its signature and
 the rules above, and translated for Vulkan (SPIR-V), Metal and DirectX 12 (HLSL) with its options at their
 defaults, minimums and maximums. Every option must be an `override` of its type in some stage; an `override`

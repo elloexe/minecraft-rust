@@ -1,5 +1,5 @@
 {
-  "kind": "horizon-server-benchmark",
+  "kind": "claudium-server-benchmark",
   "date": "2026-10-17T14:56:24+00:00",
   "machine": {
     "system": "Linux",
@@ -11,7 +11,7 @@
     "openjdk 25.0.4.1 2026-08-18"
   ],
   "settings": {
-    "servers": "horizon,vanilla",
+    "servers": "claudium,vanilla",
     "bots": "1,10,25,50,100",
     "behaviour": "walk,explore",
     "join_every": 1.0,
@@ -21,10 +21,10 @@
     "explore_speed": 0,
     "gamerule": "",
     "heap": "4g",
-    "out": "/home/ludovic/code/horizon/.claude/worktrees/server-host-4/.local/bench-out/walk-explore.json",
+    "out": "/home/ludovic/code/claudium/.claude/worktrees/server-host-4/.local/bench-out/walk-explore.json",
     "nice": 19,
     "bots_via": "ssh macmini",
-    "bots_bin": "/Users/ludovicmarie/code/horizon/.claude/worktrees/server-host-4/target/release/horizon-bots",
+    "bots_bin": "/Users/ludovicmarie/code/claudium/.claude/worktrees/server-host-4/target/release/claudium-bots",
     "connect": "<server address>",
     "properties": {
       "level-seed": "12345",
@@ -42,7 +42,7 @@
   },
   "runs": [
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 1,
       "behaviour": "walk",
       "start_seconds": 9.51,
@@ -116,7 +116,7 @@
       "tick_queries": 35
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 10,
       "behaviour": "walk",
       "start_seconds": 9.31,
@@ -190,7 +190,7 @@
       "tick_queries": 35
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 25,
       "behaviour": "walk",
       "start_seconds": 9.31,
@@ -264,7 +264,7 @@
       "tick_queries": 35
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 50,
       "behaviour": "walk",
       "start_seconds": 9.21,
@@ -338,7 +338,7 @@
       "tick_queries": 35
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 100,
       "behaviour": "walk",
       "start_seconds": 9.21,
@@ -382,7 +382,7 @@
       "error": "[Errno 32] Broken pipe"
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 1,
       "behaviour": "explore",
       "start_seconds": 9.41,
@@ -456,7 +456,7 @@
       "tick_queries": 35
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 10,
       "behaviour": "explore",
       "start_seconds": 9.52,
@@ -530,7 +530,7 @@
       "tick_queries": 35
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 25,
       "behaviour": "explore",
       "start_seconds": 9.31,
@@ -604,7 +604,7 @@
       "tick_queries": 35
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 50,
       "behaviour": "explore",
       "start_seconds": 9.21,
@@ -648,7 +648,7 @@
       "error": "[Errno 32] Broken pipe"
     },
     {
-      "server": "horizon",
+      "server": "claudium",
       "bots": 100,
       "behaviour": "explore",
       "start_seconds": 9.21,

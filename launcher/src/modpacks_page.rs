@@ -1,9 +1,9 @@
 //! Imported modpacks, on the Mods page's Modpacks tab: import a pack, read its coverage report,
-//! port what this computer can and play it as its own profile (`horizon_launcher::modpacks`).
+//! port what this computer can and play it as its own profile (`claudium_launcher::modpacks`).
 use super::*;
-use horizon_launcher::browser::horizon::pack as horizon_pack;
-use horizon_launcher::modpacks::{self, Imported};
-use horizon_port_pack::report::Status;
+use claudium_launcher::browser::claudium::pack as claudium_pack;
+use claudium_launcher::modpacks::{self, Imported};
+use claudium_port_pack::report::Status;
 use std::path::PathBuf;
 
 /// The report's filter: every row, or one status.
@@ -137,7 +137,7 @@ impl Launcher {
         if self.packs_loaded.is_none() {
             self.mods.report_list.reset();
             self.packs = modpacks::list();
-            self.registry_packs = horizon_pack::list();
+            self.registry_packs = claudium_pack::list();
             self.reload_instances();
             if self.pack_open.is_none() {
                 self.pack_open = self.packs.first().map(|p| p.slug.clone());
@@ -238,7 +238,7 @@ impl Launcher {
         for (i, p) in self.registry_packs.iter().enumerate() {
             let (play, remove) = (p.work.clone(), p.work.clone());
             let id = p.id.clone();
-            let key = format!("horizon:{id}");
+            let key = format!("claudium:{id}");
             let confirming = self.confirm_remove.as_deref() == Some(key.as_str());
             let right = div()
                 .flex()
@@ -270,7 +270,7 @@ impl Launcher {
                     .on_click(cx.listener(
                         move |this, _: &ClickEvent, _, cx| {
                             if this.confirm_remove.as_ref() == Some(&key) {
-                                match horizon_pack::remove(&remove) {
+                                match claudium_pack::remove(&remove) {
                                     Ok(()) => this.packs_loaded = None,
                                     Err(e) => this.pack_error = Some(e),
                                 }
@@ -434,7 +434,7 @@ impl Launcher {
         if !can_play {
             notes.push("Playing needs a prepared Claudium version (Play page).".into());
         }
-        let mut rows: Vec<&horizon_port_pack::report::Row> = p
+        let mut rows: Vec<&claudium_port_pack::report::Row> = p
             .rows
             .iter()
             .filter(|r| self.pack_filter.is_none_or(|s| r.status == s))

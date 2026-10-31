@@ -1,0 +1,15 @@
+{
+  "claudium.options.controller": "Kontroler",
+  "claudium.options.vibration": "Wibracje",
+  "claudium.options.adaptive_triggers": "Adaptacyjne spusty",
+  "claudium.options.lightbar": "Pasek świetlny",
+  "claudium.options.look_sensitivity": "Czułość rozglądania",
+  "claudium.options.invert_x": "Odwróć oś X rozglądania",
+  "claudium.options.invert_y": "Odwróć oś Y rozglądania",
+  "claudium.options.sneak_button": "Przycisk skradania",
+  "claudium.options.move_deadzone": "Martwa strefa ruchu",
+  "claudium.options.look_deadzone": "Martwa strefa rozglądania",
+  "claudium.options.button_glyphs": "Symbole przycisków",
+  "claudium.options.menu_navigation": "Nawigacja po menu",
+  "claudium.options.on_screen_keyboard": "Klawiatura ekranowa"
+}

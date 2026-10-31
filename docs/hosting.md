@@ -1,31 +1,31 @@
 # Host a server
 
-`horizon-server` hosts a Minecraft Java Edition 26.3 server with Horizon's own game as the engine: one native
-program, no Java, one settings file, a command line, and a web panel. Vanilla 26.3 clients and Horizon clients
+`claudium-server` hosts a Minecraft Java Edition 26.3 server with Claudium's own game as the engine: one native
+program, no Java, one settings file, a command line, and a web panel. Vanilla 26.3 clients and Claudium clients
 can join it. This page covers what works on `main` today and says plainly what doesn't yet. The design and the
-plan are in [docs/server.md](https://github.com/horizon-rust/horizon/blob/main/docs/server.md).
+plan are in [docs/server.md](https://github.com/elloexe/minecraft-rust/blob/main/docs/server.md).
 
 ## Before you start
 
 - **Online mode checks accounts** (release v2026.10.17.07 and newer). With `online_mode = true`, the
   default, players who sign in with the official Minecraft launcher join with their own accounts, as on a
   vanilla server.
-- **Names you add are accounts** (release v2026.10.17.14 and newer). `init --player`, `horizon-server
+- **Names you add are accounts** (release v2026.10.17.14 and newer). `init --player`, `claudium-server
   whitelist add` and `op`, and the console's `whitelist add`, `op` and `ban` look a name up the way vanilla
   does: players already seen (kept in `usercache.json`), then Mojang's profile service. In online mode a name
   with no account is refused. So you can whitelist friends before they first join. On an offline server,
-  `horizon-server whitelist add` always writes the offline UUID, the one the player joins with, also while
+  `claudium-server whitelist add` always writes the offline UUID, the one the player joins with, also while
   the server runs (it writes the entry and the game reloads the list): the console's own `whitelist add`
   takes the account's UUID when someone owns that name, as vanilla does, and that player is then refused.
-- **Horizon's own client can't sign in to a Microsoft account yet.** That needs an Azure app registration and
+- **Claudium's own client can't sign in to a Microsoft account yet.** That needs an Azure app registration and
   Mojang's approval, which the project doesn't have
-  ([docs/microsoft-account.md](https://github.com/horizon-rust/horizon/blob/main/docs/microsoft-account.md)).
-  Until then Horizon players can join offline servers only (`online_mode = false`). An offline server never
+  ([docs/microsoft-account.md](https://github.com/elloexe/minecraft-rust/blob/main/docs/microsoft-account.md)).
+  Until then Claudium players can join offline servers only (`online_mode = false`). An offline server never
   checks accounts: anyone who reaches it can join under any name. Keep it on your LAN or a tailnet
   (Tailscale, ZeroTier), or share it only with friends you trust.
 - **Secure chat** works as on vanilla's server: in online mode, vanilla clients sign their chat, and with
   `enforce-secure-profile=true` (the default) unsigned chat is refused. On an offline server, or for a player
-  without a chat session (Horizon's own client today), chat stays unsigned and shows as not secure.
+  without a chat session (Claudium's own client today), chat stays unsigned and shows as not secure.
 - **Nether and End:** each player travels on their own through portals, and operators with `execute in
   <dimension> run tp`. The players in the level they leave stop seeing them, and the ones in the level they
   arrive in start to, as on vanilla (checked against vanilla with two players, by command and through an End
@@ -44,46 +44,46 @@ plan are in [docs/server.md](https://github.com/horizon-rust/horizon/blob/main/d
 Linux (x86-64) and macOS (Apple Silicon):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/horizon-rust/horizon/main/packaging/server/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/elloexe/minecraft-rust/main/packaging/server/install.sh | sh
 ```
 
 Windows (x64), in PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/horizon-rust/horizon/main/packaging/server/install.ps1 | iex
+irm https://raw.githubusercontent.com/elloexe/minecraft-rust/main/packaging/server/install.ps1 | iex
 ```
 
-The script downloads the current Horizon Nightly for your computer from GitHub (the only build Horizon ships;
+The script downloads the current Claudium Nightly for your computer from GitHub (the only build Claudium ships;
 `--version` picks another), checks it against the SHA-256 GitHub publishes, and never asks for sudo or administrator rights. It installs:
 
-- the release in `~/.local/share/horizon/releases/<version>` (Windows: `%LOCALAPPDATA%\Horizon`), with
+- the release in `~/.local/share/claudium/releases/<version>` (Windows: `%LOCALAPPDATA%\Claudium`), with
   `current` pointing at the one in use;
-- `horizon-server` and `horizon-prepare` in `~/.local/bin` (Windows: added to your PATH);
+- `claudium-server` and `claudium-prepare` in `~/.local/bin` (Windows: added to your PATH);
 - a `game-files` folder for the files you prepare, kept across updates.
 
 Options: `--version vX.Y.Z`, `--dir FOLDER`, `--bin FOLDER` (Windows: `-Version`, `-Dir`). Other systems,
-such as Linux on ARM, build from source: `cargo build --release -p horizon-client --bin horizon-client -p
-horizon-server` and keep both programs in one folder.
+such as Linux on ARM, build from source: `cargo build --release -p claudium-client --bin claudium-client -p
+claudium-server` and keep both programs in one folder.
 
-The Horizon launcher also installs releases. Every release folder holds `horizon-server`, so you can run it
+The Claudium launcher also installs releases. Every release folder holds `claudium-server`, so you can run it
 from there too.
 
 ## 2. Prepare the game files
 
-Horizon reads Minecraft's data from your own copy of the game. You need Minecraft Java Edition 26.3, played
+Claudium reads Minecraft's data from your own copy of the game. You need Minecraft Java Edition 26.3, played
 once from the official launcher on this computer, a Java 25 runtime, and the 26.3 `server.jar`: it's the
 `downloads.server.url` in your launcher's `versions/26.3/26.3.json`. Then:
 
 ```sh
-horizon-prepare --prepare --server-jar /path/to/server.jar
+claudium-prepare --prepare --server-jar /path/to/server.jar
 ```
 
 Add `--minecraft-dir PATH` if your launcher keeps the game elsewhere. The prepared files go to
 `game-files`, which updates keep.
 
 **On a headless machine** (a VPS, a home server), prepare on your own computer instead, with the launcher or
-`horizon-prepare`, and copy the prepared `26.3` folder to the server: into
-`~/.local/share/horizon/game-files/horizon-client/26.3`, or into `resources/` in the server folder, or anywhere
+`claudium-prepare`, and copy the prepared `26.3` folder to the server: into
+`~/.local/share/claudium/game-files/claudium-client/26.3`, or into `resources/` in the server folder, or anywhere
 `[engine] resources` in `server.toml` names. A folder copied this way needs release v2026.10.17.07 or
 newer: older ones don't keep `registries.json` and `commands.json` with the prepared files, and the
 server then stops with "registries.json not found next to the resources". Prepare again with a newer release.
@@ -92,7 +92,7 @@ server then stops with "registries.json not found next to the resources". Prepar
 
 ```sh
 mkdir my-server && cd my-server
-horizon-server init
+claudium-server init
 ```
 
 `init` asks five things and writes `server.toml`:
@@ -108,7 +108,7 @@ It then tells you where it found the game and its files. Every question has a fl
 script:
 
 ```sh
-horizon-server init --eula --world survival --seed 12345 --port 25565 --whitelist --player Alex --op Alex --yes
+claudium-server init --eula --world survival --seed 12345 --port 25565 --whitelist --player Alex --op Alex --yes
 ```
 
 `--no-whitelist` turns the whitelist off, and `--offline` turns online mode off (see "Before you start").
@@ -118,14 +118,14 @@ server, as vanilla does.
 Start the server in the foreground, with the console on your terminal (Ctrl-C stops it cleanly):
 
 ```sh
-horizon-server run
+claudium-server run
 ```
 
 or in the background:
 
 ```sh
-horizon-server start
-horizon-server status
+claudium-server start
+claudium-server status
 ```
 
 ```text
@@ -169,7 +169,7 @@ hardcore = false
 # resource-pack-sha1, require-resource-pack and resource-pack-prompt, as on vanilla
 
 [engine]
-path = ""                    # the game program; empty: the one beside horizon-server
+path = ""                    # the game program; empty: the one beside claudium-server
 resources = ""               # the prepared game files; empty: resources/ here, else the usual places
 restart_on_crash = true
 
@@ -187,55 +187,55 @@ start instead of being ignored. When the game changes a setting itself (`/whitel
 back into `server.toml` when it stops, and your comments are kept. Changes to the file apply at the next
 restart: there is no live reload yet.
 
-Already have a vanilla server? Run `horizon-server init` in its folder, or `horizon-server import
+Already have a vanilla server? Run `claudium-server init` in its folder, or `claudium-server import
 server.properties` to write `server.toml` from it. The world, `ops.json`, `whitelist.json` and the ban lists
 keep vanilla's names and formats, so going back to vanilla works too.
 
 ## 5. Commands
 
 ```text
-horizon-server init                      first run
-horizon-server run                       in the foreground, with the console; Ctrl-C stops it
-horizon-server start | stop | restart    in the background (its output goes to logs/supervisor.log)
-horizon-server status [--json]           up or not, TPS, MSPT, players, chunks, RAM, CPU
-horizon-server cmd COMMAND...            one console command, and what it answers
-horizon-server logs [-f] [-n N]          the log; -f follows it
-horizon-server report [SECONDS]          record a performance report (below)
-horizon-server op|deop NAME
-horizon-server whitelist on|off|list
-horizon-server whitelist add|remove NAME
-horizon-server backup [NAME]             back up now
-horizon-server backups [--json]          list the backups
-horizon-server restore BACKUP [--yes]
-horizon-server service install|uninstall|print [--system]
-horizon-server panel                     a one-time login link for the web panel
-horizon-server import FILE               server.toml from a vanilla server.properties
-horizon-server config [--json]           the settings in server.toml
-horizon-server config set KEY=VALUE...   change settings, checked first (below)
-horizon-server update [--check]          install the newest release and restart on it (below)
-horizon-server rollback                  back to the release before
+claudium-server init                      first run
+claudium-server run                       in the foreground, with the console; Ctrl-C stops it
+claudium-server start | stop | restart    in the background (its output goes to logs/supervisor.log)
+claudium-server status [--json]           up or not, TPS, MSPT, players, chunks, RAM, CPU
+claudium-server cmd COMMAND...            one console command, and what it answers
+claudium-server logs [-f] [-n N]          the log; -f follows it
+claudium-server report [SECONDS]          record a performance report (below)
+claudium-server op|deop NAME
+claudium-server whitelist on|off|list
+claudium-server whitelist add|remove NAME
+claudium-server backup [NAME]             back up now
+claudium-server backups [--json]          list the backups
+claudium-server restore BACKUP [--yes]
+claudium-server service install|uninstall|print [--system]
+claudium-server panel                     a one-time login link for the web panel
+claudium-server import FILE               server.toml from a vanilla server.properties
+claudium-server config [--json]           the settings in server.toml
+claudium-server config set KEY=VALUE...   change settings, checked first (below)
+claudium-server update [--check]          install the newest release and restart on it (below)
+claudium-server rollback                  back to the release before
 ```
 
 While the server runs, `op`, `whitelist` and `cmd` go to the game's console, so they act exactly as vanilla's
 console commands do. While it's stopped, they edit vanilla's files directly. Any console command works through
-`cmd`: `horizon-server cmd ban Griefer`, `horizon-server cmd say Restarting in 5 minutes`.
-To generate the world around spawn ahead of the players, Horizon has its own `pregen` command, off until
-`server.toml` has `horizon-pregen = true` under `[properties]`: `horizon-server cmd pregen start 2500`
+`cmd`: `claudium-server cmd ban Griefer`, `claudium-server cmd say Restarting in 5 minutes`.
+To generate the world around spawn ahead of the players, Claudium has its own `pregen` command, off until
+`server.toml` has `claudium-pregen = true` under `[properties]`: `claudium-server cmd pregen start 2500`
 ([pregeneration](pregeneration.md)).
-To let only the Horizon client join, set `horizon-clients-only = true` under `[properties]` (off by default).
-Other clients are turned away while they connect with "This server is for the Horizon client:
-playhorizon.dev", and the console says which client it was. The check reads the brand a client names itself
-by (`minecraft:brand`), which any client can fake: it keeps out players who didn't install Horizon, not
+To let only the Claudium client join, set `claudium-clients-only = true` under `[properties]` (off by default).
+Other clients are turned away while they connect with "This server is for the Claudium client:
+claudium.invalid", and the console says which client it was. The check reads the brand a client names itself
+by (`minecraft:brand`), which any client can fake: it keeps out players who didn't install Claudium, not
 cheaters. The server's own checks (reach, movement) are what protect it.
 
-`horizon-server report` records the running server for 60 seconds (`report 300` for five minutes, up to 600),
+`claudium-server report` records the running server for 60 seconds (`report 300` for five minutes, up to 600),
 then prints a short summary and saves it in `reports/`: `perf-<time>.txt` and `perf-<time>.json`. They say where
 the ticks' time went, phase by phase (mobs, block ticks, block entities, the network and the chunks it
 sends, saving...), the slowest ticks, how many entities of each type, chunks, players, memory, CPU, and the
 settings that matter (view and simulation distance, max players). They hold no names, UUIDs or addresses, so you
-can attach them to an issue as they are. On the console it is `horizon-report [SECONDS]`.
+can attach them to an issue as they are. On the console it is `claudium-report [SECONDS]`.
 
-`config set` changes `server.toml` without opening it: `horizon-server config set world.difficulty=hard
+`config set` changes `server.toml` without opening it: `claudium-server config set world.difficulty=hard
 server.max_players=10`. Each key is a section and a name from the file (`properties.spawn-protection=0` for any
 other vanilla key). The values are checked as the server checks them, and nothing is written if one is wrong.
 A running server takes the difficulty, the default game mode, the whitelist and the backup settings at once;
@@ -247,7 +247,7 @@ minutes. It keeps the crash report and gives up after 5 crashes in 10 minutes, a
 
 **Updates** (a server installed with the install script). The server checks for a newer release a minute
 after it starts and every 6 hours after, and says so in its log, in `status` and in the panel; it never
-updates by itself. `horizon-server update --check` asks once. `horizon-server update`:
+updates by itself. `claudium-server update --check` asks once. `claudium-server update`:
 
 1. downloads the current Nightly and checks it against its signed SHA-256;
 2. stops the game, backs up the world (`backups/<time>-before-<release>.zip`) and switches to the new
@@ -256,25 +256,25 @@ updates by itself. `horizon-server update --check` asks once. `horizon-server up
 
 If the new game crashes or doesn't come up in time, the server goes back to the release it was on by itself
 and puts the world back as it was just before the switch (the world the new game left is kept in
-`backups/`). `horizon-server rollback` goes back to the release before by hand, keeping the world as it is
+`backups/`). `claudium-server rollback` goes back to the release before by hand, keeping the world as it is
 (it backs it up first). `--version vX.Y.Z` installs a given release, and `--archive FILE --version NAME` an
 archive you have, such as your own build. A server still on a release from before the last dated one doesn't know
-that 0.2 comes after the dated releases and says it is up to date: run `horizon-server update --version v0.2.0`
+that 0.2 comes after the dated releases and says it is up to date: run `claudium-server update --version v0.2.0`
 once ([versioning](versioning.md)). A stopped server is switched and starts on the new release next
-time. Set `HORIZON_NO_UPDATE_CHECK=1` in the server's environment to turn the check off.
+time. Set `CLAUDIUM_NO_UPDATE_CHECK=1` in the server's environment to turn the check off.
 
 Coming: `console` (attach to a server running in the background), `ban` and `pardon` as their own
 commands, and `mcp` (an MCP server so an AI assistant can run the server).
 
 ## 6. Web panel
 
-The panel runs inside `horizon-server` while the server runs. It shows live TPS, MSPT, RAM and CPU graphs for
+The panel runs inside `claudium-server` while the server runs. It shows live TPS, MSPT, RAM and CPU graphs for
 the last 10 minutes, the players with their ping (and a kick button), the console with a command line, and the
 backups (back up now, restore with a confirmation), with Restart and Stop. When a newer release is out it says
-so, with an Update button that runs `horizon-server update` (section 5), and shows how it went.
+so, with an Update button that runs `claudium-server update` (section 5), and shows how it went.
 
 ```sh
-horizon-server panel
+claudium-server panel
 ```
 
 prints a login link that works once, for 10 minutes. The panel listens on `127.0.0.1:8130`, this computer
@@ -290,9 +290,9 @@ make a login link, and no one else can. Never put it on the open internet.
 ## 7. Backups
 
 ```sh
-horizon-server backup before-the-update
-horizon-server backups
-horizon-server restore before-the-update
+claudium-server backup before-the-update
+claudium-server backups
+claudium-server restore before-the-update
 ```
 
 A backup zips the world, vanilla's files and `server.toml` into `backups/`. A running server saves first and
@@ -306,7 +306,7 @@ it was running. The panel does the same with one click.
 ## 8. Start it with the computer
 
 ```sh
-horizon-server service install
+claudium-server service install
 ```
 
 - **Linux:** a systemd user unit (`--system` for a system unit, with sudo). To keep a user unit running while
@@ -314,7 +314,7 @@ horizon-server service install
 - **macOS:** a launchd agent in `~/Library/LaunchAgents`.
 - **Windows:** a task that starts at logon (a real Windows service comes later).
 
-The service runs `horizon-server run` through the installed `current` release, so an update applies at the
+The service runs `claudium-server run` through the installed `current` release, so an update applies at the
 next restart. `service print` shows what it would install, `service uninstall` removes it and leaves the server
 folder alone.
 
@@ -324,23 +324,23 @@ No image is published: build one from the repository. The image holds none of Mi
 folder you prepared (step 2) read-only.
 
 ```sh
-git clone https://github.com/horizon-rust/horizon && cd horizon
-docker build -f packaging/server/Dockerfile -t horizon-server .
+git clone https://github.com/elloexe/minecraft-rust && cd claudium
+docker build -f packaging/server/Dockerfile -t claudium-server .
 
-docker run -d --name horizon -p 25565:25565 --stop-timeout 180 \
-  -v horizon-data:/data \
-  -v /path/to/26.3:/opt/horizon/.local/horizon-client/26.3:ro \
-  -e HORIZON_EULA=true -e HORIZON_WHITELIST=true -e HORIZON_PLAYERS=Alex,Steve -e HORIZON_OP=Alex \
-  horizon-server
+docker run -d --name claudium -p 25565:25565 --stop-timeout 180 \
+  -v claudium-data:/data \
+  -v /path/to/26.3:/opt/claudium/.local/claudium-client/26.3:ro \
+  -e CLAUDIUM_EULA=true -e CLAUDIUM_WHITELIST=true -e CLAUDIUM_PLAYERS=Alex,Steve -e CLAUDIUM_OP=Alex \
+  claudium-server
 ```
 
-- `HORIZON_EULA=true` accepts the [Minecraft EULA](https://aka.ms/MinecraftEULA) for this server. Without it
+- `CLAUDIUM_EULA=true` accepts the [Minecraft EULA](https://aka.ms/MinecraftEULA) for this server. Without it
   the container stops and says why.
-- The first start writes `/data/server.toml` from `HORIZON_EULA`, `HORIZON_WORLD`, `HORIZON_SEED`,
-  `HORIZON_PORT`, `HORIZON_WHITELIST`, `HORIZON_PLAYERS`, `HORIZON_OP` and `HORIZON_ONLINE`. Later starts use
+- The first start writes `/data/server.toml` from `CLAUDIUM_EULA`, `CLAUDIUM_WORLD`, `CLAUDIUM_SEED`,
+  `CLAUDIUM_PORT`, `CLAUDIUM_WHITELIST`, `CLAUDIUM_PLAYERS`, `CLAUDIUM_OP` and `CLAUDIUM_ONLINE`. Later starts use
   the file.
 - The mounted folder must come from release v2026.10.17.07 or newer (see step 2).
-- Manage it with `docker exec horizon horizon-server status` (and `cmd`, `backup`, `logs`, ...).
+- Manage it with `docker exec claudium claudium-server status` (and `cmd`, `backup`, `logs`, ...).
   `docker stop` saves and stops cleanly; `--stop-timeout 180` gives it the time.
 - The panel stays on 127.0.0.1 inside the container.
 - The image still carries ALSA and udev libraries because the game links them, even though a server never plays
@@ -348,11 +348,11 @@ docker run -d --name horizon -p 25565:25565 --stop-timeout 180 \
 
 ## 10. How fast is it
 
-The latest bot benchmark compares Horizon with vanilla 26.3, Paper and Fabric + Lithium:
-[benchmarks/server-four-way-2026-10-19](https://github.com/horizon-rust/horizon/blob/main/benchmarks/server-four-way-2026-10-19/README.md).
+The latest bot benchmark compares Claudium with vanilla 26.3, Paper and Fabric + Lithium:
+[benchmarks/server-four-way-2026-10-19](https://github.com/elloexe/minecraft-rust/blob/main/benchmarks/server-four-way-2026-10-19/README.md).
 It ran release v2026.10.19 on a 4-thread laptop CPU (i7-7500U), with 1 to 50 players walking, exploring and
 standing around spawn, the bots on another machine. All four servers did the same work. Earlier
-measurements are in [docs/server.md](https://github.com/horizon-rust/horizon/blob/main/docs/server.md). In
+measurements are in [docs/server.md](https://github.com/elloexe/minecraft-rust/blob/main/docs/server.md). In
 short:
 
 - **Memory:** 0.7 GB with one player and 1.1 GB with 50, against 3.4 to 4.5 GB for the Java servers
@@ -360,11 +360,11 @@ short:
 - **Start:** ready in 8 to 9 s, against 15 s for vanilla, 17 s for Fabric and 19 to 22 s for Paper.
 - **CPU:** from 10 players up, the least of the four (1.4 cores at 50, against Paper's 2.1 and Fabric's 2.4).
 - **Average tick:** Paper's is shorter at every count (10.3 against 13.7 ms with one player, 46.9 against
-  47.8 with 50), and Fabric + Lithium's with 1 and 10 players. Horizon's is shorter than vanilla's (equal
+  47.8 with 50), and Fabric + Lithium's with 1 and 10 players. Claudium's is shorter than vanilla's (equal
   with 10), and than Fabric's from 25 players up.
-- **Slow ticks:** from 10 players up, Horizon's slowest ticks (99th percentile) are the shortest of the
+- **Slow ticks:** from 10 players up, Claudium's slowest ticks (99th percentile) are the shortest of the
   four (73 ms with 50, against 110 for Paper and 174 for Fabric).
-- **50 players:** Horizon and Paper keep 20 TPS, Fabric + Lithium drops to 17, and vanilla's watchdog
+- **50 players:** Claudium and Paper keep 20 TPS, Fabric + Lithium drops to 17, and vanilla's watchdog
   stopped it.
 
 For more than 50 active players, give it more cores.
@@ -375,8 +375,8 @@ For more than 50 active players, give it more cores.
   `[engine] resources`.
 - **"registries.json not found next to the resources"**: the prepared folder is from an older release. Prepare
   again with a newer one.
-- **Nobody can join**: the whitelist is on by default (`horizon-server whitelist add NAME`), and the port must be
+- **Nobody can join**: the whitelist is on by default (`claudium-server whitelist add NAME`), and the port must be
   open in your firewall. On a tailnet, use the server's tailnet address.
-- **It keeps restarting**: `horizon-server status` shows the last crash and `horizon-server logs -n 200` the log
+- **It keeps restarting**: `claudium-server status` shows the last crash and `claudium-server logs -n 200` the log
   before it. Crash reports are in `crash-reports/`.
-- Report problems at <https://github.com/horizon-rust/horizon/issues>, with the end of the log.
+- Report problems at <https://github.com/elloexe/minecraft-rust/issues>, with the end of the log.

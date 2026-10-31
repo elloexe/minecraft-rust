@@ -147,7 +147,7 @@
   "Not prepared. Claudium needs the files of your own Minecraft {version}.": "Pas préparé. Claudium a besoin des fichiers de votre propre Minecraft {version}.",
   "Prepared for Minecraft {version}": "Préparé pour Minecraft {version}",
   "Prepared for Minecraft {version}, without its sounds: the game will be silent. Prepare again to copy them from your Minecraft install.": "Préparé pour Minecraft {version}, sans ses sons : le jeu sera muet. Préparez à nouveau pour les copier depuis votre installation de Minecraft.",
-  "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID), so it can't start the game.": "Cette version du launcher n'a pas de connexion Microsoft (HORIZON_MSA_CLIENT_ID) : elle ne peut pas lancer le jeu.",
+  "This build of the launcher has no Microsoft sign-in (CLAUDIUM_MSA_CLIENT_ID), so it can't start the game.": "Cette version du launcher n'a pas de connexion Microsoft (CLAUDIUM_MSA_CLIENT_ID) : elle ne peut pas lancer le jeu.",
   "Sign in with a Microsoft account that owns Minecraft: Java Edition to play": "Connectez-vous avec un compte Microsoft qui possède Minecraft: Java Edition pour jouer",
   "Claudium needs a Microsoft account that owns Minecraft: Java Edition, like other launchers. It also plays online servers with your name and skin.": "Claudium a besoin d'un compte Microsoft qui possède Minecraft: Java Edition, comme les autres launchers. Il permet aussi de jouer sur les serveurs en ligne avec votre nom et votre skin.",
   "Sign in": "Se connecter",

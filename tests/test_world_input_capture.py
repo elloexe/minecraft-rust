@@ -40,8 +40,8 @@ def function(source, name):
 
 class WorldInputCaptureTests(unittest.TestCase):
     def test_loading_completion_wiring(self):
-        game = (ROOT / "crates/horizon-client/src/game.rs").read_text(encoding="utf-8")
-        remote = (ROOT / "crates/horizon-client/src/game/remote.rs").read_text(encoding="utf-8")
+        game = (ROOT / "crates/claudium-client/src/game.rs").read_text(encoding="utf-8")
+        remote = (ROOT / "crates/claudium-client/src/game/remote.rs").read_text(encoding="utf-8")
         spawn = method(game, "spawn_player")
         self.assertLess(spawn.index("self.player = Some(player)"),
                         spawn.index("self.capture_loaded_world()"))
@@ -54,8 +54,8 @@ class WorldInputCaptureTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("rustc"), "requires Rust")
     def test_capture_lifecycle(self):
-        source = (ROOT / "crates/horizon-client/src/game.rs").read_text(encoding="utf-8")
-        mouse = (ROOT / "crates/horizon-client-input/src/mouse.rs").read_text(encoding="utf-8")
+        source = (ROOT / "crates/claudium-client/src/game.rs").read_text(encoding="utf-8")
+        mouse = (ROOT / "crates/claudium-client-input/src/mouse.rs").read_text(encoding="utf-8")
         fixture = r'''
 use std::cell::Cell;
 #[derive(Clone, Copy, PartialEq)]
@@ -265,12 +265,12 @@ fn main() {
 }
 '''
         capture = method(source, "capture").replace(
-            "horizon_client::mouse::mouse_position_after_grab_change",
+            "claudium_client::mouse::mouse_position_after_grab_change",
             "mouse_position_after_grab_change")
         fixture = fixture.replace("HELPER", function(mouse, "mouse_position_after_grab_change"))
         fixture = fixture.replace("METHODS", capture + "\n" +
                                   method(source, "capture_loaded_world"))
-        with tempfile.TemporaryDirectory(prefix="horizon-input-") as folder:
+        with tempfile.TemporaryDirectory(prefix="claudium-input-") as folder:
             folder = Path(folder)
             rust = folder / "capture.rs"
             binary = folder / ("capture.exe" if os.name == "nt" else "capture")

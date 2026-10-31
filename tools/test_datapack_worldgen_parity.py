@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Compare chunks generated with a world's data packs block-for-block with vanilla.
 
-The packs of tools/fixtures/datapacks (Horizon's own, MIT) override and add
+The packs of tools/fixtures/datapacks (Claudium's own, MIT) override and add
 noises, density functions, the overworld noise settings, a placed feature and
-a biome tag. Vanilla side: VanillaChunkGenerationOracle with HORIZON_DATAPACKS,
+a biome tag. Vanilla side: VanillaChunkGenerationOracle with CLAUDIUM_DATAPACKS,
 which selects every pack of the folder after vanilla, as a world does, and
-loads the registries through vanilla's own pack repository. Horizon side:
+loads the registries through vanilla's own pack repository. Claudium side:
 chunk_dump with the same variable, reading the packs through
 worldgen::overrides into GeneratorData::load_with. The same terrain sites are
 compared for every block state, quart biome and block entity, first after
-TERRAIN, then with decoration. Horizon without the packs must differ from
+TERRAIN, then with decoration. Claudium without the packs must differ from
 vanilla with them, so the packs are known to take effect.
 
 usage: test_datapack_worldgen_parity.py [--seed N] [--sites K] [--phase terrain|full]
@@ -26,9 +26,9 @@ except ImportError:
     import lab
     import test_chunk_generation_parity as chunks
 
-# HORIZON_PARITY_DATAPACKS: another folder of packs (tools/fixtures/tall_datapacks: a 2096-high
+# CLAUDIUM_PARITY_DATAPACKS: another folder of packs (tools/fixtures/tall_datapacks: a 2096-high
 # Overworld).
-DATAPACKS = Path(os.environ.get('HORIZON_PARITY_DATAPACKS', lab.ROOT / 'tools/fixtures/datapacks'))
+DATAPACKS = Path(os.environ.get('CLAUDIUM_PARITY_DATAPACKS', lab.ROOT / 'tools/fixtures/datapacks'))
 SEEDS = [12345, 4242]
 
 
@@ -46,20 +46,20 @@ def main():
     differing = 0
     pack_effect = 0
     for phase in args.phase or ['terrain', 'full']:
-        os.environ['HORIZON_PHASE'] = phase
+        os.environ['CLAUDIUM_PHASE'] = phase
         for seed in args.seed or SEEDS:
             rng = random.Random(seed)
             sites = [(0, 0)] + [(rng.randint(-300, 300), rng.randint(-300, 300)) for _ in range(args.sites)]
             rects = [f'{x},{z},{x},{z}' for x, z in sites]
             tag = f'{seed}-{phase}'
             vanilla_path, rust_path, plain_path = (build / f'{side}-{tag}.txt' for side in ('vanilla', 'rust', 'plain'))
-            os.environ['HORIZON_DATAPACKS'] = str(DATAPACKS)
+            os.environ['CLAUDIUM_DATAPACKS'] = str(DATAPACKS)
             oracle.run(vanilla_path, ['dump', seed, 'overworld', *rects])
             stderr = chunks.run_rust(binary, rust_path, seed, 'overworld', rects)
-            del os.environ['HORIZON_DATAPACKS']
+            del os.environ['CLAUDIUM_DATAPACKS']
             for line in stderr.splitlines():
                 if 'data pack' in line:
-                    print('  horizon:', line)
+                    print('  claudium:', line)
             vanilla, rust = chunks.parse(vanilla_path), chunks.parse(rust_path)
             counts = chunks.compare(vanilla, rust, names, f'{tag} packs')
             differing += counts[0]
@@ -68,7 +68,7 @@ def main():
             chunks.run_rust(binary, plain_path, seed, 'overworld', rects)
             plain = chunks.compare(vanilla, chunks.parse(plain_path), names, f'{tag} without packs', quiet=True)
             pack_effect += plain[0]
-            print(f'{tag}: without the packs Horizon differs from them in {plain[0]} of {len(vanilla)} chunks ({plain[1]} blocks)')
+            print(f'{tag}: without the packs Claudium differs from them in {plain[0]} of {len(vanilla)} chunks ({plain[1]} blocks)')
     if not pack_effect:
         sys.exit('the packs changed nothing: the harness would not see them')
     if differing:

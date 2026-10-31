@@ -9,12 +9,12 @@ fn desktop_entry(home: &Path, wrapper: Option<&str>, args: &[&str]) {
     command
         .arg("desktop-entry")
         .args(args)
-        .env("HORIZON_LAUNCHER_HOME", home.join("launcher"))
+        .env("CLAUDIUM_LAUNCHER_HOME", home.join("launcher"))
         .env("XDG_DATA_HOME", home.join("data"))
-        .env("HORIZON_LAUNCHER_NO_SELF_UPDATE", "1")
-        .env_remove("HORIZON_LAUNCHER_DESKTOP_EXEC");
+        .env("CLAUDIUM_LAUNCHER_NO_SELF_UPDATE", "1")
+        .env_remove("CLAUDIUM_LAUNCHER_DESKTOP_EXEC");
     if let Some(wrapper) = wrapper {
-        command.env("HORIZON_LAUNCHER_DESKTOP_EXEC", wrapper);
+        command.env("CLAUDIUM_LAUNCHER_DESKTOP_EXEC", wrapper);
     }
     let output = command.output().unwrap();
     assert!(
@@ -26,9 +26,10 @@ fn desktop_entry(home: &Path, wrapper: Option<&str>, args: &[&str]) {
 
 #[test]
 fn menu_registration_preserves_the_package_wrapper() {
-    let home = std::env::temp_dir().join(format!("horizon-desktop-wrapper-{}", std::process::id()));
+    let home =
+        std::env::temp_dir().join(format!("claudium-desktop-wrapper-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&home);
-    let entry = home.join("data/applications/horizon-launcher.desktop");
+    let entry = home.join("data/applications/claudium-launcher.desktop");
 
     // Migrate a registration that pointed at the private executable.
     desktop_entry(&home, None, &[]);
@@ -38,7 +39,7 @@ fn menu_registration_preserves_the_package_wrapper() {
         env!("CARGO_BIN_EXE_claudium-launcher")
     )));
 
-    let wrapper = "/usr/bin/horizon-launcher";
+    let wrapper = "/usr/bin/claudium-launcher";
     for _ in 0..2 {
         desktop_entry(&home, Some(wrapper), &[]);
         let text = std::fs::read_to_string(&entry).unwrap();

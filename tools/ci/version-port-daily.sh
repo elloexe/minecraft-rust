@@ -1,24 +1,24 @@
 #!/bin/bash
-# Daily on the Mac mini, from launchd (tools/ci/dev.horizon.version-port.plist; docs/version-ports.md, "Detect"):
-# when Mojang releases a Minecraft version Horizon doesn't pin, port it as far as the report: prepare, diff,
+# Daily on the Mac mini, from launchd (tools/ci/dev.claudium.version-port.plist; docs/version-ports.md, "Detect"):
+# when Mojang releases a Minecraft version Claudium doesn't pin, port it as far as the report: prepare, diff,
 # regen (ports/NEW on the local branch port/NEW), every harness against it, the report, and publish's dry run.
 # It never publishes (version_port.py publish --yes stays a person's call) and never pushes.
 #
 # It runs from a copy taken from main, never from a checkout (it updates its own worktree of origin/main):
-#   curl -fsSL https://raw.githubusercontent.com/horizon-rust/horizon/main/tools/ci/version-port-daily.sh \
-#     -o ~/code/horizon-parity/version-port-daily.sh
+#   curl -fsSL https://raw.githubusercontent.com/elloexe/minecraft-rust/main/tools/ci/version-port-daily.sh \
+#     -o ~/code/claudium-parity/version-port-daily.sh
 #
-# HORIZON_REPO       the clone to make the worktree from (default ~/code/horizon)
-# HORIZON_PORT_MAIN  the worktree of origin/main it works in (default ~/code/horizon-parity/port-main)
-# HORIZON_PORT_REF   what that worktree checks out (default origin/main)
-# HORIZON_PORT_VERSION=V  port release V now, without asking Mojang what is new (by hand, or to replay one)
-# HORIZON_PORT_SNAPSHOTS=1  snapshots too: prepared, diffed and reported only (no regen, no harnesses)
-# HORIZON_PORT_KIRA_CARD=N  post a note on Kira card N when a port report is ready
+# CLAUDIUM_REPO       the clone to make the worktree from (default ~/code/claudium)
+# CLAUDIUM_PORT_MAIN  the worktree of origin/main it works in (default ~/code/claudium-parity/port-main)
+# CLAUDIUM_PORT_REF   what that worktree checks out (default origin/main)
+# CLAUDIUM_PORT_VERSION=V  port release V now, without asking Mojang what is new (by hand, or to replay one)
+# CLAUDIUM_PORT_SNAPSHOTS=1  snapshots too: prepared, diffed and reported only (no regen, no harnesses)
+# CLAUDIUM_PORT_KIRA_CARD=N  post a note on Kira card N when a port report is ready
 set -euo pipefail
-repo=${HORIZON_REPO:-$HOME/code/horizon}
-root=${HORIZON_PORT_MAIN:-$HOME/code/horizon-parity/port-main}
-ref=${HORIZON_PORT_REF:-origin/main}
-shared=$HOME/code/horizon-parity/shared-local
+repo=${CLAUDIUM_REPO:-$HOME/code/claudium}
+root=${CLAUDIUM_PORT_MAIN:-$HOME/code/claudium-parity/port-main}
+ref=${CLAUDIUM_PORT_REF:-origin/main}
+shared=$HOME/code/claudium-parity/shared-local
 log() { echo "$(date -u +%FT%TZ) $*"; }
 
 if [ ! -e "$root/.git" ]; then
@@ -30,18 +30,18 @@ git fetch -q origin
 git checkout -q --detach "$ref"
 if [ ! -d .local ]; then
   mkdir .local
-  for d in minecraft horizon-client tools datagen; do ln -s "$shared/$d" ".local/$d"; done
+  for d in minecraft claudium-client tools datagen; do ln -s "$shared/$d" ".local/$d"; done
 fi
 # shellcheck disable=SC1091
-source "$HOME/code/horizon-parity/env.sh"
+source "$HOME/code/claudium-parity/env.sh"
 
 # --dry-run: what is new is remembered (versions/detect-state.json) only once its port went through, so a port
 # that fails is tried again the next day.
-if [ -n "${HORIZON_PORT_VERSION:-}" ]; then
-  kind=release new=$HORIZON_PORT_VERSION
+if [ -n "${CLAUDIUM_PORT_VERSION:-}" ]; then
+  kind=release new=$CLAUDIUM_PORT_VERSION
 else
   set +e
-  python3 tools/version_port.py detect --dry-run ${HORIZON_PORT_SNAPSHOTS:+--snapshots} > "$root/.local/detect.txt"
+  python3 tools/version_port.py detect --dry-run ${CLAUDIUM_PORT_SNAPSHOTS:+--snapshots} > "$root/.local/detect.txt"
   found=$?
   set -e
   cat "$root/.local/detect.txt"
@@ -54,7 +54,7 @@ else
   new=$(sed -n "s/^New $kind: \([^ ]*\) .*/\1/p" "$root/.local/detect.txt" | head -1)
 fi
 old=$(python3 -c 'import json; print(json.load(open("research-lock.json"))["minecraft"]["version"])')
-log "Minecraft $new ($kind) is out; Horizon pins $old"
+log "Minecraft $new ($kind) is out; Claudium pins $old"
 
 if [ "$kind" = snapshot ]; then
   python3 tools/version_port.py port "$new" --no-regen
@@ -66,12 +66,12 @@ else
   python3 tools/version_port.py report "$old" "$new" --lines 30
   python3 tools/version_port.py publish "$old" "$new" --check-github --show 0
 fi
-[ -n "${HORIZON_PORT_VERSION:-}" ] || python3 tools/version_port.py detect ${HORIZON_PORT_SNAPSHOTS:+--snapshots} > /dev/null || true
-report=${HORIZON_VERSIONS:-$HOME/code/horizon-parity/versions}/diff-$old-$new/report.md
+[ -n "${CLAUDIUM_PORT_VERSION:-}" ] || python3 tools/version_port.py detect ${CLAUDIUM_PORT_SNAPSHOTS:+--snapshots} > /dev/null || true
+report=${CLAUDIUM_VERSIONS:-$HOME/code/claudium-parity/versions}/diff-$old-$new/report.md
 log "Port report: $report"
-if [ -n "${HORIZON_PORT_KIRA_CARD:-}" ]; then
+if [ -n "${CLAUDIUM_PORT_KIRA_CARD:-}" ]; then
   text="Minecraft $new ($kind) is out. Port report ready on the Mac mini ($report); publish's dry run is in the log."
-  node "$HOME/code/horizon-parity/tools/kira.mjs" card_note \
+  node "$HOME/code/claudium-parity/tools/kira.mjs" card_note \
     "$(python3 -c 'import json,sys; print(json.dumps({"ref": "card " + sys.argv[1], "text": sys.argv[2]}))' \
-      "$HORIZON_PORT_KIRA_CARD" "$text")" > /dev/null || true
+      "$CLAUDIUM_PORT_KIRA_CARD" "$text")" > /dev/null || true
 fi

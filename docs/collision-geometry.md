@@ -1,10 +1,10 @@
-# Horizon collision geometry
+# Claudium collision geometry
 
 The version target is Minecraft Java Edition **26.3**. Geometry is a simulation
-foundation; Horizon has a native client for inspecting a controlled block scene.
+foundation; Claudium has a native client for inspecting a controlled block scene.
 Live gameplay and entity simulation remain unfinished.
 
-`horizon-core::geometry` provides `Vec3`, `Aabb`, `Axis`, `Direction`, `BlockHit`,
+`claudium-core::geometry` provides `Vec3`, `Aabb`, `Axis`, `Direction`, `BlockHit`,
 and immutable `VoxelShape` values. Coordinates are doubles. Arithmetic keeps
 vanilla's operation order, signed zero, NaN comparisons, normalization threshold,
 and collision epsilon. It does not enable approximate or fused simulation math.
@@ -95,7 +95,7 @@ budget counts ray steps and iterator candidates, including suppressed duplicates
 Earlier callbacks are not rolled back on an error. Block effects still need
 their own implementations and integration with entity movement.
 
-`horizon-world::collision::CachedCollisionRegistry` imports a private local export
+`claudium-world::collision::CachedCollisionRegistry` imports a private local export
 of vanilla cache data. The export includes DataVersion, all state descriptors,
 deduplicated shapes, coordinate-kind metadata, discrete extrema, and a per-state
 cache index. Import verifies every state ID
@@ -1574,7 +1574,7 @@ startUsingItem and its private equipment packet construction. The
 records **84,873 matching lines per JAR**, including captured stack/level/hand
 arguments, empty stacks, callback mutation/failure ordering, flag writes, native
 UseEffects/KineticWeapon presence and clearing a populated kinetic-enemy map.
-Targeted Clippy passes; all 20 existing horizon-world library tests pass with
+Targeted Clippy passes; all 20 existing claudium-world library tests pass with
 these changes. Synchronized flag storage, packet encoding/delivery, kinetic
 combat and complete inventory/game-tick integration remain pending.
 
@@ -1745,7 +1745,7 @@ The native regressions retain **144,736 lifecycle**, **84,873 start-use** and
 [lifecycle](../benchmarks/rust-shared-item-use-2026-10-07/item-use-lifecycle.json),
 [start](../benchmarks/rust-shared-item-use-2026-10-07/item-use-start.json),
 [eligibility](../benchmarks/rust-shared-item-use-2026-10-07/item-use.json).
-Targeted Clippy and all 20 horizon-world library tests pass. Hand queries and
+Targeted Clippy and all 20 claudium-world library tests pass. Hand queries and
 flags remain controlled in these fixtures; composing them with actual player
 inventory, synchronized flags and full item effects remains pending.
 

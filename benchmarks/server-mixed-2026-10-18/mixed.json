@@ -1,5 +1,5 @@
 {
- "kind": "horizon-server-benchmark",
+ "kind": "claudium-server-benchmark",
  "date": "2026-10-18T17:23:30+00:00",
  "machine": {
   "system": "Linux",
@@ -12,7 +12,7 @@
   "openjdk 25.0.4.1 2026-08-18"
  ],
  "settings": {
-  "servers": "horizon,vanilla",
+  "servers": "claudium,vanilla",
   "bots": "1,10,25,50",
   "behaviour": "mixed",
   "join_every": 1.0,
@@ -25,7 +25,7 @@
   "out": "mixed.json",
   "nice": 19,
   "bots_via": "ssh macmini",
-  "bots_bin": "horizon-bots (on the Mac mini)",
+  "bots_bin": "claudium-bots (on the Mac mini)",
   "connect": "<the ThinkPad's tailnet address>",
   "properties": {
    "level-seed": "12345",
@@ -43,7 +43,7 @@
  },
  "runs": [
   {
-   "server": "horizon",
+   "server": "claudium",
    "bots": 1,
    "behaviour": "mixed",
    "start_seconds": 10.92,
@@ -117,7 +117,7 @@
    "tick_queries": 58
   },
   {
-   "server": "horizon",
+   "server": "claudium",
    "bots": 10,
    "behaviour": "mixed",
    "start_seconds": 10.22,
@@ -199,7 +199,7 @@
    "tick_queries": 58
   },
   {
-   "server": "horizon",
+   "server": "claudium",
    "bots": 25,
    "behaviour": "mixed",
    "start_seconds": 14.73,
@@ -281,7 +281,7 @@
    "tick_queries": 56
   },
   {
-   "server": "horizon",
+   "server": "claudium",
    "bots": 50,
    "behaviour": "mixed",
    "start_seconds": 19.84,
@@ -363,5 +363,5 @@
    "tick_queries": 57
   }
  ],
- "horizon_build": "v2026.10.18.15 release binaries (horizon-client, the engine, at 6c078b28); horizon-server from #898 (4ea2243e, the supervisor only)"
+ "claudium_build": "v2026.10.18.15 release binaries (claudium-client, the engine, at 6c078b28); claudium-server from #898 (4ea2243e, the supervisor only)"
 }

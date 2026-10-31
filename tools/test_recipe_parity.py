@@ -3,7 +3,7 @@
 
 The Java oracle (VanillaRecipeOracle) loads the data pack's recipe registry and
 answers craft/cook/stonecut/smith commands; the Rust example (recipe_fixture)
-answers the same commands from horizon_client::crafting and ::stations.
+answers the same commands from claudium_client::crafting and ::stations.
 Crafting cases are built from every recipe's own ingredients (placed at random
 offsets, mirrored, perturbed) plus focused generators for the special recipes
 (banners, books, fireworks, dyeing, repair, pots, tipped arrows, maps) and
@@ -287,7 +287,7 @@ def main():
     cases += list(smithing_cases(g))
     (work / 'cases.txt').write_text(''.join(c + '\n' for c in cases))
     vanilla.run('VanillaRecipeOracle', work / 'cases.txt', work / 'native.txt')
-    lib.cargo_example('horizon-client', 'recipe_fixture', lib.RESOURCES, work / 'cases.txt', work / 'rust.txt')
+    lib.cargo_example('claudium-client', 'recipe_fixture', lib.RESOURCES, work / 'cases.txt', work / 'rust.txt')
 
     def key(case, native_line):
         kind = case.split('\t')[0]

@@ -1,10 +1,10 @@
-//! The selected instance's server list on Home (`horizon_launcher::server_list`, the game's own
+//! The selected instance's server list on Home (`claudium_launcher::server_list`, the game's own
 //! `servers.dat`): each server with the picture the game last saw, Join (the game starts straight
 //! into it), Remove after a confirmation, and a line to add one. Nothing is put in the list that
 //! the player did not put there.
 use super::*;
+use claudium_launcher::server_list::{self, Server};
 use gpui::{Image, ImageFormat};
-use horizon_launcher::server_list::{self, Server};
 use servers_page::Field;
 use std::path::PathBuf;
 use std::sync::Arc;

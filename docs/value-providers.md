@@ -1,6 +1,6 @@
 # World-generation value providers
 
-Horizon implements the scalar distributions needed by the pinned Java Edition
+Claudium implements the scalar distributions needed by the pinned Java Edition
 **26.3** cave and canyon definitions. `FloatProvider` supports constant, uniform
 and trapezoid distributions. `IntProvider` supports constant, uniform, biased and
 very biased distributions, trapezoids, recursively clamped sources and weighted lists.

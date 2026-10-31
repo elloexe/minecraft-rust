@@ -1,6 +1,6 @@
 {
   "scope": "Assets + BlockFacts + Behaviours loader only; no full startup or first frame",
-  "resources": "/srv/bob-data/horizon/.local/horizon-client/26.3",
+  "resources": "/srv/bob-data/claudium/.local/claudium-client/26.3",
   "repeats": 10,
   "ordering": [
     [
@@ -56,12 +56,12 @@
   ],
   "executables": {
     "released": {
-      "path": "/srv/bob-data/horizon/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-integrated",
+      "path": "/srv/bob-data/claudium/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-integrated",
       "mode": "deferred",
       "sha256": "a52d6a7efc7b3198ef0dd8150325f56a3fe5d0c5883fd6d14c4b0c281866ce7c"
     },
     "retained": {
-      "path": "/srv/bob-data/horizon/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-integrated",
+      "path": "/srv/bob-data/claudium/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-integrated",
       "mode": "deferred-held",
       "sha256": "a52d6a7efc7b3198ef0dd8150325f56a3fe5d0c5883fd6d14c4b0c281866ce7c"
     }

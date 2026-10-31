@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Players in different dimensions on a dedicated server, against vanilla's, seen by vanilla clients.
 
-A vanilla dedicated server and Horizon's (`horizon-client --dedicated --nogui`) each serve a copy of one flat
+A vanilla dedicated server and Claudium's (`claudium-client --dedicated --nogui`) each serve a copy of one flat
 world vanilla generated first, with Alice and Bob as operators in creative. LocatorBarClient joins them both
 (players made of vanilla's protocol code) and records, step by step, the other players each is sent and loses
 (ClientboundAddEntityPacket, ClientboundRemoveEntitiesPacket) and the dimensions it respawns into
@@ -123,40 +123,40 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     report = build / 'report.json'
     report.unlink(missing_ok=True)
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/LocatorBarClient.java'
+    oracle = lab.ROOT / 'mods/claudium/src/test/java/dev/claudiumlab/parity/LocatorBarClient.java'
     classes = build / 'classes'
     shutil.rmtree(classes, ignore_errors=True)
     classes.mkdir()
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
     subprocess.run(['javac', '--release', str(lock['minecraft']['java_major']), '-proc:none', '-nowarn', '-sourcepath',
-                    lab.ROOT / 'mods/horizon/src/test/java', '-cp', dependencies, '-d', classes, oracle],
+                    lab.ROOT / 'mods/claudium/src/test/java', '-cp', dependencies, '-d', classes, oracle],
                    cwd=lab.ROOT, check=True, capture_output=True)
-    subprocess.run(['cargo', 'build', '--profile', 'fast', '-p', 'horizon-client', '--bin', 'horizon-client'], cwd=lab.ROOT,
+    subprocess.run(['cargo', 'build', '--profile', 'fast', '-p', 'claudium-client', '--bin', 'claudium-client'], cwd=lab.ROOT,
                    check=True, capture_output=True)
     import json
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'],
                                                   cwd=lab.ROOT, text=True))
-    binary = Path(metadata['target_directory']) / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    binary = Path(metadata['target_directory']) / 'fast' / ('claudium-client.exe' if os.name == 'nt' else 'claudium-client')
     vanilla_server = ['java', '-Xmx2g', '-Duser.timezone=UTC', '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon_server = [binary, '--resources', lab.LOCAL / 'horizon-client/26.3', '--dedicated', '--nogui']
-    client = ['java', '-Xmx1g', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.LocatorBarClient']
+    claudium_server = [binary, '--resources', lab.LOCAL / 'claudium-client/26.3', '--dedicated', '--nogui']
+    client = ['java', '-Xmx1g', '-cp', str(classes) + os.pathsep + dependencies, 'dev.claudiumlab.parity.LocatorBarClient']
 
     world = generate_world(vanilla_server, build)
     vanilla_all = run_side('vanilla', vanilla_server, client, build, world)
-    horizon_all = run_side('horizon', horizon_server, client, build, world)
-    errors = [l for l in vanilla_all + horizon_all if ' error ' in f' {l} ' or 'disconnected' in l]
-    vanilla, horizon = shown(vanilla_all), shown(horizon_all)
-    if errors or vanilla != horizon:
+    claudium_all = run_side('claudium', claudium_server, client, build, world)
+    errors = [l for l in vanilla_all + claudium_all if ' error ' in f' {l} ' or 'disconnected' in l]
+    vanilla, claudium = shown(vanilla_all), shown(claudium_all)
+    if errors or vanilla != claudium:
         import difflib
-        diff = '\n'.join(difflib.unified_diff(vanilla, horizon, 'vanilla', 'horizon', n=1, lineterm=''))
-        raise AssertionError(f'{len(errors)} errors, transcripts differ (see {build}/vanilla.txt and horizon.txt):\n'
+        diff = '\n'.join(difflib.unified_diff(vanilla, claudium, 'vanilla', 'claudium', n=1, lineterm=''))
+        raise AssertionError(f'{len(errors)} errors, transcripts differ (see {build}/vanilla.txt and claudium.txt):\n'
                              + '\n'.join(errors[:10]) + '\n' + diff[:6000])
     if sum(' respawn ' in l for l in vanilla) < 6:
         raise AssertionError(f'vanilla sent too few respawns: the script did not run (see {build})')
     lab.write_json(report, dict(
         schema=1, minecraft=lock['minecraft']['version'], platform=platform.platform(),
         java=subprocess.check_output(['java', '--version'], text=True).splitlines()[0],
-        lines=len(vanilla), output_sha256=lab.digest(build / 'horizon.txt', 'sha256'),
+        lines=len(vanilla), output_sha256=lab.digest(build / 'claudium.txt', 'sha256'),
         scope='Two players on a dedicated server changing dimensions (Nether, End, back): the other players each '
               'is sent and loses, the dimensions it respawns into and its locator bar waypoints.'))
     print(f'server dimension players: {len(vanilla)} lines identical')

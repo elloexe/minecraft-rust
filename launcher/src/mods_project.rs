@@ -1,4 +1,4 @@
-//! The Mods page's project page, search filters and project icons (`horizon_launcher::browser`:
+//! The Mods page's project page, search filters and project icons (`claudium_launcher::browser`:
 //! `details` for the data, `images` for the icons and gallery). Drawn only with the launcher's
 //! shared components, so a restyle of those restyles this.
 //!
@@ -11,12 +11,12 @@
 //!   a placeholder stands in until one arrives.
 use super::mods_page::{Checking, Event};
 use super::*;
-use gpui::img;
-use horizon_launcher::browser::{
+use claudium_launcher::browser::{
     self,
     details::{Details, Environment, Filters, Sort, Tags},
     images, java, Kind as PackKind, Project, SourceId, Support, Version,
 };
+use gpui::img;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -42,14 +42,14 @@ pub(super) struct Opened {
     details: Option<Result<Arc<Details>, String>>,
     versions: Option<Result<Arc<[ProjectVersion]>, String>>,
     version_list: cull::Cull,
-    checked_versions: HashMap<String, horizon_port_pack::check::Verdict>,
+    checked_versions: HashMap<String, claudium_port_pack::check::Verdict>,
 }
 
 /// Cached verdicts are read with the version request, never while drawing a frame.
 #[derive(Clone)]
 pub(super) struct ProjectVersion {
     version: Version,
-    verdict: Option<horizon_port_pack::check::Verdict>,
+    verdict: Option<claudium_port_pack::check::Verdict>,
 }
 
 /// The project page, filters and images' share of the Mods page's state.
@@ -72,7 +72,7 @@ pub(super) enum Loaded {
     Checked(
         (SourceId, String),
         String,
-        horizon_port_pack::check::Verdict,
+        claudium_port_pack::check::Verdict,
     ),
     Image((String, u32), Option<PathBuf>),
     Tags((SourceId, PackKind), Result<Tags, String>),
@@ -487,8 +487,8 @@ impl Launcher {
             .child(div().flex().child(back))
             .child(head);
         // Registry projects are rated on the site, signed in with GitHub (one rating per account).
-        if p.source == SourceId::Horizon {
-            let url = browser::horizon::rate_url(&p.id);
+        if p.source == SourceId::Claudium {
+            let url = browser::claudium::rate_url(&p.id);
             page = page.child(
                 div()
                     .flex()

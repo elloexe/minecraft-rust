@@ -1,6 +1,6 @@
 {
   "scope": "Isolated gameplay-facts.json validation/typed decoding; includes JSON file read",
-  "resources": "/srv/bob-data/horizon/.local/horizon-client/26.3",
+  "resources": "/srv/bob-data/claudium/.local/claudium-client/26.3",
   "repeats": 10,
   "load_averages_before_after": [
     [

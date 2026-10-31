@@ -1,15 +1,15 @@
 //! The mod browser's sources: search Modrinth (CurseForge support is coming soon) for what
-//! Horizon loads, say how well each result runs, and download a file only after its checksum
+//! Claudium loads, say how well each result runs, and download a file only after its checksum
 //! matches (docs/mod-browser.md).
 //!
-//! Offered: Java mods (Fabric, NeoForge, Forge), whose content Horizon ports and whose jar is
+//! Offered: Java mods (Fabric, NeoForge, Forge), whose content Claudium ports and whose jar is
 //! checked before install ([`java`]), modpacks (imported and ported), resource packs
 //! (`resourcepacks/`) and data packs (into a world, [`installed::install_datapack`]). Java code
-//! itself doesn't run in Horizon (docs/mods.md).
+//! itself doesn't run in Claudium (docs/mods.md).
+pub mod claudium;
 pub mod curseforge;
 pub mod details;
 pub mod download;
-pub mod horizon;
 pub mod images;
 pub mod installed;
 pub mod java;
@@ -18,11 +18,11 @@ pub mod modrinth;
 
 use serde::{Deserialize, Serialize};
 
-/// The Minecraft version Horizon plays. A version port updates it with the other `"26.3"` sites
+/// The Minecraft version Claudium plays. A version port updates it with the other `"26.3"` sites
 /// (docs/version-ports.md).
 pub const GAME: &str = "26.3";
 
-/// What a project is, as far as Horizon is concerned.
+/// What a project is, as far as Claudium is concerned.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Kind {
@@ -30,7 +30,7 @@ pub enum Kind {
     Modpack,
     /// A Java mod: its content is ported ([`java`]).
     Mod,
-    /// One of Horizon's own shader packs (`.hshader`, docs/shaders.md), from Horizon's registry
+    /// One of Claudium's own shader packs (`.hshader`, docs/shaders.md), from Claudium's registry
     /// only.
     Shader,
     /// A data pack: it goes into one world's `datapacks/` (`crate::datapacks`).
@@ -73,8 +73,8 @@ impl Kind {
 pub enum SourceId {
     Modrinth,
     CurseForge,
-    /// Horizon's own registry of reviewed mods, modpacks and resource packs ([`horizon`]).
-    Horizon,
+    /// Claudium's own registry of reviewed mods, modpacks and resource packs ([`claudium`]).
+    Claudium,
 }
 
 impl SourceId {
@@ -82,19 +82,19 @@ impl SourceId {
         match self {
             SourceId::Modrinth => "Modrinth",
             SourceId::CurseForge => "CurseForge",
-            SourceId::Horizon => "Claudium",
+            SourceId::Claudium => "Claudium",
         }
     }
 }
 
-/// How well a project runs in Horizon.
+/// How well a project runs in Claudium.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Support {
-    /// Made for the version Horizon plays, and Horizon reads everything it uses.
+    /// Made for the version Claudium plays, and Claudium reads everything it uses.
     Works,
     /// It loads, with the limit said.
     Partial(String),
-    /// It can't run in Horizon: never offered for install.
+    /// It can't run in Claudium: never offered for install.
     No(String),
 }
 
@@ -165,7 +165,7 @@ pub struct FileRef {
     pub name: String,
     pub size: u64,
     pub sha512: Option<String>,
-    /// What Horizon's registry lists.
+    /// What Claudium's registry lists.
     pub sha256: Option<String>,
     pub sha1: Option<String>,
     pub primary: bool,
@@ -266,15 +266,15 @@ pub trait Source: Send + Sync {
 
 /// What the launcher says wherever CurseForge would be.
 pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
-/// What another source answers for shader packs: Horizon's own are on its registry only.
-pub const SHADERS_ON_HORIZON: &str =
+/// What another source answers for shader packs: Claudium's own are on its registry only.
+pub const SHADERS_ON_CLAUDIUM: &str =
     "Claudium's shader packs are on Claudium's registry: pick Claudium.";
 
-/// The sources this launcher uses: Modrinth and Horizon's registry. CurseForge support is coming
+/// The sources this launcher uses: Modrinth and Claudium's registry. CurseForge support is coming
 /// soon: its API needs a paid key, so no search or install goes to it; `curseforge` is kept for
 /// then.
 pub fn sources() -> Vec<Box<dyn Source>> {
-    vec![Box::new(modrinth::Modrinth), Box::new(horizon::Registry)]
+    vec![Box::new(modrinth::Modrinth), Box::new(claudium::Registry)]
 }
 
 /// The source of that id, when this launcher can use it.
@@ -282,10 +282,10 @@ pub fn source(id: SourceId) -> Option<Box<dyn Source>> {
     sources().into_iter().find(|s| s.id() == id)
 }
 
-/// How well a project of `kind` made for `game_versions` and `loaders` runs in Horizon.
+/// How well a project of `kind` made for `game_versions` and `loaders` runs in Claudium.
 pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Support {
-    if loaders.iter().any(|l| l == horizon::LOADER) {
-        // Made for Horizon and reviewed: it runs when it is for the version Horizon plays.
+    if loaders.iter().any(|l| l == claudium::LOADER) {
+        // Made for Claudium and reviewed: it runs when it is for the version Claudium plays.
         return match newest_release(game_versions)
             .filter(|_| !game_versions.iter().any(|v| v == GAME))
         {
@@ -376,7 +376,7 @@ pub fn pick(kind: Kind, versions: &[Version], everything: bool) -> Option<&Versi
         .filter(|v| v.blocked.is_none() && v.file().is_some());
     if versions
         .iter()
-        .any(|v| v.loaders.iter().any(|l| l == horizon::LOADER))
+        .any(|v| v.loaders.iter().any(|l| l == claudium::LOADER))
     {
         return usable.find(|v| v.game_versions.iter().any(|g| g == GAME));
     }

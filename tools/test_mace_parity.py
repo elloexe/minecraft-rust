@@ -17,10 +17,10 @@ thinned by Breach in `CombatRules.getDamageAfterAbsorb`), then
 stopped fall, the waived fall damage, the smash sounds, the dust-pillar level
 event and the knockback around the target), the post-attack enchantments
 (Wind Burst's `ExplodeEffect` on the player) and `postHurtEnemy` (the fall
-reset and the weapon's wear with Unbreaking). Horizon runs the same steps
+reset and the weapon's wear with Unbreaking). Claudium runs the same steps
 through the helpers `Game::attack` uses (`smash_damage_bonus`,
 `hurt_by_player`, `weapon_hit`) in a headless game
-(`HORIZON_DISPENSE_FIXTURE`). Both print every target's health and
+(`CLAUDIUM_DISPENSE_FIXTURE`). Both print every target's health and
 velocity, the player's velocity, fall distance, impulse impact and grace
 time and its landing-particle flag, sounds, level and game events, the used
 statistic, the held stack and the level random afterwards.
@@ -154,7 +154,7 @@ def main():
         args.count = 3000
     lock, jars, libraries = base.verify_artifacts()
     facts = h.load_facts()
-    resources = lab.LOCAL / 'horizon-client' / lock['minecraft']['version']
+    resources = lab.LOCAL / 'claudium-client' / lock['minecraft']['version']
     work = lab.LOCAL / 'mace-parity'
     work.mkdir(parents=True, exist_ok=True)
     all_cases = list(cases(facts, args.count, args.seed))
@@ -162,15 +162,15 @@ def main():
     classes = work / 'classes'
     classes.mkdir(exist_ok=True)
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
-    java_root = lab.ROOT / 'mods/horizon/src/test/java'
+    java_root = lab.ROOT / 'mods/claudium/src/test/java'
     d.run(['javac', '--release', str(lock['minecraft']['java_major']), '-proc:none', '-sourcepath', str(java_root), '-nowarn',
-           '-cp', dependencies, '-d', str(classes), str(java_root / 'dev/horizonlab/parity/VanillaDispenserOracle.java')])
-    d.run(['java', '-Xmx3G', '-cp', str(classes) + os.pathsep + dependencies, 'dev.horizonlab.parity.VanillaDispenserOracle',
+           '-cp', dependencies, '-d', str(classes), str(java_root / 'dev/claudiumlab/parity/VanillaDispenserOracle.java')])
+    d.run(['java', '-Xmx3G', '-cp', str(classes) + os.pathsep + dependencies, 'dev.claudiumlab.parity.VanillaDispenserOracle',
            str(resources), str(work / 'cases.jsonl'), str(work / 'native.txt')])
-    d.run(['cargo', 'build', '-q', '--profile', 'fast', '-p', 'horizon-client', '--bin', 'horizon-client'], cwd=lab.ROOT,
+    d.run(['cargo', 'build', '-q', '--profile', 'fast', '-p', 'claudium-client', '--bin', 'claudium-client'], cwd=lab.ROOT,
           env={**os.environ, 'CARGO_BUILD_JOBS': os.environ.get('CARGO_BUILD_JOBS', '3')})
-    d.run([str(lab.cargo_target() / 'fast/horizon-client'), '--resources', str(resources)], cwd=work,
-          env=lab.game_env(HORIZON_DISPENSE_FIXTURE=f'{work / "cases.jsonl"},{work / "rust.txt"}'))
+    d.run([str(lab.cargo_target() / 'fast/claudium-client'), '--resources', str(resources)], cwd=work,
+          env=lab.game_env(CLAUDIUM_DISPENSE_FIXTURE=f'{work / "cases.jsonl"},{work / "rust.txt"}'))
     ignore = tuple(prefix + ' ' for prefix in args.ignore.split(',') if prefix) + ('D ',)
     native = h.split_cases((work / 'native.txt').read_text(), ignore)
     rust = h.split_cases((work / 'rust.txt').read_text(), ignore)

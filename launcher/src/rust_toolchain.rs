@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// The Rust release native mods build with: the stable release when it was pinned (CI builds the
-/// game on stable; horizon-mixins needs 1.95 or newer).
+/// game on stable; claudium-mixins needs 1.95 or newer).
 pub const VERSION: &str = "1.99.1";
 const DIST: &str = "https://static.rust-lang.org/dist/2026-10-15";
 
@@ -187,7 +187,7 @@ pub fn root() -> PathBuf {
     backend::data_dir().join("rust")
 }
 
-/// The Cargo home of native builds (downloaded crates, horizon-mixins), never the player's own.
+/// The Cargo home of native builds (downloaded crates, claudium-mixins), never the player's own.
 pub fn cargo_home() -> PathBuf {
     backend::data_dir().join("cargo")
 }
@@ -436,7 +436,7 @@ mod tests {
 
     #[test]
     fn a_component_archive_unpacks_as_its_installer_would() {
-        let dir = std::env::temp_dir().join(format!("horizon-rust-unpack-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("elloexe-unpack-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let archive = dir.join("cargo.tar.gz");
@@ -530,7 +530,8 @@ mod tests {
 
     #[test]
     fn a_mingw_zip_unpacks_its_programs_and_not_its_documentation() {
-        let dir = std::env::temp_dir().join(format!("horizon-mingw-unpack-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("claudium-mingw-unpack-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let archive = dir.join("mingw.zip");
@@ -558,7 +559,7 @@ mod tests {
 
     #[test]
     fn the_command_puts_mingw_after_rust_when_the_toolchain_has_it() {
-        let dir = std::env::temp_dir().join(format!("horizon-mingw-path-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("claudium-mingw-path-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let toolchain = Toolchain { dir: dir.clone() };
         fs::create_dir_all(toolchain.mingw_bin()).unwrap();

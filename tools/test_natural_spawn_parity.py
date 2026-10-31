@@ -5,7 +5,7 @@ Java (VanillaNaturalSpawnOracle) runs vanilla's NaturalSpawner on a stand-in
 ServerLevel built from each case: boxes of blocks, light and biomes, structure
 starts with their pieces, existing mobs, players, the world spawn point and
 unloaded chunks. Rust (natural_spawn_fixture) runs
-horizon_client::mobs::spawn_selection on the same world. Three modes:
+claudium_client::mobs::spawn_selection on the same world. Three modes:
 
 - chunk: createState over the case's mobs (category counts, spawn potential
   charges, local caps), getFilteredSpawningCategories under the global caps,
@@ -549,11 +549,11 @@ def main():
         lab.prepare()
     lock, jars, libraries = base.verify_artifacts()
     resources = lab.RESOURCES
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaNaturalSpawnOracle.java'
-    sources = [oracle, Path(__file__), lab.ROOT / 'crates/horizon-client/examples/probe/natural_spawn_fixture.rs',
-               lab.ROOT / 'crates/horizon-client/src/mobs/spawn_selection.rs',
-               lab.ROOT / 'crates/horizon-client-render/src/biome.rs',
-               lab.ROOT / 'crates/horizon-client/src/mobs/spawn_rules.rs']
+    oracle = lab.ROOT / 'mods/claudium/src/test/java/dev/claudiumlab/parity/VanillaNaturalSpawnOracle.java'
+    sources = [oracle, Path(__file__), lab.ROOT / 'crates/claudium-client/examples/probe/natural_spawn_fixture.rs',
+               lab.ROOT / 'crates/claudium-client/src/mobs/spawn_selection.rs',
+               lab.ROOT / 'crates/claudium-client-render/src/biome.rs',
+               lab.ROOT / 'crates/claudium-client/src/mobs/spawn_rules.rs']
     tested = base.source_hashes(sources)
     inputs = build / 'inputs.txt'
     cases = corpus()
@@ -565,11 +565,11 @@ def main():
     def run(command, name):
         with (build / (name + '.log')).open('w', encoding='utf-8') as log:
             base.run(list(map(str, command)), stdout=log, stderr=subprocess.STDOUT)
-    run(['javac', '--release', lock['minecraft']['java_major'], '-proc:none', '-sourcepath', str(lab.ROOT / 'mods/horizon/src/test/java'),
+    run(['javac', '--release', lock['minecraft']['java_major'], '-proc:none', '-sourcepath', str(lab.ROOT / 'mods/claudium/src/test/java'),
          '-cp', str(jars['server']) + os.pathsep + deps, '-d', classes, oracle], 'compile-java')
     run(['java', '-Xmx3G', '-cp', os.pathsep.join([str(classes), str(jars['server']), deps]),
-         'dev.horizonlab.parity.VanillaNaturalSpawnOracle', inputs, build / 'server.txt'], 'server')
-    run(['cargo', 'build', '--profile', 'fast', '-p', 'horizon-client', '--example', 'client_probe'], 'compile-rust')
+         'dev.claudiumlab.parity.VanillaNaturalSpawnOracle', inputs, build / 'server.txt'], 'server')
+    run(['cargo', 'build', '--profile', 'fast', '-p', 'claudium-client', '--example', 'client_probe'], 'compile-rust')
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'], cwd=lab.ROOT, text=True))
     binary = Path(metadata['target_directory']) / 'fast/examples/client_probe'
     run([binary, 'natural_spawn_fixture', resources, inputs, build / 'rust.txt'], 'rust')

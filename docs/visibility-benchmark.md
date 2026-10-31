@@ -1,6 +1,6 @@
 # Section visibility shortcuts
 
-The helper in `crates/horizon-client-render/src/mesher.rs` returns the same 36 face-pair bits
+The helper in `crates/claudium-client-render/src/mesher.rs` returns the same 36 face-pair bits
 as the original flood fill. It initializes its visited map with opaque cells,
 resolving state opacity once per cell, and returns directly for fully open or
 fully closed sections. During traversal, touching all six faces ends the fill;
@@ -18,9 +18,9 @@ From the repository root:
 
 ```sh
 export CARGO_INCREMENTAL=0
-export CARGO_TARGET_DIR=/home/bob/Documents/horizon/target
-cargo test -p horizon-client --lib --profile fast mesher::visibility_tests
-cargo test -p horizon-client --lib --profile fast mesher::visibility_tests::visibility_benchmark -- --ignored --exact --nocapture --test-threads=1
+export CARGO_TARGET_DIR=/home/bob/Documents/claudium/target
+cargo test -p claudium-client --lib --profile fast mesher::visibility_tests
+cargo test -p claudium-client --lib --profile fast mesher::visibility_tests::visibility_benchmark -- --ignored --exact --nocapture --test-threads=1
 ```
 
 The ignored test calls the actual production helper with `Padded` sections and
@@ -73,5 +73,5 @@ reported because real-world section frequencies were unavailable.
 
 Validation passed: the two focused correctness tests, the opt-in benchmark
 (with output equality assertions), `cargo fmt --all -- --check`, and
-`cargo clippy -p horizon-client --lib --tests --profile fast -- -D warnings`.
+`cargo clippy -p claudium-client --lib --tests --profile fast -- -D warnings`.
 The full parity suite and workspace-wide Clippy were not run.

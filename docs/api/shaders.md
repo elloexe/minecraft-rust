@@ -1,19 +1,19 @@
 # Shader API
 
-Horizon has no shader packs today: the earlier implementation was removed on 2026-10-24. Two things will replace it,
-designed separately: a **Horizon shader API**, described here, and a clean-room loader for the existing pack format
+Claudium has no shader packs today: the earlier implementation was removed on 2026-10-24. Two things will replace it,
+designed separately: a **Claudium shader API**, described here, and a clean-room loader for the existing pack format
 (its own spec; it is not part of this API). Both sit on the same renderer hooks, agreed between the two.
 
 ## Overview: what a shader author will be able to do
 
-Write WGSL against documented stages of Horizon's renderer, with typed inputs, options the player can change, a
+Write WGSL against documented stages of Claudium's renderer, with typed inputs, options the player can change, a
 reload as soon as a file is saved and an overlay that shows what each pass costs and draws. The renderer keeps
 everything that makes it fast (culling, batching, LOD, the mesher); a pack changes how surfaces and light look, not
 how the world is fed to the GPU.
 
 ## The design
 
-- **A pack** is a folder or a zip with `horizon-shaders.toml` (id, name, version, the `api` line, the stages it
+- **A pack** is a folder or a zip with `claudium-shaders.toml` (id, name, version, the `api` line, the stages it
   uses, its options) and WGSL files. No preprocessor and no other shading language: WGSL is what wgpu validates and
   compiles for Vulkan, Metal and DirectX 12.
 - **Stages, not pipelines.** A stage is a function with a fixed signature that the renderer calls inside its own pass,
@@ -36,9 +36,9 @@ how the world is fed to the GPU.
 
 ## The pack format (schema 1)
 
-A pack is a folder, or the same files zipped as a `.hshader`, with `horizon-shaders.toml` at its root
-(crate `horizon-shader-api`; the sample with every key is
-`crates/horizon-shader-api/tests/samples/schema-1/`):
+A pack is a folder, or the same files zipped as a `.hshader`, with `claudium-shaders.toml` at its root
+(crate `claudium-shader-api`; the sample with every key is
+`crates/claudium-shader-api/tests/samples/schema-1/`):
 
 ```toml
 schema = 1                 # the manifest's format; a reader refuses schemas newer than it knows
@@ -80,9 +80,9 @@ the same way every time (files in path order, fixed dates), so a pack's SHA-256 
 ## Guide, reference and examples
 
 - [shaders-reference.md](shaders-reference.md): every stage's signature, input and output structs, resources and
-  helpers, the frame's fields with their units, option types and limits, generated from `crates/horizon-shader-api`.
-- [The guide](../shaders.md): making a pack with `horizon-shader new`, `check` and `pack`; the templates and the
-  example pack (`crates/horizon-shader-api/packs/golden_hour`).
+  helpers, the frame's fields with their units, option types and limits, generated from `crates/claudium-shader-api`.
+- [The guide](../shaders.md): making a pack with `claudium-shader new`, `check` and `pack`; the templates and the
+  example pack (`crates/claudium-shader-api/packs/golden_hour`).
 
 ## Stability
 
@@ -98,9 +98,9 @@ stages.
 
 - 2026-10-26: the material stage in the game: terrain's surfaces through the pack's `material`.
 - 2026-10-26: the sky stage in the game: the pack's `sky` gets vanilla's colour along each ray.
-- 2026-10-26: the post stage in the game (`HORIZON_SHADER_PACK`, hot reload with the last good pack kept).
-- 2026-10-25: `horizon-shader` (`new`, `check`, `pack`), three templates, the example pack and the guide.
+- 2026-10-26: the post stage in the game (`CLAUDIUM_SHADER_PACK`, hot reload with the last good pack kept).
+- 2026-10-25: `claudium-shader` (`new`, `check`, `pack`), three templates, the example pack and the guide.
 - 2026-10-25: the check (naga validation, signatures, options, budgets, SPIR-V/Metal/HLSL translation).
 - 2026-10-25: the stages of API 0.1 (sky, material, post), their inputs and the generated reference.
-- 2026-10-25: the pack format, schema 1: `horizon-shaders.toml` and the `.hshader` package.
+- 2026-10-25: the pack format, schema 1: `claudium-shaders.toml` and the `.hshader` package.
 - 2026-10-24: the earlier shader pack code was removed; this API is designed from scratch.

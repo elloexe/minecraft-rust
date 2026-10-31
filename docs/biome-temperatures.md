@@ -1,6 +1,6 @@
 # Biome temperatures
 
-Horizon implements Java Edition **26.3** biome temperature sampling, including the
+Claudium implements Java Edition **26.3** biome temperature sampling, including the
 frozen modifier, height adjustment, rain/snow thresholds, precipitation selection
 and the small frozen-ocean iceberg melt predicate. The fixed seeded simplex and
 noise-stack sources use the existing Rust noise implementation.

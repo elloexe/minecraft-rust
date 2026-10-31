@@ -1,7 +1,7 @@
 # A server's levels: one per dimension
 
 Vanilla's `MinecraftServer` holds a `ServerLevel` per dimension, and each player is in one of them.
-Horizon's server does the same. That covers the dedicated server and single player's server thread
+Claudium's server does the same. That covers the dedicated server and single player's server thread
 (`Game::serving`, the default since #1114). So a LAN world's host and each guest can be in different
 dimensions at the same time.
 
@@ -12,7 +12,7 @@ and save, block ticks, entities, block entities and their per-level queues). `ga
 the other dimensions' levels as `Parked` values and swaps one into place (`enter_level`). The swap is
 `mem::swap` of each per-level field, so the tick code runs unchanged, one level at a time.
 
-| Vanilla | Horizon |
+| Vanilla | Claudium |
 | --- | --- |
 | `MinecraftServer.levels` | the level in place plus `Levels::parked` |
 | `MinecraftServer.tickChildren`, every level | `tick_server`: each level with a player in it, in Overworld, Nether, End order. The first pass reads the network and runs the shared parts (clock, weather, functions, autosave). |
@@ -26,7 +26,7 @@ the other dimensions' levels as `Parked` values and swaps one into place (`enter
 The packets of a guest are read in its own level's pass (`Hub::tick_level`), so its actions and
 commands run with its level in place.
 
-The window's own game (`--in-frame`, `--no-server-thread`, `HORIZON_SERVER_THREAD=0`, and the command
+The window's own game (`--in-frame`, `--no-server-thread`, `CLAUDIUM_SERVER_THREAD=0`, and the command
 harness) keeps one level, which follows its player (`enter_dimension`). LAN guests of a world run that way
 stay in the host's dimension. **That mode is deprecated: never use it, it will be removed soon.** It gets no
 multi-level work and no compatibility.
@@ -42,7 +42,7 @@ Connecting or disconnecting changes `remote`, independently of the execution rol
 The server thread has a hub without a host player. The window joins it through memory as one
 more player. It still sets `options.dedicated` for gameplay checks outside the role migration's
 startup/world-loading scope. Everything above serves both servers, and `server_dimension_players`
-(vanilla clients on Horizon's dedicated server) and `lan_e2e --server-thread` (Horizon clients on the
+(vanilla clients on Claudium's dedicated server) and `lan_e2e --server-thread` (Claudium clients on the
 server thread) check it from the two sides.
 
 ## Cost of an extra level

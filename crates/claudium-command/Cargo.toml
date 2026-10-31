@@ -1,0 +1,15 @@
+[package]
+name = "claudium-command"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version = "1.90"
+description = "Commands (Brigadier): the vanilla command tree, argument types, selectors, parsing, suggestions and the network form of the tree"
+
+[dependencies]
+claudium-client-core = { path = "../claudium-client-core" }
+claudium-protocol = { path = "../claudium-protocol" }
+claudium-world = { path = "../claudium-world" }
+
+[lints]
+workspace = true

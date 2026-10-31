@@ -1,6 +1,6 @@
 //! Where the player's own Minecraft files are: the folder they chose, the official launcher's,
 //! or another launcher's (Prism Launcher, MultiMC, Modrinth App, ATLauncher, GDLauncher), #434.
-//! horizon-prepare reads the official launcher's layout and pins the version JSON's own sha1, so
+//! claudium-prepare reads the official launcher's layout and pins the version JSON's own sha1, so
 //! files found elsewhere are linked into that layout in the launcher's data folder, with the
 //! pinned version JSON from Mojang when the other launcher keeps its own rewrite of it.
 
@@ -55,12 +55,12 @@ pub struct Found {
     pub base: PathBuf,
     /// The client jar, checked against the pin.
     pub client: PathBuf,
-    /// The launcher's version JSON when it is one Horizon pins.
+    /// The launcher's version JSON when it is one Claudium pins.
     pub manifest: Option<PathBuf>,
 }
 
 impl Found {
-    /// Whether `base` is in the official launcher's layout, so horizon-prepare reads it as is.
+    /// Whether `base` is in the official launcher's layout, so claudium-prepare reads it as is.
     fn official_layout(&self, version: &str) -> bool {
         let dir = self.base.join("versions").join(version);
         self.client == dir.join(format!("{version}.jar"))
@@ -246,7 +246,7 @@ fn instance_root(dir: &Path) -> Option<PathBuf> {
         .map(Path::to_path_buf)
 }
 
-/// The launcher whose tree `path` is inside, when its folder name is one Horizon knows, so the
+/// The launcher whose tree `path` is inside, when its folder name is one Claudium knows, so the
 /// not-found message can name it (#693).
 fn launcher_of(path: &Path) -> Option<&'static str> {
     path.ancestors()
@@ -304,7 +304,7 @@ pub fn find(dir: &Path, pins: &Pins) -> Result<Found, String> {
 
 /// The error when no folder has the pinned version: every folder looked in with what it
 /// lacks, and what the player can do about it (#419, #693). When the chosen folder is inside a
-/// launcher Horizon knows, the advice names it: a Prism or MultiMC instance downloads the game
+/// launcher Claudium knows, the advice names it: a Prism or MultiMC instance downloads the game
 /// only when it is launched once.
 pub fn not_found(version: &str, checked: &[(PathBuf, String)], chosen: &Path) -> String {
     let mut text = format!("Minecraft {version} was not found. Claudium looked in:");

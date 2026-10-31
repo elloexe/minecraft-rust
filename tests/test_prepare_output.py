@@ -17,7 +17,7 @@ class PrepareOutputTests(unittest.TestCase):
     def test_what_varies_between_runs_does_not_count(self):
         manifest = {'schema': 7, 'data_version': 5023, 'render_files_sha256': {'a.json': 'x'}}
         a = {
-            'horizon-resources.json': json.dumps(manifest).encode(),
+            'claudium-resources.json': json.dumps(manifest).encode(),
             'render-definitions.json': b'{"a": 1, "b": [1, 2]}',
             'creative-inventory.json': b'{"tags": [["b", "a"]]}',
             'block-behaviours.json': b'{"c": "Foo$$Lambda/0x0000012a"}',
@@ -26,7 +26,7 @@ class PrepareOutputTests(unittest.TestCase):
         }
         manifest['render_files_sha256'] = {'a.json': 'y'}
         b = {
-            'horizon-resources.json': json.dumps(manifest).encode(),
+            'claudium-resources.json': json.dumps(manifest).encode(),
             'render-definitions.json': b'{"b": [1, 2], "a": 1}',
             'creative-inventory.json': b'{"tags": [["a", "b"]]}',
             'block-behaviours.json': b'{"c": "Foo$$Lambda/0x00000ff0"}',
@@ -41,9 +41,9 @@ class PrepareOutputTests(unittest.TestCase):
             (Path(tmp) / 'b/render-definitions.json').write_bytes(b'{"b": [2, 1], "a": 1}')
             self.assertNotEqual(first, prepare_output.digest(Path(tmp) / 'b'))
             (Path(tmp) / 'b/render-definitions.json').write_bytes(b'{"b": [1, 2], "a": 1}')
-            (Path(tmp) / 'b/horizon-resources.json').write_text(json.dumps({**manifest, 'schema': 8}))
+            (Path(tmp) / 'b/claudium-resources.json').write_text(json.dumps({**manifest, 'schema': 8}))
             self.assertNotEqual(first, prepare_output.digest(Path(tmp) / 'b'))
-            (Path(tmp) / 'b/horizon-resources.json').write_text(json.dumps(manifest))
+            (Path(tmp) / 'b/claudium-resources.json').write_text(json.dumps(manifest))
             (Path(tmp) / 'b/new.nbt').write_bytes(b'')
             self.assertNotEqual(first, prepare_output.digest(Path(tmp) / 'b'))
 

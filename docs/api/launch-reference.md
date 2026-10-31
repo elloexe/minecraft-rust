@@ -1,7 +1,7 @@
-<!-- Generated from crates/horizon-client/src/game/launch_api.rs; a test fails when this file is out of date. Update it with: HORIZON_WRITE_DOCS=1 cargo test -p horizon-client --bin horizon-client launch_api -->
+<!-- Generated from crates/claudium-client/src/game/launch_api.rs; a test fails when this file is out of date. Update it with: CLAUDIUM_WRITE_DOCS=1 cargo test -p claudium-client --bin claudium-client launch_api -->
 # Launch API reference
 
-What `horizon-client` promises a launcher that starts it, Launch API 0.1.0. The guide: [launch.md](launch.md); stability and versions: [stability.md](stability.md).
+What `claudium-client` promises a launcher that starts it, Launch API 0.1.0. The guide: [launch.md](launch.md); stability and versions: [stability.md](stability.md).
 
 ## Options
 
@@ -9,9 +9,9 @@ Any other option is refused with exit code 2, so ask `--launch-api` before passi
 
 | Option | What it does |
 | --- | --- |
-| `--resources DIR` | The prepared resources (horizon-prepare's output). Default: `resources` beside the executable, else `.local/horizon-client/26.3`. |
-| `--game-dir DIR` | The game folder: `saves/`, `options.txt`, `resourcepacks/`, `horizon-mods/`, `screenshots/`. Created when missing. Default: the working directory. `--gameDir` is the same. |
-| `--home DIR` | Logs (`logs/latest.log`) and crash reports (`crash-reports/`). Default: `HORIZON_HOME`, else `horizon` in the platform data folder. |
+| `--resources DIR` | The prepared resources (claudium-prepare's output). Default: `resources` beside the executable, else `.local/claudium-client/26.3`. |
+| `--game-dir DIR` | The game folder: `saves/`, `options.txt`, `resourcepacks/`, `claudium-mods/`, `screenshots/`. Created when missing. Default: the working directory. `--gameDir` is the same. |
+| `--home DIR` | Logs (`logs/latest.log`) and crash reports (`crash-reports/`). Default: `CLAUDIUM_HOME`, else `claudium` in the platform data folder. |
 | `--width N` | The window's starting width (default 1280). |
 | `--height N` | The window's starting height (default 720). |
 | `--fullscreen` | Opens the window fullscreen, whatever `options.txt` says; `options.txt` is not changed. |
@@ -23,10 +23,11 @@ Any other option is refused with exit code 2, so ask `--launch-api` before passi
 
 ## `--launch-api`
 
-Prints one JSON object on stdout and exits 0. `horizon` is the build's version; readers ignore fields they don't know.
+Prints one JSON object on stdout and exits 0. `claudium` is the build's version; readers ignore fields they don't know.
 
 ```json
 {
+  "claudium": "<version>",
   "crash_report_line": "Claudium: crash report saved to ",
   "exit_codes": [
     0,
@@ -34,7 +35,6 @@ Prints one JSON object on stdout and exits 0. `horizon` is the build's version; 
     2,
     101
   ],
-  "horizon": "<version>",
   "launch_api": "0.1.0",
   "minecraft": "26.3",
   "options": [

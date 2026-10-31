@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The End of a dedicated server nobody has entered, force-loaded from the console, against vanilla's.
 
-A vanilla dedicated server and Horizon's each open a copy of one world vanilla generated (its End not made yet).
+A vanilla dedicated server and Claudium's each open a copy of one world vanilla generated (its End not made yet).
 With no player online, the console force-loads the End's main island and its arena. A FORCED ticket keeps its level active
 (`ServerChunkCache.hasActiveTickets`, `TicketType.FORCED`), so the chunks are generated, loaded and ticked
 without a player in the dimension. With nobody in the fight, `EnderDragonFight.tick` neither scans the state nor
@@ -68,17 +68,17 @@ def main():
     build = lab.LOCAL / NAME
     build.mkdir(parents=True, exist_ok=True)
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
-    subprocess.run(['cargo', 'build', '--release', '-p', 'horizon-client', '--bin', 'horizon-client'], cwd=lab.ROOT,
+    subprocess.run(['cargo', 'build', '--release', '-p', 'claudium-client', '--bin', 'claudium-client'], cwd=lab.ROOT,
                    check=True, capture_output=True)
-    binary = lab.cargo_target() / 'release' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    binary = lab.cargo_target() / 'release' / ('claudium-client.exe' if os.name == 'nt' else 'claudium-client')
     vanilla_server = ['java', '-Xmx2g', '-Duser.timezone=UTC', '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon_server = [binary, '--resources', lab.LOCAL / 'horizon-client/26.3', '--dedicated', '--nogui']
+    claudium_server = [binary, '--resources', lab.LOCAL / 'claudium-client/26.3', '--dedicated', '--nogui']
     world = generate_world(vanilla_server, build)
     vanilla = run_side('vanilla', vanilla_server, build, world)
-    horizon = run_side('horizon', horizon_server, build, world)
+    claudium = run_side('claudium', claudium_server, build, world)
     normal = lambda s: re.sub(r'\s+', ' ', s).strip()
-    problems = [f'{q}\n  vanilla: {vanilla[q]}\n  horizon: {horizon[q]}'
-                for q in QUERIES if normal(vanilla[q]) != normal(horizon[q])]
+    problems = [f'{q}\n  vanilla: {vanilla[q]}\n  claudium: {claudium[q]}'
+                for q in QUERIES if normal(vanilla[q]) != normal(claudium[q])]
     if problems:
         raise AssertionError('the forced End differs:\n' + '\n'.join(problems))
     print(f'forced End: loaded and ticked with nobody in it, no exit portal, as vanilla ({vanilla[QUERIES[0]]})')

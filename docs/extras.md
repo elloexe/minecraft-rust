@@ -1,4 +1,4 @@
-# Horizon extras
+# Claudium extras
 
 Optional conveniences built into the client: fullbright, dynamic lights, your own name tag, auto-reconnect,
 Mouse Tweaks-style inventory controls and inventory sorting. **Every one is off by default**: a fresh
@@ -9,16 +9,16 @@ again restores vanilla's behaviour completely.
 
 | Part | Code |
 |---|---|
-| Settings, parsing and saving | `crates/horizon-client-render/src/extras.rs` |
+| Settings, parsing and saving | `crates/claudium-client-render/src/extras.rs` |
 | FPS and click counters (for native mods) | `extras.rs` (pure logic, unit tested) |
-| Dynamic lights: item glow, nearest sources | `crates/horizon-client-render/src/dynamic_light.rs` (unit tested), `game/dynamic_lights.rs`, `terrain.wgsl` and `entity.wgsl` (`dynamic_block_light`) |
-| HUD drawing (a native mod's minimap, corner stacking) | `crates/horizon-client/src/extras_hud.rs` |
-| Minimap colours, tiles and image (for the Minimap native mod) | `crates/horizon-client-render/src/minimap.rs` |
-| Reconnect policy and backoff | `crates/horizon-client/src/reconnect.rs` |
-| Game glue (input hooks, per-frame update) | `crates/horizon-client/src/game/extras.rs` |
-| Mouse Tweaks-style controls, sort buttons | `crates/horizon-client/src/game/tweaks.rs` |
-| Sort order and its clicks | `crates/horizon-client/src/inv_sort.rs` (pure, unit tested) |
-| The settings page | `options_ui.rs` (`Page::Extras`): **Options → Horizon Settings... → Extras...** |
+| Dynamic lights: item glow, nearest sources | `crates/claudium-client-render/src/dynamic_light.rs` (unit tested), `game/dynamic_lights.rs`, `terrain.wgsl` and `entity.wgsl` (`dynamic_block_light`) |
+| HUD drawing (a native mod's minimap, corner stacking) | `crates/claudium-client/src/extras_hud.rs` |
+| Minimap colours, tiles and image (for the Minimap native mod) | `crates/claudium-client-render/src/minimap.rs` |
+| Reconnect policy and backoff | `crates/claudium-client/src/reconnect.rs` |
+| Game glue (input hooks, per-frame update) | `crates/claudium-client/src/game/extras.rs` |
+| Mouse Tweaks-style controls, sort buttons | `crates/claudium-client/src/game/tweaks.rs` |
+| Sort order and its clicks | `crates/claudium-client/src/inv_sort.rs` (pure, unit tested) |
+| The settings page | `options_ui.rs` (`Page::Extras`): **Options → Claudium Settings... → Extras...** |
 
 The settings are grouped by extra, under a header each, two buttons to a row as
 vanilla's options lists are, and each says what it does in its tooltip. An
@@ -30,12 +30,12 @@ extras stay out of the way of other input and options work.
 
 ## Options storage
 
-`horizon-extras.txt` beside `options.txt`, in the same `key:value` format as
-`horizon-graphics.txt`. `options.txt` is untouched, so a vanilla client can share
+`claudium-extras.txt` beside `options.txt`, in the same `key:value` format as
+`claudium-graphics.txt`. `options.txt` is untouched, so a vanilla client can share
 the folder. Unknown or broken lines fall back to the defaults.
 
-Extras' keys (the sort key) are Horizon settings stored in that file and bound on
-the Extras page, not in vanilla's Key Binds screen: Horizon has no Horizon category
+Extras' keys (the sort key) are Claudium settings stored in that file and bound on
+the Extras page, not in vanilla's Key Binds screen: Claudium has no Claudium category
 in Controls, and adding one would put a non-vanilla mapping into `options.txt`.
 
 ## The extras
@@ -63,10 +63,10 @@ in Controls, and adding one would put a non-vanilla mapping into `options.txt`.
 ### Moved to native mods
 
 The **FPS counter**, **Keystrokes**, **Zoom** and the **Minimap** are official native mods now (in
-horizon-rust/horizon-mods under `native/<name>/`, [mods.md](mods.md#horizons-official-mods)), with the same look and
+elloexe/claudium-mods under `native/<name>/`, [mods.md](mods.md#claudiums-official-mods)), with the same look and
 options. Players install them from the launcher's Mods page, and the launcher builds them into the game
 ([native-mods.md](native-mods.md)). The game keeps
-the hook points they use (`crates/horizon-client/src/game/native_hooks.rs`), and `horizon-extras.txt` keeps the old
+the hook points they use (`crates/claudium-client/src/game/native_hooks.rs`), and `claudium-extras.txt` keeps the old
 keys and `movedToMods`.
 
 The game still draws the minimap, for the native mod (`native_minimap` in `native_hooks.rs`, [mods.md](mods.md)):

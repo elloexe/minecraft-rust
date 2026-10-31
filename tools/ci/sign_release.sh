@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Signs a release (docs/release-flow.md, "Signed checksums"): writes SHA256SUMS for the files given, then
-# SHA256SUMS.sig beside them, one base64 Ed25519 signature per line over "horizon release <tag>\n" + SHA256SUMS,
+# SHA256SUMS.sig beside them, one base64 Ed25519 signature per line over "claudium release <tag>\n" + SHA256SUMS,
 # for every key set in RELEASE_SIGNING_KEY and RELEASE_SIGNING_KEY_NEXT (base64 PKCS#8, the `release`
 # environment's secrets). The job that runs this holds the private keys, so it runs nothing from the repository
 # but this file, which calls only the runner's sha256sum and OpenSSL; the publish job then checks the result
-# with horizon-release-sign, as launchers do.
+# with claudium-release-sign, as launchers do.
 # EPHEMERAL=yes (dry runs) signs with a throwaway key instead and writes its public key to ephemeral.pub.
-#   tools/ci/sign_release.sh v2026.10.19 dist/horizon-linux-x86_64.tar.gz dist/horizon-windows-x64.zip ...
+#   tools/ci/sign_release.sh v2026.10.19 dist/claudium-linux-x86_64.tar.gz dist/claudium-windows-x64.zip ...
 set -euo pipefail
 tag=$1; shift
 dir=$(dirname "$1")
@@ -22,7 +22,7 @@ for file in "$@"; do
   names+=("$(basename "$file")")
 done
 (cd "$dir" && "${sha[@]}" -- "${names[@]}") > "$dir/SHA256SUMS"
-{ printf 'horizon release %s\n' "$tag"; cat "$dir/SHA256SUMS"; } > "$work/message"
+{ printf 'claudium release %s\n' "$tag"; cat "$dir/SHA256SUMS"; } > "$work/message"
 rm -f "$dir/SHA256SUMS.sig" "$dir/ephemeral.pub"
 
 sign_with() {  # the key file in $1

@@ -16,18 +16,18 @@ impl gpui::AssetSource for Assets {
         let name = path
             .strip_prefix("icons/")
             .and_then(|p| p.strip_suffix(".svg"));
-        Ok(name.and_then(horizon_theme::icons::get).map(Cow::Borrowed))
+        Ok(name.and_then(claudium_theme::icons::get).map(Cow::Borrowed))
     }
 
     fn list(&self, _path: &str) -> gpui::Result<Vec<SharedString>> {
-        Ok(horizon_theme::icons::ALL
+        Ok(claudium_theme::icons::ALL
             .iter()
             .map(|(name, _)| format!("icons/{name}.svg").into())
             .collect())
     }
 }
 
-/// A pixel icon (`horizon_theme::icons`) in `color`.
+/// A pixel icon (`claudium_theme::icons`) in `color`.
 pub fn icon(name: &'static str, size: f32, color: Hsla) -> Svg {
     svg()
         .path(format!("icons/{name}.svg"))

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Entities other than mobs and items, tracked to a vanilla client, against vanilla's dedicated server.
 
-A vanilla dedicated server and Horizon's (`horizon-client --dedicated --nogui`) each serve a copy of one flat
+A vanilla dedicated server and Claudium's (`claudium-client --dedicated --nogui`) each serve a copy of one flat
 world vanilla generated first, with the same server.properties (offline, view distance 4). A vanilla-codec
 client (VanillaProtocolClient in its entity mode) joins, and once its chunks are in it asks for the scene: the
 console freezes the ticks, builds a wall and a rail and summons, around the spawn, every kind of minecart (one
@@ -146,48 +146,48 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     report = build / 'report.json'
     report.unlink(missing_ok=True)
-    oracle = lab.ROOT / 'mods/horizon/src/test/java/dev/horizonlab/parity/VanillaProtocolClient.java'
+    oracle = lab.ROOT / 'mods/claudium/src/test/java/dev/claudiumlab/parity/VanillaProtocolClient.java'
     classes = build / 'classes'
     shutil.rmtree(classes, ignore_errors=True)
     classes.mkdir()
     dependencies = os.pathsep.join(map(str, [jars['server'], *libraries]))
     subprocess.run(['javac', '--release', str(lock['minecraft']['java_major']), '-proc:none', '-nowarn', '-sourcepath',
-                    lab.ROOT / 'mods/horizon/src/test/java', '-cp', dependencies, '-d', classes, oracle],
+                    lab.ROOT / 'mods/claudium/src/test/java', '-cp', dependencies, '-d', classes, oracle],
                    cwd=lab.ROOT, check=True, capture_output=True)
-    # SERVER_ENTITIES_SIDES=vanilla (or horizon) runs one side and reads the other's last transcript.
-    sides = [s for s in os.environ.get('SERVER_ENTITIES_SIDES', 'vanilla,horizon').split(',') if s]
-    if 'horizon' in sides:
-        subprocess.run(['cargo', 'build', '--profile', 'fast', '-p', 'horizon-client', '--bin', 'horizon-client'], cwd=lab.ROOT,
+    # SERVER_ENTITIES_SIDES=vanilla (or claudium) runs one side and reads the other's last transcript.
+    sides = [s for s in os.environ.get('SERVER_ENTITIES_SIDES', 'vanilla,claudium').split(',') if s]
+    if 'claudium' in sides:
+        subprocess.run(['cargo', 'build', '--profile', 'fast', '-p', 'claudium-client', '--bin', 'claudium-client'], cwd=lab.ROOT,
                        check=True, capture_output=True)
     import json
     metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--no-deps', '--format-version', '1'],
                                                   cwd=lab.ROOT, text=True))
-    binary = Path(metadata['target_directory']) / 'fast' / ('horizon-client.exe' if os.name == 'nt' else 'horizon-client')
+    binary = Path(metadata['target_directory']) / 'fast' / ('claudium-client.exe' if os.name == 'nt' else 'claudium-client')
     vanilla_server = ['java', '-Xmx2g', '-Duser.timezone=UTC', '-cp', dependencies, 'net.minecraft.server.Main', 'nogui']
-    horizon_server = [binary, '--resources', lab.LOCAL / 'horizon-client/26.3', '--dedicated', '--nogui']
+    claudium_server = [binary, '--resources', lab.LOCAL / 'claudium-client/26.3', '--dedicated', '--nogui']
     client = ['java', '-Xmx1g', '-Duser.timezone=UTC', '-cp', str(classes) + os.pathsep + dependencies,
-              'dev.horizonlab.parity.VanillaProtocolClient']
+              'dev.claudiumlab.parity.VanillaProtocolClient']
 
     world = generate_world(vanilla_server, build)
     results = {}
-    for label, command in [('vanilla', vanilla_server), ('horizon', horizon_server)]:
+    for label, command in [('vanilla', vanilla_server), ('claudium', claudium_server)]:
         if label in sides:
             results[label] = run_side(label, command, client, build, world)
         else:
             results[label] = (build / f'{label}.txt').read_text(encoding='utf-8').splitlines()
-    vanilla, horizon = scene_lines(results['vanilla']), scene_lines(results['horizon'])
-    errors = [l for l in results['vanilla'] + results['horizon'] if l.startswith('error')]
-    if errors or vanilla != horizon:
+    vanilla, claudium = scene_lines(results['vanilla']), scene_lines(results['claudium'])
+    errors = [l for l in results['vanilla'] + results['claudium'] if l.startswith('error')]
+    if errors or vanilla != claudium:
         import difflib
-        diff = '\n'.join(difflib.unified_diff(vanilla, horizon, 'vanilla', 'horizon', n=0, lineterm=''))
-        raise AssertionError(f'{len(errors)} errors, transcripts differ (see {build}/vanilla.txt and horizon.txt):\n'
+        diff = '\n'.join(difflib.unified_diff(vanilla, claudium, 'vanilla', 'claudium', n=0, lineterm=''))
+        raise AssertionError(f'{len(errors)} errors, transcripts differ (see {build}/vanilla.txt and claudium.txt):\n'
                              + '\n'.join(errors[:10]) + '\n' + diff[:8000])
     if len(vanilla) < len(SCENE) - 2:
         raise AssertionError(f'only {len(vanilla)} entities tracked: the scene did not run (see {build})')
     lab.write_json(report, dict(
         schema=1, minecraft=lock['minecraft']['version'], platform=platform.platform(),
         java=subprocess.check_output(['java', '--version'], text=True).splitlines()[0],
-        entities=len(vanilla), output_sha256=lab.digest(build / 'horizon.txt', 'sha256'),
+        entities=len(vanilla), output_sha256=lab.digest(build / 'claudium.txt', 'sha256'),
         scope='Minecarts (one rolling), boats (one falling), armor stands, a chicken jockey, a slime, a pig with a '
               'scale, item frames, paintings, primed TNT, falling blocks (one held by a cobweb), an arrow and an '
               'end crystal '

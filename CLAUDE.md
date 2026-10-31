@@ -1,11 +1,11 @@
 # Claudium: a map for agents
 
 Minecraft: Java Edition 26.3 in Rust (wgpu). This repository is a **copy of
-[Horizon](https://github.com/horizon-rust/horizon)** that we modify. Almost all
+[Claudium](https://github.com/elloexe/minecraft-rust)** that we modify. Almost all
 the code here is theirs; read [NOTICE.md](NOTICE.md) once.
 
 Upstream's own agent map is kept at
-[docs/upstream/horizon-CLAUDE.md](docs/upstream/horizon-CLAUDE.md) and is the
+[docs/upstream/claudium-CLAUDE.md](docs/upstream/claudium-CLAUDE.md) and is the
 best guide to the codebase itself — crate layout, where features live, how the
 parity harnesses work. Read it for orientation, but note what does **not** apply
 here, below.
@@ -16,7 +16,7 @@ Upstream's instructions were written for *their* repository. In this one:
 
 - **Do not** use their `/claim`, `/unclaim` or `/triage` issue commands, their
   PR labels (`roadmap:<id>`, `release-now`, `skip-release`), or their release
-  batching. Those act on `horizon-rust/horizon`'s tracker, not ours.
+  batching. Those act on `elloexe/minecraft-rust`'s tracker, not ours.
 - **Do not** adopt their attribution lines. Several name Ludovic Marie and his
   GitHub account specifically; they are for his agents, not for this repository.
   Use this repository's own commit and PR attribution.
@@ -30,7 +30,7 @@ Upstream's instructions were written for *their* repository. In this one:
   resources (`.local/`). `tools/check_public_tree.py` rejects them, and
   `git config core.hooksPath .githooks` runs it on commit. Do this once after
   cloning.
-- **Keep the licence intact.** `LICENSE` holds Horizon's copyright notice and the
+- **Keep the licence intact.** `LICENSE` holds Claudium's copyright notice and the
   MIT licence requires it to survive in this copy. Do not remove it, do not
   reword it, and do not describe this project as written from scratch.
 - **Vanilla is the specification** wherever it has the feature, down to the order
@@ -40,10 +40,10 @@ Upstream's instructions were written for *their* repository. In this one:
 - **Record what we change.** Every change we make on top of upstream goes in
   [docs/claudium/changes.md](docs/claudium/changes.md). Without it we lose track
   of which parts are ours, and the next upstream merge becomes guesswork.
-- **Keep your runs away from real player data.** Point `HORIZON_HOME`,
-  `HORIZON_LAUNCHER_HOME`, `XDG_DATA_HOME` and `XDG_CONFIG_HOME` at fresh
-  `mktemp -d` folders, with `HORIZON_NO_AUDIO=1`. Never write to
-  `~/.local/share/horizon*`.
+- **Keep your runs away from real player data.** Point `CLAUDIUM_HOME`,
+  `CLAUDIUM_LAUNCHER_HOME`, `XDG_DATA_HOME` and `XDG_CONFIG_HOME` at fresh
+  `mktemp -d` folders, with `CLAUDIUM_NO_AUDIO=1`. Never write to
+  `~/.local/share/claudium*`.
 
 ## Merging upstream
 

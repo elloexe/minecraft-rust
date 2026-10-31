@@ -1,7 +1,7 @@
 # Compiled density evaluation
 
-Horizon targets the repository-pinned Minecraft Java Edition **26.3**. The
-`horizon_core::density` module implements selected compiled samplers and an initial
+Claudium targets the repository-pinned Minecraft Java Edition **26.3**. The
+`claudium_core::density` module implements selected compiled samplers and an initial
 integrated graph compiler. Complete graph coverage and terrain generation remain pending.
 
 Implemented samplers:
@@ -240,7 +240,7 @@ slice. Unshifted noise clears it before accumulation. Gradients overwrite only
 the volume's cells; shifted noise retains whatever its X child wrote outside the
 volume. Unary operators transform the whole logical buffer after their child
 returns. Binary, general range-choice, interval selection and interpolation bulk evaluation require exactly a volume-sized buffer,
-matching the valid size of its temporary right-hand buffer. Horizon rejects an
+matching the valid size of its temporary right-hand buffer. Claudium rejects an
 oversized multi-input output before evaluating children; Java's accidental reads beyond
 the temporary array and backing-pool capacity are outside this bounded API.
 Short buffers are always rejected before writes. Errors from evaluated children
@@ -282,7 +282,7 @@ input and are retained intentionally. End corners are clamped to the last coarse
 sample when the output ends exactly on a grid point.
 
 For strided output, vanilla first evaluates a full block-resolution volume with
-sizes equal to output sizes times steps, then selects the strided cells. Horizon
+sizes equal to output sizes times steps, then selects the strided cells. Claudium
 preserves that extent, including trailing blocks, the child's volume descriptor,
 and the repeated-addition rounding. Scratch vectors are retained in the context.
 The interpolating paths write only volume cells; direct delegation retains the
@@ -330,14 +330,14 @@ a zero derivative returns the endpoint value without multiplying a possibly
 nonfinite coordinate. Interior evaluation samples the left nested value before
 the right, then performs the float cubic correction in the reference order.
 A constant NaN may occur as a nested value, but vanilla rejects it as the root of
-a compiled constant sampler; Horizon preserves that distinction.
+a compiled constant sampler; Claudium preserves that distinction.
 
 Scalar queries compute coordinates lazily and retain non-NaN values for the
 remainder of that query. NaN results are queried again when the same coordinate
 is needed. Bulk evaluation walks output cells, evaluating a coordinate's entire
 child volume only when a selected branch first needs it. Those buffers remain
 available through the call, including NaN cells. Unselected coordinates are not
-evaluated. A later lazy child failure retains completed output cells, and Horizon
+evaluated. A later lazy child failure retains completed output cells, and Claudium
 returns acquired buffers to the context on both success and error.
 
 Constant roots fill the entire logical output slice. Nonconstant splines use an
@@ -376,7 +376,7 @@ A bulk request reuses its cached buffer when every volume descriptor field
 matches. Otherwise it evaluates the child into a private retained buffer and
 copies to the caller only on success. Vanilla installs that cache entry before
 calling the child: a failed child can leave a partially written cached volume
-that a later request reads without recomputation. Horizon preserves the writes
+that a later request reads without recomputation. Claudium preserves the writes
 and the entry. Unwritten values are initialized to zero; failure comparisons use
 a vanilla context with a zero-initializing arena. Unwritten data from vanilla's
 global recycling pool is not claimed to match. Cached bulk output must have

@@ -1,9 +1,9 @@
-//! Instances in the window (`horizon_launcher::instances`): the sidebar's list, by group, and the
+//! Instances in the window (`claudium_launcher::instances`): the sidebar's list, by group, and the
 //! dialog that makes one (empty, or a copy of the selected one) or changes its name, group and
 //! icon.
 use super::*;
+use claudium_launcher::instances::{self, Icon, Instance, Kind as InstanceKind};
 use gpui::RenderImage;
-use horizon_launcher::instances::{self, Icon, Instance, Kind as InstanceKind};
 use servers_page::Field;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -37,7 +37,7 @@ const TEXTURES: [&str; 24] = [
     "book",
 ];
 
-/// Colours offered as icons: Horizon's accent and a few that sit beside it in both themes.
+/// Colours offered as icons: Claudium's accent and a few that sit beside it in both themes.
 const COLOURS: [&str; 8] = [
     "#5b3fd6", "#3f7fd6", "#2f9e8f", "#4f9e2f", "#c9a227", "#d9732f", "#c4405a", "#7d7591",
 ];
@@ -51,7 +51,7 @@ pub(super) struct InstanceDialog {
     icon: Option<Icon>,
     error: Option<String>,
     busy: bool,
-    /// Horizon, or the Java game it plays.
+    /// Claudium, or the Java game it plays.
     pub(super) java: new_instance::JavaChoice,
 }
 
@@ -217,7 +217,7 @@ impl Launcher {
                 }
                 InstanceKind::Pack => (false, tr("From Claudium's registry").into()),
             };
-            // Java instances have nothing of Horizon's to prepare: no state square.
+            // Java instances have nothing of Claudium's to prepare: no state square.
             let state = (matches!(i.kind, InstanceKind::Default | InstanceKind::Own)
                 && i.java.is_none())
             .then_some(if prepared { t.success } else { t.warn });
@@ -288,7 +288,7 @@ impl Launcher {
         let editing = d.editing.clone();
         let copy = selected.filter(|_| d.copy);
         // A new Java instance: what it plays, and its name when none is typed.
-        let java = (editing.is_none() && d.java.kind != new_instance::NewKind::Horizon)
+        let java = (editing.is_none() && d.java.kind != new_instance::NewKind::Claudium)
             .then(|| d.java.clone());
         let minecraft = java.as_ref().map(|j| {
             j.minecraft(match &self.instances.versions {
@@ -364,7 +364,7 @@ impl Launcher {
             d.busy,
             d.java.kind,
         );
-        let java = !editing && kind != new_instance::NewKind::Horizon;
+        let java = !editing && kind != new_instance::NewKind::Claudium;
         let n = t.night;
         let from = self
             .selected_instance()
@@ -697,7 +697,7 @@ impl Launcher {
 }
 
 impl Launcher {
-    /// Delete…, for every instance but Horizon's own (the game's home); not while a game runs.
+    /// Delete…, for every instance but Claudium's own (the game's home); not while a game runs.
     fn delete_button(&self, instance: &Instance, cx: &mut Context<Self>) -> Option<Stateful<Div>> {
         if instance.kind == InstanceKind::Default {
             return None;
@@ -766,7 +766,7 @@ impl Launcher {
         match instances::delete(id) {
             Ok(_) => {
                 self.instances.confirm_delete = None;
-                // Play starts Horizon again; the window's copy of the settings says so too.
+                // Play starts Claudium again; the window's copy of the settings says so too.
                 if self.settings.instance.as_deref() == Some(id) {
                     self.settings.instance = None;
                     self.settings.save();

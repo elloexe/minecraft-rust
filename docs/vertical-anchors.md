@@ -1,6 +1,6 @@
 # Vertical anchors
 
-Horizon implements the pinned Java Edition **26.3** vertical anchors: absolute,
+Claudium implements the pinned Java Edition **26.3** vertical anchors: absolute,
 above bottom, below top and relative to sea level. Runtime resolution preserves
 signed integer wrapping. Codec parsing and encoding enforce the vanilla field
 range, preserve decimal truncation and integer wrapping, and follow the nested

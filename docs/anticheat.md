@@ -1,6 +1,6 @@
 # The dedicated server's anticheat
 
-Horizon's dedicated server can check what players send beyond what vanilla checks. It is **off**: a
+Claudium's dedicated server can check what players send beyond what vanilla checks. It is **off**: a
 server that doesn't turn it on runs vanilla's checks only ("moved too quickly", "moved wrongly"...)
 and costs nothing more. An owner turns it on in `server.toml`:
 
@@ -19,8 +19,8 @@ kick = 20
 decay = 0.02
 ```
 
-horizon-server checks the section before every start; the game reads it from `server.toml` when it
-starts (`horizon-client --dedicated` run by hand reads the same file from its folder, if there is one).
+claudium-server checks the section before every start; the game reads it from `server.toml` when it
+starts (`claudium-client --dedicated` run by hand reads the same file from its folder, if there is one).
 
 ## How a check acts
 
@@ -48,10 +48,10 @@ ones in this version.
 
 ## Writing a check
 
-- The rules are in `crates/horizon-anticheat` (no game state: unit-test them there); the hub runs them
-  where it handles the packet (`crates/horizon-client/src/lan/`) and calls `Hub::flag`, which carries out
+- The rules are in `crates/claudium-anticheat` (no game state: unit-test them there); the hub runs them
+  where it handles the packet (`crates/claudium-client/src/lan/`) and calls `Hub::flag`, which carries out
   setback, alert and kick (`lan/anticheat.rs`).
-- A check is one entry in the `checks!` table of `horizon-anticheat/src/lib.rs`: its name in
+- A check is one entry in the `checks!` table of `claudium-anticheat/src/lib.rs`: its name in
   `server.toml`, its default thresholds and its own settings.
 - Predict what vanilla allows (effects, ice, elytra, riptide, vehicles, knockback, levitation, slime,
   bubble columns, latency). A false positive is worse than a missed cheat: when unsure, don't flag.
@@ -60,12 +60,12 @@ ones in this version.
 - Original code only (CONTRIBUTING.md): written from vanilla 26.3 and public descriptions of what cheats
   do. Never read, copy or paraphrase another anticheat's source (Grim, NoCheatPlus, Vulcan, Matrix,
   Spartan, Paper's anti-xray...), its decompiled jars or docs quoting its code.
-- Test it both ways in `tools/anticheat_e2e.py`: a horizon-bots cheat is caught, legit bots are never
+- Test it both ways in `tools/anticheat_e2e.py`: a claudium-bots cheat is caught, legit bots are never
   flagged, and nothing happens with the anticheat off.
 
 ```sh
-cargo build --profile fast -p horizon-client --bin horizon-client
-cargo build --profile fast -p horizon-bots
+cargo build --profile fast -p claudium-client --bin claudium-client
+cargo build --profile fast -p claudium-bots
 python3 tools/anticheat_e2e.py --bin-dir target/fast
-python3 tools/server_bench.py --servers horizon --bots 60 --behaviour walk --anticheat   # its cost
+python3 tools/server_bench.py --servers claudium --bots 60 --behaviour walk --anticheat   # its cost
 ```

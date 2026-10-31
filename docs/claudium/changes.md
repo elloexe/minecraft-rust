@@ -18,6 +18,27 @@ are ours.
   parity-harness runner tests are untouched. The orphaned tool scripts under
   `tools/ci/` and `tools/` stay for now (some are shared by `test_release_train`).
 
+### Full debrand
+
+- Removed every player-facing and in-code "Horizon": ~87,000 tokens across 2,495
+  files, then every embedded and all-caps form, then 62 directory and file names.
+  All 30 crates are now `claudium-*` (lib paths `claudium_*`), env vars are
+  `CLAUDIUM_*`, the mod namespace and datapack fixtures are `claudium*`, and the
+  upstream service URLs (registry, mixins, telemetry domain, keychain service)
+  are repointed into this project's namespace so nothing calls upstream.
+- "Horizontal" and the like are untouched (the rename guarded against `*tal`).
+- Lockfiles kept their pinned third-party versions: only our own crate names were
+  renamed inside them, so no transitive dependency drifted.
+- The one deliberate exception in code: `claudium-mods` also reads the legacy
+  `horizon-mod.toml` manifest name (`LEGACY_MANIFEST`), because the signed sample
+  fixture `coords_hud-0.1.0.hmod` embeds it and its signing key was deleted
+  upstream, so its bytes can't change without losing the registry's
+  signature-verification test coverage. New mods are always written
+  `claudium-mod.toml`; the two unsigned fixtures were repacked to the new name.
+- "Horizon" now remains only in the four credit/reference locations: `LICENSE`,
+  `NOTICE.md`, `docs/upstream/` (archived upstream docs) and `docs/claudium/`
+  (this derivation record) — the inspiration credit.
+
 ### Debranding
 
 - Renamed every player-facing "Horizon" to "Claudium": 684 string literals across

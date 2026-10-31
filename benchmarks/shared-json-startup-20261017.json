@@ -1,6 +1,6 @@
 {
   "scope": "Assets + block facts + behaviours loader only; excludes full startup",
-  "resources": ".local/horizon-client/26.3",
+  "resources": ".local/claudium-client/26.3",
   "repeats": 5,
   "metrics": {
     "baseline": {
@@ -88,6 +88,6 @@
       }
     }
   },
-  "build": "cargo build --release -p horizon-client --example shared_json_startup_profile",
+  "build": "cargo build --release -p claudium-client --example shared_json_startup_profile",
   "limitations": "Loader-only wall-clock timings under concurrent machine load; not full startup or time to first frame. RSS includes Assets::load."
 }

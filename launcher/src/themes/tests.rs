@@ -1,5 +1,5 @@
 use super::*;
-use horizon_theme::night::{DAWN, NIGHT};
+use claudium_theme::night::{DAWN, NIGHT};
 
 fn blend(top: u32, under: u32, alpha: f32) -> u32 {
     let channel = |shift: u32| {
@@ -61,7 +61,7 @@ fn colours_go_to_hsl_and_back() {
 
 #[test]
 fn a_background_is_a_picture_kept_once() {
-    let root = std::env::temp_dir().join(format!("horizon-background-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("claudium-background-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).unwrap();
     let picture = |name: &str, w: u32, h: u32| {

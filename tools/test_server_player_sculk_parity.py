@@ -73,17 +73,17 @@ def check_walk(host, guest, out, role):
 
 
 def main():
-    subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'horizon-client',
-                    '--bin', 'horizon-client', '--bin', 'horizon-ctl'], cwd=lab.ROOT, check=True)
+    subprocess.run(['cargo', 'build', '--locked', '--profile', 'fast', '-p', 'claudium-client',
+                    '--bin', 'claudium-client', '--bin', 'claudium-ctl'], cwd=lab.ROOT, check=True)
     metadata = json.loads(subprocess.check_output(
         ['cargo', 'metadata', '--format-version', '1', '--no-deps'], cwd=lab.ROOT, text=True))
-    ctl = lab.ROOT / metadata['target_directory'] / 'fast' / 'horizon-ctl'
+    ctl = lab.ROOT / metadata['target_directory'] / 'fast' / 'claudium-ctl'
     checks = ['sculk-walk-host', 'sculk-walk-guest']
     for role, name in zip(('host', 'guest'), checks):
         lan.CHECK_FNS[name] = lambda h, g, o, role=role: check_walk(h, g, o, role)
     # Use the runner's current display (xvfb on Linux), with fresh isolated homes.
     lan.game_env = lambda _screen, home: lab.game_env(
-        HORIZON_HOME=home, HORIZON_TELEMETRY_URL='off')
+        CLAUDIUM_HOME=home, CLAUDIUM_TELEMETRY_URL='off')
     reports = {}
     for threaded in (True, False):
         lan.SERVER_THREAD = threaded

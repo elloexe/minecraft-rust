@@ -1,6 +1,6 @@
 # Heightmaps
 
-Horizon implements the six heightmap types in the pinned Minecraft Java Edition
+Claudium implements the six heightmap types in the pinned Minecraft Java Edition
 **26.3**. Each map stores 256 relative column heights in padded 64-bit words.
 World-surface predicates use `isAir`; ocean-floor predicates use the version's
 `blocks_motion_in_heightmap` block tag. Motion-blocking maps also include nonempty

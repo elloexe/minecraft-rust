@@ -1,26 +1,26 @@
 #!/bin/sh
-# Installs horizon-server (docs/server.md) on Linux or macOS: the current Horizon Nightly for this computer (the
-# only build Horizon ships; GitHub's latest release while there is none), downloaded from GitHub Releases and
+# Installs claudium-server (docs/server.md) on Linux or macOS: the current Claudium Nightly for this computer (the
+# only build Claudium ships; GitHub's latest release while there is none), downloaded from GitHub Releases and
 # checked against the SHA-256 GitHub publishes for it. On Linux that is
-# the server build (horizon-server-linux-x86_64.tar.gz), which needs neither ALSA nor udev.
+# the server build (claudium-server-linux-x86_64.tar.gz), which needs neither ALSA nor udev.
 #
-#   curl -fsSL https://raw.githubusercontent.com/horizon-rust/horizon/main/packaging/server/install.sh | sh
-#   curl -fsSL .../install.sh | sh -s -- --version v0.5.0 --dir /opt/horizon --bin /usr/local/bin
-#   sh install.sh --archive horizon-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
+#   curl -fsSL https://raw.githubusercontent.com/elloexe/minecraft-rust/main/packaging/server/install.sh | sh
+#   curl -fsSL .../install.sh | sh -s -- --version v0.5.0 --dir /opt/claudium --bin /usr/local/bin
+#   sh install.sh --archive claudium-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
 #
 # It needs curl, tar or unzip, and sha256sum or shasum; it never asks for sudo (pick folders you can write).
-# Releases go to <dir>/releases/<version>, <dir>/current points at the one in use, and <bin>/horizon-server
+# Releases go to <dir>/releases/<version>, <dir>/current points at the one in use, and <bin>/claudium-server
 # runs it. The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
 # Nothing of Mojang's is downloaded.
 set -eu
 
-REPO=horizon-rust/horizon
+REPO=elloexe/minecraft-rust
 VERSION=latest
-DIR="${XDG_DATA_HOME:-$HOME/.local/share}/horizon"
+DIR="${XDG_DATA_HOME:-$HOME/.local/share}/claudium"
 BIN="$HOME/.local/bin"
 ARCHIVE=
 
-die() { echo "horizon install: $*" >&2; exit 1; }
+die() { echo "claudium install: $*" >&2; exit 1; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -35,9 +35,9 @@ done
 
 # The archives to look for, in order: on Linux the server build, else (releases before it) the full game.
 case "$(uname -s)-$(uname -m)" in
-  Linux-x86_64) ASSETS="horizon-server-linux-x86_64.tar.gz horizon-linux-x86_64.tar.gz" ;;
-  Darwin-arm64) ASSETS=horizon-macos-arm64.zip ;;
-  *) die "no Horizon release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
+  Linux-x86_64) ASSETS="claudium-server-linux-x86_64.tar.gz claudium-linux-x86_64.tar.gz" ;;
+  Darwin-arm64) ASSETS=claudium-macos-arm64.zip ;;
+  *) die "no Claudium release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
 esac
 
 TMP=$(mktemp -d)
@@ -63,7 +63,7 @@ else
 
   TAG=$(printf '%s\n' "$JSON" | sed -n 's/^  "tag_name": "\([^"]*\)".*/\1/p' | head -n 1)
   [ -n "$TAG" ] || die "could not read the release's tag"
-  # A Nightly installs under its date and commit, as `horizon-server update` names it:
+  # A Nightly installs under its date and commit, as `claudium-server update` names it:
   # "Nightly 2026-10-28 · 0c02067" is nightly-2026-10-28-0c02067.
   case "$TAG" in
     nightly|nightly-*)
@@ -84,7 +84,7 @@ else
   [ -n "$URL" ] || die "release $TAG has none of $ASSETS"
   [ -n "$DIGEST" ] || die "release $TAG publishes no SHA-256 for $ASSET"
 
-  echo "Downloading Horizon $TAG ($ASSET)..."
+  echo "Downloading Claudium $TAG ($ASSET)..."
   curl -fL --progress-bar -o "$TMP/$ASSET" "$URL"
   GOT=$($SHA "$TMP/$ASSET" | cut -d' ' -f1)
   [ "$GOT" = "$DIGEST" ] || die "$ASSET doesn't match its SHA-256 (got $GOT, expected $DIGEST): not installed"
@@ -95,27 +95,27 @@ case "$ASSET" in
   *.tar.gz) tar -xzf "$TMP/$ASSET" -C "$TMP/x" ;;
   *.zip) command -v unzip >/dev/null || die "unzip is needed"; unzip -q "$TMP/$ASSET" -d "$TMP/x" ;;
 esac
-SOURCE=$(dirname "$(find "$TMP/x" -name horizon-server -type f | head -n 1)")
-[ -x "$SOURCE/horizon-server" ] || die "$ASSET holds no horizon-server (a release from before it existed?)"
+SOURCE=$(dirname "$(find "$TMP/x" -name claudium-server -type f | head -n 1)")
+[ -x "$SOURCE/claudium-server" ] || die "$ASSET holds no claudium-server (a release from before it existed?)"
 
 RELEASE="$DIR/releases/$TAG"
-mkdir -p "$DIR/releases" "$DIR/game-files/horizon-client" "$BIN"
+mkdir -p "$DIR/releases" "$DIR/game-files/claudium-client" "$BIN"
 rm -rf "$RELEASE"
 mv "$SOURCE" "$RELEASE"
 # Prepared game files live outside the release, so updates and rollbacks keep them.
 mkdir -p "$RELEASE/.local"
-ln -sfn "$DIR/game-files/horizon-client" "$RELEASE/.local/horizon-client"
+ln -sfn "$DIR/game-files/claudium-client" "$RELEASE/.local/claudium-client"
 ln -sfn "$RELEASE" "$DIR/current"
 # Small launchers rather than links: the programs find their release folder from where they run.
-for tool in horizon-server horizon-prepare; do
+for tool in claudium-server claudium-prepare; do
   printf '#!/bin/sh\nexec "%s/current/%s" "$@"\n' "$DIR" "$tool" > "$BIN/$tool"
   chmod +x "$BIN/$tool"
 done
 
-echo "Installed Horizon $TAG in $RELEASE; horizon-server and horizon-prepare are in $BIN."
+echo "Installed Claudium $TAG in $RELEASE; claudium-server and claudium-prepare are in $BIN."
 # The full game (releases before the server build) links ALSA and udev; minimal Linux images often lack them.
-if [ "$(uname -s)" = Linux ] && [ ! -e "$RELEASE/horizon-engine" ] && command -v ldd >/dev/null; then
-  MISSING=$(ldd "$RELEASE/horizon-client" 2>/dev/null | awk '/not found/ { printf "%s ", $1 }')
+if [ "$(uname -s)" = Linux ] && [ ! -e "$RELEASE/claudium-engine" ] && command -v ldd >/dev/null; then
+  MISSING=$(ldd "$RELEASE/claudium-client" 2>/dev/null | awk '/not found/ { printf "%s ", $1 }')
   if [ -n "$MISSING" ]; then
     echo "The game needs libraries this system doesn't have: $MISSING"
     echo "Install them before starting a server:"
@@ -129,9 +129,9 @@ case ":$PATH:" in
   *":$BIN:"*) ;;
   *) echo "Add $BIN to your PATH, for example: echo 'export PATH=\"$BIN:\$PATH\"' >> ~/.profile" ;;
 esac
-if [ -z "$(ls -A "$DIR/game-files/horizon-client" 2>/dev/null)" ]; then
+if [ -z "$(ls -A "$DIR/game-files/claudium-client" 2>/dev/null)" ]; then
   echo "Next, prepare the game files from your own Minecraft 26.3 (it needs Java 25 and the game installed once"
   echo "by the official launcher; see docs/server.md):"
-  echo "  horizon-prepare --prepare --server-jar /path/to/server.jar"
+  echo "  claudium-prepare --prepare --server-jar /path/to/server.jar"
 fi
-echo "Then set up a server: mkdir my-server && cd my-server && horizon-server init"
+echo "Then set up a server: mkdir my-server && cd my-server && claudium-server init"

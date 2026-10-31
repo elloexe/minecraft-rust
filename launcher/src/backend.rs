@@ -9,14 +9,15 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
-pub const REPO: &str = "horizon-rust/horizon";
-pub const README_URL: &str = "https://github.com/horizon-rust/horizon/blob/main/launcher/README.md";
+pub const REPO: &str = "elloexe/minecraft-rust";
+pub const README_URL: &str =
+    "https://github.com/elloexe/minecraft-rust/blob/main/launcher/README.md";
 /// The players' page on connecting an AI agent (the website's docs/agents.md).
-pub const AGENT_DOCS_URL: &str = "https://playhorizon.dev/docs/agents";
-/// This launcher's version: the release workflow sets `HORIZON_LAUNCHER_VERSION` from the
+pub const AGENT_DOCS_URL: &str = "https://claudium.invalid/docs/agents";
+/// This launcher's version: the release workflow sets `CLAUDIUM_LAUNCHER_VERSION` from the
 /// tag it builds (no version-bump commits); other builds say Cargo.toml's.
-pub const VERSION: &str = version_or(option_env!("HORIZON_LAUNCHER_VERSION"));
-/// Launcher releases are tagged `launcher@X.Y.Z` from 0.2 on (docs/versioning.md), and Horizon's
+pub const VERSION: &str = version_or(option_env!("CLAUDIUM_LAUNCHER_VERSION"));
+/// Launcher releases are tagged `launcher@X.Y.Z` from 0.2 on (docs/versioning.md), and Claudium's
 /// own `vX.Y.Z`. Before 0.2 they were `launcher-vX.Y.Z` and `vYYYY.MM.DD[.N]`: every 0.2 tag is
 /// newer than every one of those ([`release_order`]).
 pub const LAUNCHER_TAG_PREFIX: &str = "launcher@";
@@ -47,11 +48,11 @@ pub struct Release {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub const ASSET: Option<&str> = Some("horizon-linux-x86_64.tar.gz");
+pub const ASSET: Option<&str> = Some("claudium-linux-x86_64.tar.gz");
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-pub const ASSET: Option<&str> = Some("horizon-macos-arm64.zip");
+pub const ASSET: Option<&str> = Some("claudium-macos-arm64.zip");
 #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
-pub const ASSET: Option<&str> = Some("horizon-windows-x64.zip");
+pub const ASSET: Option<&str> = Some("claudium-windows-x64.zip");
 #[cfg(not(any(
     all(target_os = "linux", target_arch = "x86_64"),
     all(target_os = "macos", target_arch = "aarch64"),
@@ -60,11 +61,11 @@ pub const ASSET: Option<&str> = Some("horizon-windows-x64.zip");
 pub const ASSET: Option<&str> = None;
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub const LAUNCHER_ASSET: Option<&str> = Some("horizon-launcher-linux-x86_64.tar.gz");
+pub const LAUNCHER_ASSET: Option<&str> = Some("claudium-launcher-linux-x86_64.tar.gz");
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-pub const LAUNCHER_ASSET: Option<&str> = Some("horizon-launcher-macos-arm64.zip");
+pub const LAUNCHER_ASSET: Option<&str> = Some("claudium-launcher-macos-arm64.zip");
 #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
-pub const LAUNCHER_ASSET: Option<&str> = Some("horizon-launcher-windows-x64.zip");
+pub const LAUNCHER_ASSET: Option<&str> = Some("claudium-launcher-windows-x64.zip");
 #[cfg(not(any(
     all(target_os = "linux", target_arch = "x86_64"),
     all(target_os = "macos", target_arch = "aarch64"),
@@ -79,9 +80,9 @@ const LAUNCHER_BINARY: &str = if cfg!(windows) {
 };
 
 pub(crate) const CLIENT: &str = if cfg!(windows) {
-    "horizon-client.exe"
+    "claudium-client.exe"
 } else {
-    "horizon-client"
+    "claudium-client"
 };
 
 /// The agent `url` is fetched with: the launcher's own user agent, through the player's proxy when
@@ -89,7 +90,7 @@ pub(crate) const CLIENT: &str = if cfg!(windows) {
 fn agent(url: &str) -> ureq::Agent {
     crate::proxy::agent(
         ureq::AgentBuilder::new()
-            .user_agent(&format!("horizon-launcher/{VERSION}"))
+            .user_agent(&format!("claudium-launcher/{VERSION}"))
             // A connection that goes quiet fails instead of waiting for ever.
             .timeout_connect(std::time::Duration::from_secs(15))
             .timeout_read(std::time::Duration::from_secs(60)),
@@ -111,7 +112,7 @@ pub fn get_bytes(url: &str) -> Result<Vec<u8>, String> {
 pub(crate) fn get(url: &str) -> Result<ureq::Response, String> {
     let mut request = agent(url).get(url);
     // CI runners share addresses and hit GitHub's anonymous rate limit; they pass their own token.
-    if let Some(token) = std::env::var("HORIZON_GITHUB_TOKEN")
+    if let Some(token) = std::env::var("CLAUDIUM_GITHUB_TOKEN")
         .ok()
         .filter(|t| !t.is_empty())
     {
@@ -128,7 +129,7 @@ pub(crate) fn get(url: &str) -> Result<ureq::Response, String> {
     })
 }
 
-/// A Horizon game tag: `v` then a digit (`v2026.10.13`). Launcher tags never match.
+/// A Claudium game tag: `v` then a digit (`v2026.10.13`). Launcher tags never match.
 pub fn is_game_tag(tag: &str) -> bool {
     tag.strip_prefix('v')
         .is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()))
@@ -141,13 +142,13 @@ pub fn launcher_version(tag: &str) -> Option<&str> {
         .filter(|v| v.starts_with(|c: char| c.is_ascii_digit()))
 }
 
-/// The tag this launcher was released as. launcher.yml gives it (`HORIZON_LAUNCHER_TAG`); a release
+/// The tag this launcher was released as. launcher.yml gives it (`CLAUDIUM_LAUNCHER_TAG`); a release
 /// built before it did gave only the version, of a `launcher-v` tag; a build from source is
 /// Cargo.toml's version on the 0.2 line.
 pub fn own_tag() -> String {
     own_tag_of(
-        option_env!("HORIZON_LAUNCHER_TAG"),
-        option_env!("HORIZON_LAUNCHER_VERSION"),
+        option_env!("CLAUDIUM_LAUNCHER_TAG"),
+        option_env!("CLAUDIUM_LAUNCHER_VERSION"),
     )
 }
 
@@ -162,7 +163,7 @@ fn own_tag_of(tag: Option<&str>, injected: Option<&str>) -> String {
     }
 }
 
-/// Where a tag or version stands among Horizon's releases (docs/versioning.md): the tags from
+/// Where a tag or version stands among Claudium's releases (docs/versioning.md): the tags from
 /// before 0.2 (`vYYYY.MM.DD[.N]`, `launcher-vX.Y.Z`) and bare versions first, compared number by
 /// number with missing parts as zero and anything after a `-` ignored, as launchers always did;
 /// then the 0.2 tags (`vX.Y.Z`, `launcher@X.Y.Z`) in semver's order, a pre-release
@@ -173,7 +174,7 @@ pub enum ReleaseOrder {
     Before02(Vec<u64>),
     Semver([u64; 3], Prerelease),
     /// A Nightly (`nightly-<date>-<commit>`), by its date: newer than every release, since the
-    /// Nightly is the only build Horizon ships.
+    /// Nightly is the only build Claudium ships.
     Nightly(String),
 }
 
@@ -305,7 +306,7 @@ fn is_launcher_tag(tag: &str) -> bool {
     launcher_version(tag).is_some()
 }
 
-/// Published Horizon builds, newest first: the current Nightly (the only build Horizon ships since
+/// Published Claudium builds, newest first: the current Nightly (the only build Claudium ships since
 /// 2026-10-28, docs/release-flow.md), the last week's Nightlies, then the releases from before.
 /// Drafts never reach the anonymous API, and launcher releases are left out.
 pub fn releases() -> Result<Vec<Release>, String> {
@@ -316,13 +317,13 @@ pub fn releases() -> Result<Vec<Release>, String> {
 /// ([`crate::nightly::version_of`]); only the current one (`nightly`) is an update.
 pub(crate) fn game_releases(list: &serde_json::Value) -> Vec<Release> {
     let mut out = parse_releases(list, ASSET, |tag| {
-        is_game_tag(tag) || horizon_release_sign::is_nightly(tag)
+        is_game_tag(tag) || claudium_release_sign::is_nightly(tag)
     });
     for r in &mut out {
-        if horizon_release_sign::is_nightly(&r.tag) {
+        if claudium_release_sign::is_nightly(&r.tag) {
             let version = crate::nightly::version_of(r);
             let tag = std::mem::replace(&mut r.tag, version);
-            r.prerelease = tag != horizon_release_sign::NIGHTLY;
+            r.prerelease = tag != claudium_release_sign::NIGHTLY;
             r.nightly = Some(tag);
         }
     }
@@ -388,7 +389,7 @@ fn newest_launcher_tags(refs: &serde_json::Value) -> Vec<String> {
     tags
 }
 
-/// The newest Horizon release that has a build for this platform.
+/// The newest Claudium release that has a build for this platform.
 pub fn latest(releases: &[Release]) -> Option<&Release> {
     releases.iter().find(|r| r.asset.is_some())
 }
@@ -417,7 +418,7 @@ impl Default for Links {
         Self {
             discord: "https://discord.gg/HcTeMZxe5E".into(),
             sponsor: "https://github.com/sponsors/ludovic111".into(),
-            website: "https://playhorizon.dev".into(),
+            website: "https://claudium.invalid".into(),
         }
     }
 }
@@ -451,9 +452,9 @@ pub fn links() -> Links {
         .map_or_else(Links::default, |text| Links::parse(&text))
 }
 
-/// The launcher's data folder; `HORIZON_LAUNCHER_HOME` overrides it (for tests and scripts).
+/// The launcher's data folder; `CLAUDIUM_LAUNCHER_HOME` overrides it (for tests and scripts).
 pub fn data_dir() -> PathBuf {
-    if let Some(home) = std::env::var_os("HORIZON_LAUNCHER_HOME").filter(|h| !h.is_empty()) {
+    if let Some(home) = std::env::var_os("CLAUDIUM_LAUNCHER_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
     }
     dirs::data_dir()
@@ -483,8 +484,8 @@ pub fn game_mod_api_level() -> Option<u32> {
 }
 
 /// A game version's mod API level, read once from the mark its program carries
-/// (`horizon_mods::api_level::MARK`). A program from before the mark serves level 0, the
-/// contract of Horizon 0.2.67 and 0.2.68.
+/// (`claudium_mods::api_level::MARK`). A program from before the mark serves level 0, the
+/// contract of Claudium 0.2.67 and 0.2.68.
 pub fn mod_api_level(tag: &str) -> u32 {
     static LEVELS: Mutex<Vec<(String, u32)>> = Mutex::new(Vec::new());
     let mut levels = LEVELS.lock().unwrap_or_else(|e| e.into_inner());
@@ -499,7 +500,7 @@ pub fn mod_api_level(tag: &str) -> u32 {
 /// The mod API level in the game program at `path`: its mark's, else 0.
 fn program_mod_api_level(path: &Path) -> u32 {
     let program = fs::read(path).unwrap_or_default();
-    horizon_mods::api_level::read_mark(&program).unwrap_or(0)
+    claudium_mods::api_level::read_mark(&program).unwrap_or(0)
 }
 
 /// Installed versions, newest tag first.
@@ -540,7 +541,7 @@ fn signed_digest(tag: &str, asset: &str) -> Result<String, String> {
     crate::signed::digest(
         tag,
         asset,
-        &horizon_release_sign::trusted_keys(),
+        &claudium_release_sign::trusted_keys(),
         fetch_small,
     )
 }
@@ -564,7 +565,7 @@ pub(crate) fn download(
     };
     let mut reader = response.into_reader();
     let mut file = fs::File::create(to).map_err(|e| e.to_string())?;
-    let mut hash = horizon_release_sign::Sha256::default();
+    let mut hash = claudium_release_sign::Sha256::default();
     let (mut done, mut buf) = (0u64, vec![0u8; 1 << 16]);
     loop {
         let n = reader
@@ -579,7 +580,7 @@ pub(crate) fn download(
         progress((done as f32 / size.max(1) as f32).min(1.0) * 0.9);
     }
     let name = url.rsplit('/').next().unwrap_or(url);
-    horizon_release_sign::check(name, sha256, &hash.hex()).inspect_err(|_| {
+    claudium_release_sign::check(name, sha256, &hash.hex()).inspect_err(|_| {
         let _ = fs::remove_file(to);
     })
 }
@@ -606,7 +607,7 @@ pub fn install(release: &Release, progress: impl Fn(f32)) -> Result<(), String> 
         Some(published) => crate::signed::nightly_digest(
             published,
             ASSET.unwrap_or_default(),
-            &horizon_release_sign::trusted_keys(),
+            &claudium_release_sign::trusted_keys(),
             fetch_small,
         )?,
         None if is_game_tag(tag) => signed_digest(tag, ASSET.unwrap_or_default())?,
@@ -636,7 +637,7 @@ pub(crate) fn install_as(
     let unpacked = partial.join("unpacked");
     unpack(&archive, &url, &unpacked)?;
     progress(0.97);
-    // The archives hold one top folder (horizon-linux-x86_64/...); the version folder is its contents.
+    // The archives hold one top folder (claudium-linux-x86_64/...); the version folder is its contents.
     let entries: Vec<_> = fs::read_dir(&unpacked)
         .map_err(|e| e.to_string())?
         .flatten()
@@ -700,7 +701,7 @@ pub fn disk_use(tag: &str) -> u64 {
     size(&version_dir(tag))
 }
 
-/// The Minecraft version a Horizon build targets, from its research-lock.json.
+/// The Minecraft version a Claudium build targets, from its research-lock.json.
 pub fn game_version(tag: &str) -> String {
     game_version_at(&version_dir(tag))
 }
@@ -712,7 +713,7 @@ fn read_json(path: &Path) -> Option<serde_json::Value> {
 fn game_version_at(dir: &Path) -> String {
     read_json(&dir.join("research-lock.json"))
         .and_then(|v| v["minecraft"]["version"].as_str().map(String::from))
-        .unwrap_or_else(|| horizon_core::VANILLA_VERSION.into())
+        .unwrap_or_else(|| claudium_core::VANILLA_VERSION.into())
 }
 
 pub fn resources(tag: &str) -> PathBuf {
@@ -720,10 +721,11 @@ pub fn resources(tag: &str) -> PathBuf {
 }
 
 fn resources_at(dir: &Path) -> PathBuf {
-    dir.join(".local/horizon-client").join(game_version_at(dir))
+    dir.join(".local/claudium-client")
+        .join(game_version_at(dir))
 }
 
-const RESOURCES_MANIFEST: &str = "horizon-resources.json";
+const RESOURCES_MANIFEST: &str = "claudium-resources.json";
 
 pub fn is_prepared(tag: &str) -> bool {
     resources(tag).join(RESOURCES_MANIFEST).exists()
@@ -737,7 +739,7 @@ pub fn has_sounds(tag: &str) -> bool {
 }
 
 fn sounds_in(resources: &Path) -> bool {
-    // What the game's sound registry reads (horizon-client sound_events.rs).
+    // What the game's sound registry reads (claudium-client sound_events.rs).
     resources.join("assets/minecraft/sounds.json").is_file()
 }
 
@@ -760,7 +762,7 @@ pub fn resources_summary(prepared: bool, sounds: bool, version: &str) -> String 
 
 /// Whether the resources `from` prepared are the ones preparing `to` would make: both pin the same
 /// Minecraft jars (research-lock.json) and their preparers make the same output. A preparer
-/// declares what it makes with `OUTPUT_VERSION` (crates/horizon-prepare/src/lib.rs, whose sources
+/// declares what it makes with `OUTPUT_VERSION` (crates/claudium-prepare/src/lib.rs, whose sources
 /// ship in the release folder), bumped by hand when the output changes and checked by CI
 /// (tools/prepare_output.py), so a release that changes the preparer's code but not its output
 /// keeps the resources. Preparers from before the number are known by their sources
@@ -826,7 +828,7 @@ const LEGACY_OUTPUT_VERSIONS: [(&str, u32); 2] = [
 ];
 
 /// The vanilla exporters those preparers ran (the `*_exporters_sha256` of their manifests), in
-/// mods/horizon/src/test/java/dev/horizonlab/parity.
+/// mods/claudium/src/test/java/dev/claudiumlab/parity.
 const LEGACY_EXPORTERS: [&str; 18] = [
     "ParityData.java",
     "VanillaBlockBehaviourExporter.java",
@@ -849,15 +851,15 @@ const LEGACY_EXPORTERS: [&str; 18] = [
 ];
 
 /// A version folder's preparer as the launchers before `OUTPUT_VERSION` compared it: the digest
-/// of its sources (`horizon_prepare::sources_sha256`) and of the exporters it ran, line endings
+/// of its sources (`claudium_prepare::sources_sha256`) and of the exporters it ran, line endings
 /// as checked out ignored.
 fn legacy_fingerprint(dir: &Path) -> Option<String> {
     use sha2::Digest;
-    let sources = horizon_prepare::sources_sha256(&dir.join(PREPARER_CRATE))?;
+    let sources = claudium_prepare::sources_sha256(&dir.join(PREPARER_CRATE))?;
     let mut hash = sha2::Sha256::new();
     hash.update(sources.as_bytes());
     for name in LEGACY_EXPORTERS {
-        let path = format!("mods/horizon/src/test/java/dev/horizonlab/parity/{name}");
+        let path = format!("mods/claudium/src/test/java/dev/claudiumlab/parity/{name}");
         let data: Vec<u8> = fs::read(dir.join(&path))
             .ok()?
             .into_iter()
@@ -871,9 +873,9 @@ fn legacy_fingerprint(dir: &Path) -> Option<String> {
 
 /// How launchers before `OUTPUT_VERSION` compared two preparers, for versions older than the
 /// ones `LEGACY_OUTPUT_VERSIONS` knows. The manifest records the hashes of the vanilla exporters
-/// the resources were made with (mods/horizon/src/test/java/.../parity), and the preparer writes
+/// the resources were made with (mods/claudium/src/test/java/.../parity), and the preparer writes
 /// every file and the manifest's `schema`, so both need the same preparer and the same exporter
-/// sources. The preparer is crates/horizon-prepare and tools/prepare_native_client.py (the
+/// sources. The preparer is crates/claudium-prepare and tools/prepare_native_client.py (the
 /// Python preparer of older versions, a wrapper of the binary since); a file only one of the two
 /// versions has is a different preparer. The helpers the Python preparer imported (lab.py and
 /// the test_*_parity.py modules) change between releases in how they find and check the
@@ -897,7 +899,8 @@ fn same_preparer(from: &Path, to: &Path, manifest: &serde_json::Value) -> bool {
         return false;
     }
     let mut sources = vec![
-        "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaHeightmapOracle.java".to_string(),
+        "mods/claudium/src/test/java/dev/claudiumlab/parity/VanillaHeightmapOracle.java"
+            .to_string(),
     ];
     for (_, value) in fields
         .iter()
@@ -920,7 +923,7 @@ fn same_preparer(from: &Path, to: &Path, manifest: &serde_json::Value) -> bool {
 }
 
 /// Where a version folder keeps the preparer's sources (the release package copies them).
-const PREPARER_CRATE: &str = "crates/horizon-prepare";
+const PREPARER_CRATE: &str = "crates/claudium-prepare";
 
 /// The files under `dir/relative`, as paths relative to `dir`.
 fn files_under(dir: &Path, relative: &Path) -> Vec<PathBuf> {
@@ -947,7 +950,7 @@ pub(crate) fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
         if entry.file_type()?.is_dir() {
             copy_dir(&entry.path(), &target)?;
         } else {
-            horizon_prepare::clone_or_copy(&entry.path(), &target)?;
+            claudium_prepare::clone_or_copy(&entry.path(), &target)?;
         }
     }
     Ok(())
@@ -1088,12 +1091,12 @@ fn complete_reports(versions: &Path, tag: &str) -> bool {
 }
 
 /// What a prepared version may lack that the launcher adds without preparing again, each copied
-/// from the player's own Minecraft asset store as `horizon-prepare <kind>` does: what the
+/// from the player's own Minecraft asset store as `claudium-prepare <kind>` does: what the
 /// player misses without it, whether the resources lack it, and the copy.
 type Completion = (
     &'static str,
     fn(&Path) -> bool,
-    fn(&Path, Option<&Path>, horizon_prepare::Log) -> Result<PathBuf, String>,
+    fn(&Path, Option<&Path>, claudium_prepare::Log) -> Result<PathBuf, String>,
 );
 
 const COMPLETIONS: [Completion; 5] = [
@@ -1101,7 +1104,7 @@ const COMPLETIONS: [Completion; 5] = [
     (
         "Programmer Art and High Contrast",
         lacks_packs,
-        horizon_prepare::packs,
+        claudium_prepare::packs,
     ),
     // A preparation that could not read the asset store keeps the client jar's 1x1 grey
     // placeholders, its English alone, and no sounds (#1867: Prism Launcher installs prepared
@@ -1109,14 +1112,18 @@ const COMPLETIONS: [Completion; 5] = [
     (
         "The title panorama",
         lacks_panorama,
-        horizon_prepare::panorama,
+        claudium_prepare::panorama,
     ),
-    ("The Unifont glyphs", lacks_unifont, horizon_prepare::fonts),
-    ("The languages", lacks_languages, horizon_prepare::languages),
+    ("The Unifont glyphs", lacks_unifont, claudium_prepare::fonts),
+    (
+        "The languages",
+        lacks_languages,
+        claudium_prepare::languages,
+    ),
     (
         "The sounds",
         |resources| !sounds_in(resources),
-        horizon_prepare::sounds,
+        claudium_prepare::sounds,
     ),
 ];
 
@@ -1134,7 +1141,7 @@ fn lacks_languages(resources: &Path) -> bool {
 }
 
 fn lacks_packs(resources: &Path) -> bool {
-    horizon_prepare::BUILT_IN_PACKS
+    claudium_prepare::BUILT_IN_PACKS
         .iter()
         .any(|pack| !resources.join("assets").join(pack).is_file())
 }
@@ -1240,13 +1247,13 @@ fn complete_assets_in(
 }
 
 /// The Minecraft folders whose asset store can hold what a prepared version lacks: the one
-/// chosen in the launcher, the official launcher's (or HORIZON_MINECRAFT_DIR), the folder
+/// chosen in the launcher, the official launcher's (or CLAUDIUM_MINECRAFT_DIR), the folder
 /// other launchers' files are linked into and Claudium's own download, then every launcher's
 /// default folder.
 fn minecraft_folders() -> Vec<PathBuf> {
     let mut folders: Vec<PathBuf> = Settings::load().minecraft_dir.into_iter().collect();
     folders.extend([
-        horizon_prepare::artifacts::minecraft_dir(None),
+        claudium_prepare::artifacts::minecraft_dir(None),
         data_dir().join("linked-minecraft"),
         data_dir().join("minecraft"),
     ]);
@@ -1296,19 +1303,19 @@ fn python() -> Option<&'static str> {
 
 /// How a version's resources are prepared.
 pub enum Preparer {
-    /// horizon-prepare, linked into the launcher: the version ships the same preparer sources.
-    InProcess(horizon_prepare::Options),
-    /// The version's own preparer: its horizon-prepare binary when its sources differ from the
+    /// claudium-prepare, linked into the launcher: the version ships the same preparer sources.
+    InProcess(claudium_prepare::Options),
+    /// The version's own preparer: its claudium-prepare binary when its sources differ from the
     /// launcher's (a newer or older release), or the Python script of versions made before it.
     Process(Command),
 }
 
-/// The version's horizon-prepare binary, when it ships one.
+/// The version's claudium-prepare binary, when it ships one.
 fn preparer_binary(dir: &Path) -> Option<PathBuf> {
     let binary = dir.join(if cfg!(windows) {
-        "horizon-prepare.exe"
+        "claudium-prepare.exe"
     } else {
-        "horizon-prepare"
+        "claudium-prepare"
     });
     binary.is_file().then_some(binary)
 }
@@ -1499,9 +1506,9 @@ fn java(
     log: &dyn Fn(String),
 ) -> Result<PathBuf, String> {
     let find = if compiler {
-        horizon_prepare::java::find
+        claudium_prepare::java::find
     } else {
-        horizon_prepare::java::find_runtime
+        claudium_prepare::java::find_runtime
     };
     if let Ok(jdk) = find(major, &[]) {
         return Ok(jdk.home());
@@ -1509,7 +1516,7 @@ fn java(
     let mut runtimes: Vec<PathBuf> = Vec::new();
     for home in games
         .iter()
-        .flat_map(|game| horizon_prepare::java::minecraft_runtimes(&game.join("runtime")))
+        .flat_map(|game| claudium_prepare::java::minecraft_runtimes(&game.join("runtime")))
     {
         if !runtimes.contains(&home) {
             runtimes.push(home);
@@ -1608,7 +1615,7 @@ pub enum PrepareStep {
     Files,
     Java,
     Sounds,
-    /// horizon-prepare's own work on those files.
+    /// claudium-prepare's own work on those files.
     Prepare,
 }
 
@@ -1638,7 +1645,7 @@ pub fn set_prepare_step(step: PrepareStep) {
 
 /// Checks what the preparation needs and picks how to run it. PLAY.txt describes the same
 /// steps: the player's own launcher install, the server jar from that version's own json, and
-/// Java (and Python, for versions before horizon-prepare). Also returns the Minecraft folder
+/// Java (and Python, for versions before claudium-prepare). Also returns the Minecraft folder
 /// to prepare from: `minecraft`, or the files another launcher keeps, linked into the official
 /// launcher's layout (sources.rs).
 pub fn preparer(
@@ -1650,7 +1657,7 @@ pub fn preparer(
     set_prepare_step(PrepareStep::Files);
     let version = game_version(tag);
     let dir = version_dir(tag);
-    let reused = horizon_prepare::artifacts::reuse_imported(&dir, &|line| log(line.to_string()))?;
+    let reused = claudium_prepare::artifacts::reuse_imported(&dir, &|line| log(line.to_string()))?;
     let chosen = minecraft.to_path_buf();
     // Resolved even when the game files are reused: the assets still come from the install.
     let minecraft = {
@@ -1705,7 +1712,7 @@ pub fn preparer(
             "This version prepares with Python: Python 3.10 or newer is needed. Install it, or pick a newer version.",
         )?),
     };
-    // The Java the version pins, found as horizon-prepare finds it, so a missing one is
+    // The Java the version pins, found as claudium-prepare finds it, so a missing one is
     // reported (or downloaded) before the server jar is downloaded. Versions from before
     // java_major ran Java 25.
     let major = read_json(&dir.join("research-lock.json"))
@@ -1722,7 +1729,7 @@ pub fn preparer(
     set_prepare_step(PrepareStep::Java);
     let java_home = java(
         major,
-        !horizon_prepare::exporters::available(&dir),
+        !claudium_prepare::exporters::available(&dir),
         &games,
         &manifest,
         log,
@@ -1750,10 +1757,10 @@ pub fn preparer(
             .map_err(|e| e.to_string())?;
     }
     if let Some(binary) = binary {
-        if horizon_prepare::sources_sha256(&dir.join(PREPARER_CRATE)).as_deref()
-            == Some(horizon_prepare::SOURCES_SHA256)
+        if claudium_prepare::sources_sha256(&dir.join(PREPARER_CRATE)).as_deref()
+            == Some(claudium_prepare::SOURCES_SHA256)
         {
-            let options = horizon_prepare::Options {
+            let options = claudium_prepare::Options {
                 root: dir,
                 import: !reused,
                 minecraft_dir: Some(minecraft.clone()),
@@ -1783,19 +1790,19 @@ pub fn preparer(
 }
 
 /// Copies the pinned version's sounds from the player's own launcher install into the version's
-/// resources (`horizon-prepare sounds`), each line to `log`. Sound is optional, so a launcher
+/// resources (`claudium-prepare sounds`), each line to `log`. Sound is optional, so a launcher
 /// install without them is a line in the log, never a failed preparation. The version's own
 /// preparer does it when it is not the launcher's and knows how; versions from before it read
 /// the sounds where the launcher's preparer puts them.
 pub fn sounds(tag: &str, minecraft: &Path, log: &dyn Fn(String)) {
     let dir = version_dir(tag);
-    let own = horizon_prepare::sources_sha256(&dir.join(PREPARER_CRATE)).as_deref()
-        == Some(horizon_prepare::SOURCES_SHA256);
+    let own = claudium_prepare::sources_sha256(&dir.join(PREPARER_CRATE)).as_deref()
+        == Some(claudium_prepare::SOURCES_SHA256);
     let binary = preparer_binary(&dir).filter(|binary| {
         !own && crate::process::command(binary)
             .arg("--help")
             .output()
-            .is_ok_and(|o| String::from_utf8_lossy(&o.stdout).contains("horizon-prepare sounds"))
+            .is_ok_and(|o| String::from_utf8_lossy(&o.stdout).contains("claudium-prepare sounds"))
     });
     set_prepare_step(PrepareStep::Sounds);
     log("Copying the sounds from your Minecraft install".into());
@@ -1820,7 +1827,7 @@ pub fn sounds(tag: &str, minecraft: &Path, log: &dyn Fn(String)) {
                 }
             }),
         None => std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            horizon_prepare::sounds(&dir, Some(minecraft), &|line| log(line.to_string()))
+            claudium_prepare::sounds(&dir, Some(minecraft), &|line| log(line.to_string()))
         }))
         .unwrap_or_else(|_| Err("The sound copy stopped unexpectedly".into()))
         .map(|_| ()),
@@ -1833,21 +1840,21 @@ pub fn sounds(tag: &str, minecraft: &Path, log: &dyn Fn(String)) {
 /// Runs `Preparer::InProcess` on this thread, each progress line to `log`. A panic is an
 /// error like any other, so the window never waits on a preparation that died.
 pub fn prepare_in_process(
-    options: &horizon_prepare::Options,
+    options: &claudium_prepare::Options,
     log: &dyn Fn(String),
 ) -> Result<(), String> {
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        horizon_prepare::prepare(options, &|line| log(line.to_string()))
+        claudium_prepare::prepare(options, &|line| log(line.to_string()))
     }))
     .unwrap_or_else(|_| Err("The preparation stopped unexpectedly".into()))
     .map(|_| ())
 }
 
-/// Where the game keeps saves and options.txt: `HORIZON_HOME`, else `horizon` in the platform's
-/// data folder (~/.local/share/horizon on Linux, as the release folders' horizon.sh uses). It is
+/// Where the game keeps saves and options.txt: `CLAUDIUM_HOME`, else `claudium` in the platform's
+/// data folder (~/.local/share/claudium on Linux, as the release folders' claudium.sh uses). It is
 /// never inside a version folder, so installing, updating or removing a version keeps the saves.
 pub fn game_home() -> PathBuf {
-    if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
+    if let Some(home) = std::env::var_os("CLAUDIUM_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
     }
     dirs::data_dir()
@@ -1855,15 +1862,15 @@ pub fn game_home() -> PathBuf {
         .join("claudium")
 }
 
-/// Whether No AI is on: every AI feature hidden and off (`horizon_core::no_ai`, kept in the
-/// game's `horizon-extras.txt` so the game reads the same switch).
+/// Whether No AI is on: every AI feature hidden and off (`claudium_core::no_ai`, kept in the
+/// game's `claudium-extras.txt` so the game reads the same switch).
 pub fn no_ai() -> bool {
-    horizon_core::no_ai::is_on(&game_home())
+    claudium_core::no_ai::is_on(&game_home())
 }
 
 /// Turns No AI on or off for the launcher and the game.
 pub fn set_no_ai(on: bool) -> Result<(), String> {
-    horizon_core::no_ai::set(&game_home(), on).map_err(|e| format!("Could not save No AI: {e}"))
+    claudium_core::no_ai::set(&game_home(), on).map_err(|e| format!("Could not save No AI: {e}"))
 }
 
 // ----- Logs and crash reports ---------------------------------------------------------------------
@@ -1953,7 +1960,7 @@ pub fn vulkan_start_crashed<S: AsRef<str>>(lines: impl IntoIterator<Item = S>) -
 }
 
 /// The game's graphics settings file in its home (the game's `graphics.rs`).
-const GRAPHICS_FILE: &str = "horizon-graphics.txt";
+const GRAPHICS_FILE: &str = "claudium-graphics.txt";
 
 /// Sets `graphicsApi:dx12` in `home`'s graphics settings when it is unset or `auto`, keeping
 /// every other line. True when it changed; a player's own `vulkan` or `dx12` stays.
@@ -2082,7 +2089,7 @@ pub fn client_command(tag: &str) -> Command {
     let mut cmd = Command::new(client_program(tag));
     cmd.current_dir(home).arg("--resources").arg(resources(tag));
     // PipeWire remembers volume and mute per application name. The game's own name is
-    // "PipeWire ALSA [horizon-client]", shared with development and test runs, where
+    // "PipeWire ALSA [claudium-client]", shared with development and test runs, where
     // muting it once left every later game silent: played from here it is "Claudium".
     if std::env::var_os("PIPEWIRE_PROPS").is_none() {
         cmd.env(
@@ -2093,8 +2100,8 @@ pub fn client_command(tag: &str) -> Command {
     cmd
 }
 
-/// The game's program: on macOS the one inside the version's Horizon.app, so the Dock and Cmd+Tab
-/// show Horizon's name and icon (game_app.rs); the bare binary elsewhere, or if that fails.
+/// The game's program: on macOS the one inside the version's Claudium.app, so the Dock and Cmd+Tab
+/// show Claudium's name and icon (game_app.rs); the bare binary elsewhere, or if that fails.
 fn client_program(tag: &str) -> PathBuf {
     let dir = version_dir(tag);
     #[cfg(target_os = "macos")]
@@ -2230,7 +2237,7 @@ pub fn minecraft_dir(requested: Option<PathBuf>) -> Result<PathBuf, String> {
     Ok(requested
         .or(Settings::load().minecraft_dir)
         .or_else(default_minecraft_dir)
-        .unwrap_or_else(|| horizon_prepare::artifacts::minecraft_dir(None)))
+        .unwrap_or_else(|| claudium_prepare::artifacts::minecraft_dir(None)))
 }
 
 /// The server folder: the one given, the one chosen in the launcher, or `server/` in the data folder.
@@ -2247,7 +2254,7 @@ pub fn need_prepared(tag: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!(
-            "{tag} is not prepared yet. Prepare it first: `horizon-launcher prepare --version {tag}` \
+            "{tag} is not prepared yet. Prepare it first: `claudium-launcher prepare --version {tag}` \
              uses your own Minecraft {v}, or downloads it from Mojang for the signed-in account \
              that owns it.",
             v = game_version(tag)
@@ -2259,11 +2266,12 @@ pub fn need_prepared(tag: &str) -> Result<(), String> {
 /// the gate, a sign-in that can't be renewed (no network, expired) still lets the game start,
 /// offline.
 pub fn client(tag: &str) -> Result<Command, String> {
-    let (session, offline) = account::session_for_game(&game_home(), false)
-        .map_err(|refused| format!("{refused} Sign in with `horizon-launcher account sign-in`."))?;
+    let (session, offline) = account::session_for_game(&game_home(), false).map_err(|refused| {
+        format!("{refused} Sign in with `claudium-launcher account sign-in`.")
+    })?;
     need_prepared(tag)?;
     complete_assets(tag);
-    crate::browser::horizon::before_play(&game_home());
+    crate::browser::claudium::before_play(&game_home());
     let mut cmd = client_command(tag);
     if let Some(file) = session {
         cmd.arg("--session-file").arg(file);
@@ -2280,10 +2288,10 @@ pub fn client(tag: &str) -> Result<Command, String> {
 
 /// Start the game straight into a friend's world: `--server friend:CODE`.
 pub fn join_friend(cmd: &mut Command, code: &str) -> Result<(), String> {
-    horizon_friends::invite::parse_detailed(code).map_err(|e| e.to_string())?;
+    claudium_friends::invite::parse_detailed(code).map_err(|e| e.to_string())?;
     let code: String = code.chars().filter(|c| !c.is_whitespace()).collect();
     cmd.arg("--server")
-        .arg(format!("{}{code}", horizon_friends::ADDRESS_PREFIX));
+        .arg(format!("{}{code}", claudium_friends::ADDRESS_PREFIX));
     Ok(())
 }
 
@@ -2388,14 +2396,14 @@ impl Logged {
 /// What a check found: a Claudium build newer than every installed one, and a newer launcher.
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct Updates {
-    pub horizon: Option<Release>,
+    pub claudium: Option<Release>,
     pub launcher: Option<Release>,
 }
 
 /// The newest Claudium build with a build here (the current Nightly), if it isn't installed and
 /// no installed version is newer. Two Nightlies of one day compare equal: the one on GitHub is
 /// the update.
-pub fn horizon_update(releases: &[Release], installed: &[String]) -> Option<Release> {
+pub fn claudium_update(releases: &[Release], installed: &[String]) -> Option<Release> {
     let newest = latest(releases)?;
     let newer = !installed.contains(&newest.tag)
         && installed
@@ -2441,10 +2449,10 @@ fn releases_and_updates_with(
         }
     };
     let releases = game_releases(&list);
-    let horizon = horizon_update(&installable_updates(&releases), &installed());
+    let claudium = claudium_update(&installable_updates(&releases), &installed());
     on_releases(Ok(releases));
     Ok(Updates {
-        horizon,
+        claudium,
         launcher: launcher_update(&launchers(&list)),
     })
 }
@@ -2507,15 +2515,15 @@ pub fn exe_path() -> &'static Path {
     EXE.get_or_init(|| std::env::current_exe().unwrap_or_else(|_| PathBuf::from(LAUNCHER_BINARY)))
 }
 
-/// Development builds and `HORIZON_LAUNCHER_NO_SELF_UPDATE` never replace themselves.
+/// Development builds and `CLAUDIUM_LAUNCHER_NO_SELF_UPDATE` never replace themselves.
 pub fn self_update_allowed() -> bool {
-    !cfg!(debug_assertions) && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none()
+    !cfg!(debug_assertions) && std::env::var_os("CLAUDIUM_LAUNCHER_NO_SELF_UPDATE").is_none()
 }
 
-/// The version in `horizon-launcher --version`'s output (`horizon-launcher 0.1.5`).
+/// The version in `claudium-launcher --version`'s output (`claudium-launcher 0.1.5`).
 fn parse_version_output(out: &str) -> Option<&str> {
     out.trim()
-        .strip_prefix("horizon-launcher ")
+        .strip_prefix("claudium-launcher ")
         .map(str::trim)
         .filter(|v| !v.is_empty())
 }
@@ -2560,7 +2568,7 @@ fn replace_binary(new: &Path, _exe: &Path) -> std::io::Result<()> {
 }
 
 /// The app bundle the launcher runs from (`…/Claudium.app` for `…/Claudium.app/Contents/MacOS/
-/// horizon-launcher`), or None for a bare binary, as launchers before the .app shipped.
+/// claudium-launcher`), or None for a bare binary, as launchers before the .app shipped.
 pub fn app_bundle(exe: &Path) -> Option<&Path> {
     let macos = exe.parent()?;
     let contents = macos.parent()?;
@@ -2684,7 +2692,7 @@ pub fn self_update(release: &Release, progress: impl Fn(f32)) -> Result<(), Stri
     unpack(&archive, &url, &unpacked)?;
     // A launcher inside Claudium.app replaces the whole bundle (its Info.plist, icon and
     // signature belong with the binary); a bare binary, as older launchers are, only the binary,
-    // which the macOS archive also holds (Claudium.app/Contents/MacOS/horizon-launcher).
+    // which the macOS archive also holds (Claudium.app/Contents/MacOS/claudium-launcher).
     if let Some(app) = app_bundle(exe_path()) {
         if let Some(new) = find_app(&unpacked) {
             replace_bundle(&new, app)?;
@@ -3149,11 +3157,11 @@ mod tests {
     /// and older) or none at all serves level 0.
     #[test]
     fn a_game_program_says_its_mod_api_level() {
-        let dir = std::env::temp_dir().join(format!("horizon-api-level-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("claudium-api-level-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         let marked = dir.join("marked");
         let mut program = b"\x7fELF code code".to_vec();
-        program.extend_from_slice(b"horizon-mod-api-level:0007;");
+        program.extend_from_slice(b"claudium-mod-api-level:0007;");
         fs::write(&marked, &program).unwrap();
         let old = dir.join("old");
         fs::write(&old, b"\x7fELF code without a mark").unwrap();
@@ -3168,7 +3176,7 @@ mod tests {
     /// the developer option (`Settings::dev_offline`), whose pass has no owner.
     #[test]
     fn mojang_downloads_only_for_an_owner() {
-        let dir = std::env::temp_dir().join(format!("horizon-owner-only-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("claudium-owner-only-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let pins = sources::Pins::read(&serde_json::json!({ "minecraft": {
             "version": "26.3",
@@ -3307,7 +3315,7 @@ pub fn {f}("
     #[test]
     fn reused_imports_take_the_assets_from_the_launcher_that_has_them() {
         let dir =
-            std::env::temp_dir().join(format!("horizon-reused-assets-{}", std::process::id()));
+            std::env::temp_dir().join(format!("claudium-reused-assets-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let client = b"fake client jar";
         let manifest = br#"{"id": "26.3"}"#;
@@ -3350,7 +3358,7 @@ pub fn {f}("
 
     #[test]
     fn resources_without_sounds_are_reported() {
-        let dir = std::env::temp_dir().join(format!("horizon-no-sounds-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("claudium-no-sounds-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(dir.join("assets/minecraft/textures")).unwrap();
         fs::write(dir.join(RESOURCES_MANIFEST), "{}").unwrap();
@@ -3410,7 +3418,8 @@ pub fn {f}("
 
     #[test]
     fn a_renderer_start_crash_switches_auto_to_dx12_once() {
-        let home = std::env::temp_dir().join(format!("horizon-dx12-switch-{}", std::process::id()));
+        let home =
+            std::env::temp_dir().join(format!("claudium-dx12-switch-{}", std::process::id()));
         let _ = fs::remove_dir_all(&home);
         // No settings file yet: one with the API alone.
         assert_eq!(switch_to_dx12(&home), Ok(true));
@@ -3489,8 +3498,8 @@ pub fn {f}("
         assert_eq!(launcher_version("v2026.10.13"), None);
         assert_eq!(launcher_version("launcher-vx"), None);
         let list = serde_json::json!([
-            {"tag_name": "v2026.10.12", "assets": [{"name": "horizon-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
-            {"tag_name": "launcher-v9.0.0", "assets": [{"name": "horizon-launcher-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
+            {"tag_name": "v2026.10.12", "assets": [{"name": "claudium-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
+            {"tag_name": "launcher-v9.0.0", "assets": [{"name": "claudium-launcher-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
             {"tag_name": "v2026.10.13", "assets": []},
             {"tag_name": "launcher-v0.0.1", "draft": true, "assets": []},
         ]);
@@ -3510,7 +3519,7 @@ pub fn {f}("
     /// previous one the newest again: it is what `install latest` and the update check offer.
     #[test]
     fn withdrawn_release_is_never_offered() {
-        let asset = ASSET.unwrap_or("horizon-linux-x86_64.tar.gz");
+        let asset = ASSET.unwrap_or("claudium-linux-x86_64.tar.gz");
         let list = serde_json::json!([
             {"tag_name": "v2026.10.15.1", "draft": true, "assets": [{"name": asset, "browser_download_url": "bad", "size": 1}]},
             {"tag_name": "v2026.10.15", "assets": [{"name": asset, "browser_download_url": "good", "size": 1}]},
@@ -3524,7 +3533,7 @@ pub fn {f}("
         );
         let offered = |installed: &[&str]| {
             let installed: Vec<String> = installed.iter().map(|t| t.to_string()).collect();
-            horizon_update(&releases, &installed).map(|r| r.tag)
+            claudium_update(&releases, &installed).map(|r| r.tag)
         };
         assert_eq!(offered(&["v2026.10.14"]), Some("v2026.10.15".into()));
         assert_eq!(offered(&[]), Some("v2026.10.15".into()));
@@ -3537,7 +3546,7 @@ pub fn {f}("
     /// had one installed waits for the next release instead of going back.
     #[test]
     fn updates_follow_every_release_and_leave_the_old_alpha_ones_out() {
-        let asset = ASSET.unwrap_or("horizon-linux-x86_64.tar.gz");
+        let asset = ASSET.unwrap_or("claudium-linux-x86_64.tar.gz");
         let list = serde_json::json!([
             {"tag_name": "v0.2.13", "assets": [{"name": asset, "browser_download_url": "n", "size": 1}]},
             {"tag_name": "v0.2.12", "prerelease": true, "assets": [{"name": asset, "browser_download_url": "a", "size": 1}]},
@@ -3550,7 +3559,7 @@ pub fn {f}("
         );
         let offered = |releases: &[Release], installed: &[&str]| {
             let installed: Vec<String> = installed.iter().map(|t| t.to_string()).collect();
-            horizon_update(&installable_updates(releases), &installed).map(|r| r.tag)
+            claudium_update(&installable_updates(releases), &installed).map(|r| r.tag)
         };
         assert_eq!(offered(&releases, &[]), Some("v0.2.13".into()));
         assert_eq!(offered(&releases, &["v0.2.0"]), Some("v0.2.13".into()));
@@ -3658,7 +3667,7 @@ pub fn {f}("
         assert_eq!(version_or(None), env!("CARGO_PKG_VERSION"));
         assert_eq!(
             VERSION,
-            option_env!("HORIZON_LAUNCHER_VERSION")
+            option_env!("CLAUDIUM_LAUNCHER_VERSION")
                 .filter(|v| !v.is_empty())
                 .unwrap_or(env!("CARGO_PKG_VERSION"))
         );
@@ -3675,7 +3684,7 @@ pub fn {f}("
         assert!(launcher_update(&[r(own_tag())]).is_none());
         assert_eq!(launcher_version(&own_tag()), Some(VERSION));
         assert_eq!(
-            parse_version_output(&format!("horizon-launcher {VERSION}\n")),
+            parse_version_output(&format!("claudium-launcher {VERSION}\n")),
             Some(VERSION)
         );
     }
@@ -3772,7 +3781,7 @@ pub fn {f}("
         );
         assert_eq!(compare_versions("launcher@0.2.0", "v0.2.0"), Equal);
 
-        let asset = ASSET.unwrap_or("horizon-linux-x86_64.tar.gz");
+        let asset = ASSET.unwrap_or("claudium-linux-x86_64.tar.gz");
         let list = serde_json::json!([
             {"tag_name": "v0.2.0", "prerelease": true, "assets": [{"name": asset, "browser_download_url": "b", "size": 1}]},
             {"tag_name": "v2026.10.21", "prerelease": true, "assets": [{"name": asset, "browser_download_url": "d", "size": 1}]},
@@ -3782,7 +3791,7 @@ pub fn {f}("
         let installed = ["v2026.10.19.15".to_string(), "v2026.10.12".to_string()];
         // A pre-release 0.2.0 is not an update; once published as the release, it is one.
         let offered = |releases: &[Release]| {
-            horizon_update(&installable_updates(releases), &installed).map(|r| r.tag)
+            claudium_update(&installable_updates(releases), &installed).map(|r| r.tag)
         };
         assert_eq!(offered(&releases), None);
         let mut released = releases.clone();
@@ -3882,10 +3891,10 @@ pub fn {f}("
         };
         let releases = [r("v2026.10.13"), r("v2026.10.12")];
         assert_eq!(
-            horizon_update(&releases, &["v2026.10.12".into()]).map(|r| r.tag),
+            claudium_update(&releases, &["v2026.10.12".into()]).map(|r| r.tag),
             Some("v2026.10.13".into())
         );
-        assert!(horizon_update(&releases, &["v2026.10.13".into()]).is_none());
+        assert!(claudium_update(&releases, &["v2026.10.13".into()]).is_none());
         assert!(launcher_update(&[r("launcher-v0.0.1")]).is_none());
         assert!(launcher_update(&[r("launcher@99.0.0")]).is_some());
         assert!(launcher_update_from(&[r("launcher-v99.0.0")], "launcher-v0.16.0").is_some());
@@ -3895,11 +3904,11 @@ pub fn {f}("
         assert!(select_after_update(None, &installed));
     }
 
-    /// The Nightly is the only build Horizon ships (docs/release-flow.md): every launcher takes the
+    /// The Nightly is the only build Claudium ships (docs/release-flow.md): every launcher takes the
     /// current one as its update, over every release; the last week's are listed, never offered.
     #[test]
     fn every_launcher_updates_to_the_current_nightly() {
-        let asset = ASSET.unwrap_or("horizon-linux-x86_64.tar.gz");
+        let asset = ASSET.unwrap_or("claudium-linux-x86_64.tar.gz");
         let build = |url: &str| serde_json::json!([{"name": asset, "browser_download_url": url, "size": 1}]);
         let list = serde_json::json!([
             {"tag_name": "nightly", "name": "Nightly 2026-10-28 · 9b772b2", "prerelease": true,
@@ -3935,7 +3944,7 @@ pub fn {f}("
         );
         let offered = |installed: &[&str]| {
             let installed: Vec<String> = installed.iter().map(|t| t.to_string()).collect();
-            horizon_update(&installable_updates(&releases), &installed).map(|r| r.tag)
+            claudium_update(&installable_updates(&releases), &installed).map(|r| r.tag)
         };
         let current = Some("nightly-2026-10-28-9b772b2".to_string());
         // A player of the release channel, a new player, one on an older Nightly of the same day.
@@ -3999,10 +4008,10 @@ pub fn {f}("
         let defaults = Links::default();
         assert_eq!(defaults.discord, "https://discord.gg/HcTeMZxe5E");
         assert_eq!(defaults.sponsor, "https://github.com/sponsors/ludovic111");
-        assert_eq!(defaults.website, "https://playhorizon.dev");
+        assert_eq!(defaults.website, "https://claudium.invalid");
         // The file on main says the same thing as the defaults.
         let file = Links::parse(
-            r#"{"discord": "https://discord.gg/HcTeMZxe5E", "sponsor": "https://github.com/sponsors/ludovic111", "website": "https://playhorizon.dev"}"#,
+            r#"{"discord": "https://discord.gg/HcTeMZxe5E", "sponsor": "https://github.com/sponsors/ludovic111", "website": "https://claudium.invalid"}"#,
         );
         assert_eq!(file, defaults);
         // Unreadable or missing, offline included: the defaults.
@@ -4033,12 +4042,13 @@ pub fn {f}("
     #[test]
     fn a_new_version_reuses_resources_prepared_by_a_compatible_one() {
         let versions =
-            std::env::temp_dir().join(format!("horizon-launcher-test-{}", std::process::id()));
+            std::env::temp_dir().join(format!("claudium-launcher-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&versions);
-        let oracle = "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaHeightmapOracle.java";
-        let camera = "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCameraOracle.java";
+        let oracle =
+            "mods/claudium/src/test/java/dev/claudiumlab/parity/VanillaHeightmapOracle.java";
+        let camera = "mods/claudium/src/test/java/dev/claudiumlab/parity/VanillaCameraOracle.java";
         let collision =
-            "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCollisionOracle.java";
+            "mods/claudium/src/test/java/dev/claudiumlab/parity/VanillaCollisionOracle.java";
         let write = |tag: &str, path: &str, text: &str| {
             let path = versions.join(tag).join(path);
             fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -4058,12 +4068,12 @@ pub fn {f}("
                 serde_json::json!({"schema": 7, "collision_exporters_sha256": {collision: "x"}});
             write(
                 tag,
-                &format!(".local/horizon-client/{minecraft}/{RESOURCES_MANIFEST}"),
+                &format!(".local/claudium-client/{minecraft}/{RESOURCES_MANIFEST}"),
                 &manifest.to_string(),
             );
             write(
                 tag,
-                &format!(".local/horizon-client/{minecraft}/worldgen/biomes.json"),
+                &format!(".local/claudium-client/{minecraft}/worldgen/biomes.json"),
                 "{}",
             );
         };
@@ -4086,7 +4096,7 @@ pub fn {f}("
         assert!(resources_at(&versions.join("v2026.10.13.1"))
             .join("worldgen/biomes.json")
             .exists());
-        let left: Vec<_> = fs::read_dir(versions.join("v2026.10.13.1/.local/horizon-client"))
+        let left: Vec<_> = fs::read_dir(versions.join("v2026.10.13.1/.local/claudium-client"))
             .unwrap()
             .flatten()
             .map(|e| e.file_name())
@@ -4118,9 +4128,9 @@ pub fn {f}("
         assert!(!is_prepared("v2026.10.15") && !is_prepared("v2026.10.16"));
         assert!(reuse_prepared_in(&versions).is_empty());
 
-        // Versions with horizon-prepare: its sources are the preparer, so the same sources
+        // Versions with claudium-prepare: its sources are the preparer, so the same sources
         // reuse each other's resources, and a change or a version without them prepares again.
-        let crate_file = "crates/horizon-prepare/src/lib.rs";
+        let crate_file = "crates/claudium-prepare/src/lib.rs";
         release("v2026.10.18", "26.3");
         write("v2026.10.18", crate_file, "rust preparer");
         assert_eq!(reuse_prepared(&versions, "v2026.10.18"), None);
@@ -4140,7 +4150,7 @@ pub fn {f}("
     #[test]
     fn prepared_resources_follow_the_preparers_output_version() {
         let versions = std::env::temp_dir().join(format!(
-            "horizon-launcher-output-test-{}",
+            "claudium-launcher-output-test-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&versions);
@@ -4149,19 +4159,19 @@ pub fn {f}("
             fs::create_dir_all(path.parent().unwrap()).unwrap();
             fs::write(path, text).unwrap();
         };
-        let lib = "crates/horizon-prepare/src/lib.rs";
+        let lib = "crates/claudium-prepare/src/lib.rs";
         // A preparer with its sources (as releases ship them) and the exporters it runs.
         let release = |tag: &str, code: &str| {
             write(tag, COMPLETE, "");
             let lock = serde_json::json!({"minecraft": {"version": "26.3", "client_sha1": "c", "server_sha1": "s"}});
             write(tag, "research-lock.json", &lock.to_string());
-            write(tag, "crates/horizon-prepare/Cargo.toml", "[package]");
-            write(tag, "crates/horizon-prepare/build.rs", "fn main() {}");
+            write(tag, "crates/claudium-prepare/Cargo.toml", "[package]");
+            write(tag, "crates/claudium-prepare/build.rs", "fn main() {}");
             write(tag, lib, code);
             for name in LEGACY_EXPORTERS {
                 write(
                     tag,
-                    &format!("mods/horizon/src/test/java/dev/horizonlab/parity/{name}"),
+                    &format!("mods/claudium/src/test/java/dev/claudiumlab/parity/{name}"),
                     name,
                 );
             }
@@ -4169,10 +4179,10 @@ pub fn {f}("
         let prepared = |tag: &str| {
             write(
                 tag,
-                &format!(".local/horizon-client/26.3/{RESOURCES_MANIFEST}"),
+                &format!(".local/claudium-client/26.3/{RESOURCES_MANIFEST}"),
                 r#"{"schema": 7}"#,
             );
-            write(tag, ".local/horizon-client/26.3/facts.json", tag);
+            write(tag, ".local/claudium-client/26.3/facts.json", tag);
         };
         let facts = |tag: &str| {
             fs::read_to_string(resources_at(&versions.join(tag)).join("facts.json")).ok()
@@ -4216,13 +4226,13 @@ pub fn {f}("
         // Line endings as checked out don't count; an exporter's or the sources' change does.
         write(
             "v0.2.64",
-            "mods/horizon/src/test/java/dev/horizonlab/parity/ParityData.java",
+            "mods/claudium/src/test/java/dev/claudiumlab/parity/ParityData.java",
             "ParityData.java\r",
         );
         assert_eq!(at("v0.2.64"), Some(1));
         write(
             "v0.2.64",
-            "mods/horizon/src/test/java/dev/horizonlab/parity/VanillaCollisionOracle.java",
+            "mods/claudium/src/test/java/dev/claudiumlab/parity/VanillaCollisionOracle.java",
             "changed",
         );
         assert_eq!(at("v0.2.64"), None);
@@ -4236,7 +4246,7 @@ pub fn {f}("
     #[test]
     fn prepared_versions_get_the_run_time_reports_without_preparing_again() {
         let versions = std::env::temp_dir().join(format!(
-            "horizon-launcher-reports-test-{}",
+            "claudium-launcher-reports-test-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&versions);
@@ -4251,7 +4261,7 @@ pub fn {f}("
             write(tag, "research-lock.json", &lock.to_string());
             write(
                 tag,
-                &format!(".local/horizon-client/26.3/{RESOURCES_MANIFEST}"),
+                &format!(".local/claudium-client/26.3/{RESOURCES_MANIFEST}"),
                 "{}",
             );
         };
@@ -4295,7 +4305,7 @@ pub fn {f}("
     #[test]
     fn prepared_versions_get_what_the_asset_store_adds_without_preparing_again() {
         let dir = std::env::temp_dir().join(format!(
-            "horizon-launcher-packs-test-{}",
+            "claudium-launcher-packs-test-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&dir);
@@ -4312,7 +4322,7 @@ pub fn {f}("
             data.push(n);
             data
         };
-        let mut assets: Vec<(String, Vec<u8>)> = horizon_prepare::BUILT_IN_PACKS
+        let mut assets: Vec<(String, Vec<u8>)> = claudium_prepare::BUILT_IN_PACKS
             .iter()
             .map(|name| (name.to_string(), name.as_bytes().to_vec()))
             .collect();
@@ -4451,17 +4461,17 @@ pub fn {f}("
 
     #[test]
     fn finds_the_app_bundle_around_the_binary() {
-        let exe = Path::new("/Applications/Claudium.app/Contents/MacOS/horizon-launcher");
+        let exe = Path::new("/Applications/Claudium.app/Contents/MacOS/claudium-launcher");
         assert_eq!(
             app_bundle(exe),
             Some(Path::new("/Applications/Claudium.app"))
         );
-        assert_eq!(app_bundle(Path::new("/Users/me/horizon-launcher")), None);
+        assert_eq!(app_bundle(Path::new("/Users/me/claudium-launcher")), None);
         assert_eq!(
-            app_bundle(Path::new("/x/Contents/MacOS/horizon-launcher")),
+            app_bundle(Path::new("/x/Contents/MacOS/claudium-launcher")),
             None
         );
-        let work = std::env::temp_dir().join(format!("horizon-find-app-{}", std::process::id()));
+        let work = std::env::temp_dir().join(format!("claudium-find-app-{}", std::process::id()));
         let _ = fs::remove_dir_all(&work);
         fs::create_dir_all(work.join("dist/Claudium.app/Contents/MacOS")).unwrap();
         assert_eq!(find_app(&work), Some(work.join("dist/Claudium.app")));
@@ -4474,21 +4484,21 @@ pub fn {f}("
     #[test]
     fn an_app_bundle_updates_in_place() {
         use std::os::unix::fs::PermissionsExt;
-        let work = std::env::temp_dir().join(format!("horizon-bundle-{}", std::process::id()));
+        let work = std::env::temp_dir().join(format!("claudium-bundle-{}", std::process::id()));
         let _ = fs::remove_dir_all(&work);
         let make = |dir: &Path, version: &str| {
             let app = dir.join("Claudium.app");
             fs::create_dir_all(app.join("Contents/MacOS")).unwrap();
             fs::create_dir_all(app.join("Contents/Resources")).unwrap();
-            let bin = app.join("Contents/MacOS/horizon-launcher");
+            let bin = app.join("Contents/MacOS/claudium-launcher");
             fs::copy("/usr/bin/true", &bin).unwrap();
             fs::set_permissions(&bin, fs::Permissions::from_mode(0o755)).unwrap();
             fs::write(app.join("Contents/Resources/version"), version).unwrap();
             fs::write(
                 app.join("Contents/Info.plist"),
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<plist version=\"1.0\"><dict>\
-                 <key>CFBundleExecutable</key><string>horizon-launcher</string>\
-                 <key>CFBundleIdentifier</key><string>dev.horizon.test</string>\
+                 <key>CFBundleExecutable</key><string>claudium-launcher</string>\
+                 <key>CFBundleIdentifier</key><string>dev.claudium.test</string>\
                  <key>CFBundlePackageType</key><string>APPL</string></dict></plist>\n",
             )
             .unwrap();
@@ -4515,7 +4525,7 @@ pub fn {f}("
         replace_bundle(&new, &installed).unwrap();
         let version = fs::read_to_string(installed.join("Contents/Resources/version")).unwrap();
         assert_eq!(version, "2.0.0");
-        let bin = installed.join("Contents/MacOS/horizon-launcher");
+        let bin = installed.join("Contents/MacOS/claudium-launcher");
         assert!(
             Command::new(&bin).status().unwrap().success(),
             "still executable"
@@ -4551,7 +4561,7 @@ pub fn {f}("
     #[test]
     fn launcher_versions_read_from_the_binary() {
         assert_eq!(
-            parse_version_output("horizon-launcher 0.1.5\n"),
+            parse_version_output("claudium-launcher 0.1.5\n"),
             Some("0.1.5")
         );
         assert_eq!(parse_version_output("something else"), None);
@@ -4562,7 +4572,7 @@ pub fn {f}("
             None
         );
         assert_eq!(
-            installed_launcher_version(Path::new("/nonexistent/horizon-launcher")),
+            installed_launcher_version(Path::new("/nonexistent/claudium-launcher")),
             None
         );
     }
@@ -4574,10 +4584,10 @@ pub fn {f}("
     fn a_replaced_binary_is_replaced_again_at_its_path() {
         use std::os::unix::fs::PermissionsExt;
         let dir =
-            std::env::temp_dir().join(format!("horizon-launcher-replace-{}", std::process::id()));
+            std::env::temp_dir().join(format!("claudium-launcher-replace-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
-        let exe = dir.join("horizon-launcher");
+        let exe = dir.join("claudium-launcher");
         fs::write(&exe, "old").unwrap();
         // Another update swaps the file under the running launcher.
         fs::write(dir.join("other"), "other update").unwrap();
@@ -4605,7 +4615,7 @@ pub fn {f}("
             .map(|e| e.file_name().to_string_lossy().into_owned())
             .collect();
         names.sort();
-        assert_eq!(names, ["horizon-launcher", "new"]);
+        assert_eq!(names, ["claudium-launcher", "new"]);
         let _ = fs::remove_dir_all(&dir);
     }
 
@@ -4630,12 +4640,12 @@ pub fn {f}("
     #[test]
     fn crash_reports_are_found_and_summarised() {
         let dir =
-            std::env::temp_dir().join(format!("horizon-launcher-crash-{}", std::process::id()));
+            std::env::temp_dir().join(format!("claudium-launcher-crash-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let start = std::time::SystemTime::now() - std::time::Duration::from_secs(2);
         assert!(crash_report_in_since(&dir, start).is_none());
         fs::create_dir_all(&dir).unwrap();
-        let report = "---- Claudium Crash Report ----\n// Details below.\n\nTime: 2026-10-14 09:05:07\nDescription: Unexpected error\n\npanicked at src/game.rs:10:5:\nboom\n\t0: horizon_client::game::frame\n";
+        let report = "---- Claudium Crash Report ----\n// Details below.\n\nTime: 2026-10-14 09:05:07\nDescription: Unexpected error\n\npanicked at src/game.rs:10:5:\nboom\n\t0: claudium_client::game::frame\n";
         fs::write(dir.join("crash-2026-10-14_09.05.07-client.txt"), report).unwrap();
         fs::write(dir.join("notes.txt"), "x").unwrap();
         assert_eq!(

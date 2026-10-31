@@ -90,7 +90,7 @@ FULL = [
 ]
 
 # The same blocks with no NBT: vanilla fills every field with its default, which
-# Horizon must reproduce when it loads and saves them.
+# Claudium must reproduce when it loads and saves them.
 BLOCK_ENTITIES = FULL + [(block, '') for block, nbt in FULL if nbt]
 
 # (entity id, extra SNBT). Each also gets UUID, Pos, NoAI, Silent, a name and a tag.

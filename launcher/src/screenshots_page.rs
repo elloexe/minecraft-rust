@@ -1,9 +1,9 @@
-//! The selected instance's screenshots on Home (`horizon_launcher::screenshots`): the newest as
+//! The selected instance's screenshots on Home (`claudium_launcher::screenshots`): the newest as
 //! thumbnails, all of them on request, and a viewer (← and → step through) with Copy, Open,
 //! Show in folder and Delete (to the trash, after a confirmation).
 use super::*;
+use claudium_launcher::screenshots::{self, Shot};
 use gpui::{ClipboardItem, Image, ImageFormat};
-use horizon_launcher::screenshots::{self, Shot};
 use std::path::PathBuf;
 
 /// Thumbnails shown before "Show all".

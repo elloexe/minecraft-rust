@@ -47,7 +47,7 @@ def make_cases(build):
 def close(a, b):
     """Lines equal but for doubles within 1e-12 relative error. The motion is
     Gaussian, and MarsagliaPolarGaussian calls Math.log, which HotSpot's x86-64
-    intrinsic rounds a unit apart from the platform libm horizon_core::jmath
+    intrinsic rounds a unit apart from the platform libm claudium_core::jmath
     uses for a small fraction of arguments."""
     ta, tb = a.split(), b.split()
     if len(ta) != len(tb):
@@ -72,9 +72,9 @@ def main():
     report.unlink(missing_ok=True)
     sources = [lab.ROOT / p for p in [
         'tools/test_entity_particles_parity.py', 'tools/oracle_harness.py', 'tools/test_rust_parity.py', 'tools/lab.py',
-        f'mods/horizon/src/test/java/dev/horizonlab/parity/{oracle}.java', 'Cargo.toml', 'Cargo.lock',
-        'crates/horizon-client/Cargo.toml', 'crates/horizon-client-render/src/particles.rs',
-        f'crates/horizon-client/examples/probe/{probe}.rs', 'crates/horizon-core/src/random.rs']]
+        f'mods/claudium/src/test/java/dev/claudiumlab/parity/{oracle}.java', 'Cargo.toml', 'Cargo.lock',
+        'crates/claudium-client/Cargo.toml', 'crates/claudium-client-render/src/particles.rs',
+        f'crates/claudium-client/examples/probe/{probe}.rs', 'crates/claudium-core/src/random.rs']]
     tested = base.source_hashes(sources)
     cases_path, units = make_cases(build)
     classes, dependencies, _ = harness.compile_oracle(build, oracle, jars, baking.client_libraries(),

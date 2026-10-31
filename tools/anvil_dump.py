@@ -7,7 +7,7 @@ region chunks (region/, entities/, poi/) as readable SNBT-like text.
 
 PATH selects nested keys (for example `sections 3 block_states`). Long
 arrays are summarised unless --full is given; --typed suffixes numbers
-with their NBT type (b, s, l, f, d; plain ints are TAG_Int). Used to compare Horizon saves
+with their NBT type (b, s, l, f, d; plain ints are TAG_Int). Used to compare Claudium saves
 with worlds written by the vanilla server.
 """
 import gzip

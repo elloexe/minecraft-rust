@@ -1,6 +1,6 @@
 {
   "scope": "Assets + BlockFacts + Behaviours loader only; no full startup or first frame",
-  "resources": "/srv/bob-data/horizon/.local/horizon-client/26.3",
+  "resources": "/srv/bob-data/claudium/.local/claudium-client/26.3",
   "repeats": 8,
   "ordering": [
     [
@@ -72,27 +72,27 @@
   ],
   "executables": {
     "cf837118": {
-      "path": "/srv/bob-data/horizon/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-cf837118",
+      "path": "/srv/bob-data/claudium/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-cf837118",
       "mode": "deferred",
       "sha256": "f1b044cd9ac2f67c644fb40bd7ecbe38128ec739a8112d57fc36f05fe9036a52"
     },
     "cd61e11b": {
-      "path": "/srv/bob-data/horizon/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-cd61e11b",
+      "path": "/srv/bob-data/claudium/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-cd61e11b",
       "mode": "deferred",
       "sha256": "fb2d3725b09ee38f85b49901f7053a6fe339b980a2b2dac6930a8ded22c139e8"
     },
     "arc-key": {
-      "path": "/srv/bob-data/horizon/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-arcpool",
+      "path": "/srv/bob-data/claudium/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-arcpool",
       "mode": "deferred",
       "sha256": "8cbb53d01afedf5c7a5da0e36c9f8c3569f34def9bc51488fe8699e7f615a131"
     },
     "reused-sounds": {
-      "path": "/srv/bob-data/horizon/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-reusesounds",
+      "path": "/srv/bob-data/claudium/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-reusesounds",
       "mode": "deferred",
       "sha256": "f45794bfbdbb3f9b5d34c375d397191ac67984b3ae91268aa3fdd02f2c1b7b98"
     },
     "current": {
-      "path": "/srv/bob-data/horizon/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-new",
+      "path": "/srv/bob-data/claudium/.worktrees/shared-block-json-20261017/target/release/examples/shared_json_startup_profile-new",
       "mode": "deferred",
       "sha256": "84eb1baae8e138f52e300b0b44f1339fca38e70db6e06126e78db776ea3e5cd0"
     }

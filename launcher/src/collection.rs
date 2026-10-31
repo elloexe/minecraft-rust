@@ -1,8 +1,8 @@
 //! Data collection in the window: the question asked once (and again when what is collected
-//! changes), and its section in Settings. Everything goes through `horizon_launcher::telemetry`.
+//! changes), and its section in Settings. Everything goes through `claudium_launcher::telemetry`.
 use super::*;
-use horizon_launcher::telemetry;
-use horizon_telemetry::{Choices, Consent, Kind as DataKind};
+use claudium_launcher::telemetry;
+use claudium_telemetry::{Choices, Consent, Kind as DataKind};
 
 /// What the window keeps about data collection.
 pub(crate) struct Collection {
@@ -299,15 +299,15 @@ impl Launcher {
             Some(always_on(&t).into_any_element()),
             &t,
         ));
-        let waiting = horizon_telemetry::outbox::pending(&telemetry::home()).len();
+        let waiting = claudium_telemetry::outbox::pending(&telemetry::home()).len();
         let id = match consent.install_id.as_str() {
             "" => "No install ID: nothing has been collected".to_string(),
             id => format!("Install ID {}…{}", &id[..4], &id[id.len() - 4..]),
         };
-        let server = if horizon_telemetry::endpoint().is_some() {
+        let server = if claudium_telemetry::endpoint().is_some() {
             format!("{waiting} waiting to be sent")
         } else {
-            "Sending is turned off here (HORIZON_TELEMETRY_URL=off)".into()
+            "Sending is turned off here (CLAUDIUM_TELEMETRY_URL=off)".into()
         };
         let confirm = self.collection.confirm_delete;
         let actions = div()
@@ -371,7 +371,7 @@ impl Launcher {
             .gap(px(16.))
             .child(text(theme::HEADING).text_color(t.ink).child("Data collection"))
             .child(text(theme::UI).max_w(px(600.)).text_color(t.muted).child(
-                "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.",
+                "Each switch is off unless you turn it on. What it sends is below it; the privacy page on claudium.invalid says how long it is kept.",
             ))
             .child(list)
             .child(text(theme::CAPTION).text_color(t.muted).child(telemetry::NEVER))

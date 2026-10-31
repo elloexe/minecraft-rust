@@ -87,8 +87,8 @@ def main():
              'clicks and keyPickItem cloning are not exercised; the menu clicks themselves are menu_click\'s.')
     harness.differential(
         'rust-container-screen-parity', 'VanillaContainerScreenOracle', 'container_screen_probe', make_cases, scope,
-        sources=[lab.ROOT / 'crates/horizon-client/src/container_screen.rs',
-                 lab.ROOT / 'crates/horizon-client/src/menu.rs'])
+        sources=[lab.ROOT / 'crates/claudium-client/src/container_screen.rs',
+                 lab.ROOT / 'crates/claudium-client/src/menu.rs'])
 
 
 if __name__ == '__main__':

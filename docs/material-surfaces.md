@@ -1,6 +1,6 @@
 # Seeded material surfaces
 
-Horizon implements the pinned Java Edition **26.3** material system's terracotta
+Claudium implements the pinned Java Edition **26.3** material system's terracotta
 band generation, band lookup, surface depth and secondary surface-noise query.
 These primitives now feed the [chunk surface stage](#chunk-surface-stage).
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The Nightly, the only build Horizon ships (.github/workflows/nightly-build.yml, docs/release-flow.md "Nightly").
+"""The Nightly, the only build Claudium ships (.github/workflows/nightly-build.yml, docs/release-flow.md "Nightly").
 
     nightly.py pick [--force]      which commit tonight's nightly builds: GitHub outputs and nightly-notes.md
     nightly.py rotate              renames the current `nightly` pre-release to nightly-<its date>, frees the tag
@@ -15,7 +15,7 @@ gives that commit. It is published as the `nightly` pre-release; the previous on
 Its notes list what reached main since the previous nightly, then the picked pull requests. Runs from main's
 checkout with `gh`; it reads and merges the branches with git and never runs anything from them.
 
-Each nightly ships its exact source: horizon-source.tar.gz (`git archive` of the commit, signed with the builds) on
+Each nightly ships its exact source: claudium-source.tar.gz (`git archive` of the commit, signed with the builds) on
 the release, and the tag nightly-source/<date>-<short>, which no prune deletes. Native mods pin a nightly's commit
 (docs/native-mods.md), so that commit must stay downloadable after its release and build branch are gone.
 """
@@ -83,7 +83,7 @@ def source_tag(today: str, sha: str) -> str:
 
 
 def source_line(today: str, sha: str) -> str:
-    return (f"Source: commit {sha}, kept for good as the tag `{source_tag(today, sha)}`; horizon-source.tar.gz is "
+    return (f"Source: commit {sha}, kept for good as the tag `{source_tag(today, sha)}`; claudium-source.tar.gz is "
             "its tree. Native mods built for this Nightly pin that commit.")
 
 

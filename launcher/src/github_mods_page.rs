@@ -1,10 +1,10 @@
 //! "Add from GitHub" on the Mods page: a link to a repository, release, tag, branch or commit,
-//! resolved to an exact release file or commit (`horizon_launcher::github_mods`), shown with the
+//! resolved to an exact release file or commit (`claudium_launcher::github_mods`), shown with the
 //! plain warning and a link to the exact source, and installed only after the player says they
 //! trust it. Mods installed that way list where they came from, with "Check for updates".
 use super::line_edit::{self, Key, LineEdit};
 use super::*;
-use horizon_launcher::github_mods::{self, Origin, Packed, Resolved};
+use claudium_launcher::github_mods::{self, Origin, Packed, Resolved};
 use std::path::{Path, PathBuf};
 
 enum Event {

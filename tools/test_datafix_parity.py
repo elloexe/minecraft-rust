@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """DataFixer differential test: worlds saved by older game versions, upgraded by
-vanilla 26.3 and by Horizon, must give the same data.
+vanilla 26.3 and by Claudium, must give the same data.
 
 For every sample world in datafix/worlds beside the shared vanilla data (made by
 tools/datafix_worlds.py with the official server jars of 1.18.2 to 26.2, and
@@ -9,8 +9,8 @@ generated automatically when missing), two upgrades run on a copy:
   vanilla  VanillaDataFixOracle: FileFixerUpper, then DataFixers on level.dat, every
            chunk, entity chunk and POI chunk, player, saved data, advancements and
            statistics file, exactly as 26.3 does when it opens the world
-  horizon  the `datafix_world` probe of horizon-world, which does the same with
-           horizon_world::datafix
+  claudium  the `datafix_world` probe of claudium-world, which does the same with
+           claudium_world::datafix
 
 Then every file is compared: region files chunk by chunk, NBT files and JSON
 files value by value (compound and object key order does not matter). The only
@@ -44,9 +44,9 @@ PARITY_SHARDS = 6
 # What the datafix_world probe can reach, checked by tools/parity.py: it reruns
 # this harness only when these sources (or the harness, oracle and data) change.
 PARITY_RUST_SCOPE = [
-    'crates/horizon-world/src/datafix/', 'crates/horizon-world/src/nbt.rs', 'crates/horizon-world/src/region.rs',
-    'crates/horizon-world/src/compression.rs', 'crates/horizon-core/src/position.rs', 'crates/horizon-core/src/position/',
-    'crates/horizon-core/src/geometry/', 'crates/horizon-core/src/version.rs',
+    'crates/claudium-world/src/datafix/', 'crates/claudium-world/src/nbt.rs', 'crates/claudium-world/src/region.rs',
+    'crates/claudium-world/src/compression.rs', 'crates/claudium-core/src/position.rs', 'crates/claudium-core/src/position/',
+    'crates/claudium-core/src/geometry/', 'crates/claudium-core/src/version.rs',
 ]
 
 IGNORED = {
@@ -72,7 +72,7 @@ def java_classpath():
 
 
 def build_rust():
-    subprocess.run(['cargo', 'build', '--locked', '--release', '-p', 'horizon-world', '--example', 'world_probe'],
+    subprocess.run(['cargo', 'build', '--locked', '--release', '-p', 'claudium-world', '--example', 'world_probe'],
                    cwd=ROOT, check=True)
     meta = json.loads(subprocess.check_output(['cargo', 'metadata', '--locked', '--no-deps', '--format-version', '1'],
                                               cwd=ROOT))
@@ -84,11 +84,11 @@ def run_vanilla(classpath, world, out, target=None):
     log = out.parent / (out.name + '.log')
     with log.open('w') as f:
         subprocess.run(['java', '-Xmx3g', '-Djava.awt.headless=true', '-cp', classpath,
-                        'dev.horizonlab.parity.VanillaDataFixOracle', str(world), str(out), *([str(target)] if target else [])],
+                        'dev.claudiumlab.parity.VanillaDataFixOracle', str(world), str(out), *([str(target)] if target else [])],
                        check=True, stdout=f, stderr=subprocess.STDOUT)
 
 
-def run_horizon(binary, world, out, target=None):
+def run_claudium(binary, world, out, target=None):
     shutil.rmtree(out, ignore_errors=True)
     log = out.parent / (out.name + '.log')
     with log.open('w') as f:
@@ -139,24 +139,24 @@ def files(world):
     return out
 
 
-def compare(vanilla, horizon):
+def compare(vanilla, claudium):
     report = []
-    a, b = files(vanilla), files(horizon)
+    a, b = files(vanilla), files(claudium)
     for rel in sorted(a | b, key=str):
         name = str(rel)
         if rel not in b:
-            report.append((name, 'present', 'missing from Horizon'))
+            report.append((name, 'present', 'missing from Claudium'))
             continue
         if rel not in a:
             report.append((name, 'missing from vanilla', 'present'))
             continue
-        va, ha = vanilla / rel, horizon / rel
+        va, ha = vanilla / rel, claudium / rel
         if name.endswith('.mca'):
             vc, hc = anvil_dump.region_chunks(str(va)), anvil_dump.region_chunks(str(ha))
             for key in sorted(set(vc) | set(hc)):
                 label = f'{name}{list(key)}'
                 if key not in hc:
-                    report.append((label, 'present', 'missing from Horizon'))
+                    report.append((label, 'present', 'missing from Claudium'))
                 elif key not in vc:
                     report.append((label, 'missing from vanilla', 'present'))
                 else:
@@ -193,7 +193,7 @@ def summarize(report):
         failures += len(items)
         path, a, b = items[0]
         short = lambda v: (s := json.dumps(v, default=str))[:200] + ('...' if len(s) > 200 else '')
-        print(f'  DIFF  {pattern}  x{len(items)}\n        e.g. {path}\n        vanilla {short(a)}\n        horizon {short(b)}')
+        print(f'  DIFF  {pattern}  x{len(items)}\n        e.g. {path}\n        vanilla {short(a)}\n        claudium {short(b)}')
     return failures
 
 
@@ -202,7 +202,7 @@ def main():
     p.add_argument('versions', nargs='*')
     p.add_argument('--keep', action='store_true')
     p.add_argument('--vanilla-only', action='store_true', help='only run the oracle')
-    p.add_argument('--binary', help='a prebuilt horizon-world probe binary')
+    p.add_argument('--binary', help='a prebuilt claudium-world probe binary')
     p.add_argument('--band', type=int, metavar='TARGET', help='check the data fixes up to this DataVersion only (not the '
                    'file fixes), on the sample worlds saved before it, for developing the fixes of a range of versions')
     args = p.parse_args()
@@ -232,15 +232,15 @@ def main():
         run_vanilla(classpath, world, RUN / f'{tag}-vanilla', band)
         if binary is None:
             continue
-        run_horizon(binary, world, RUN / f'{tag}-horizon', band)
-        failures = summarize(compare(RUN / f'{tag}-vanilla', RUN / f'{tag}-horizon'))
+        run_claudium(binary, world, RUN / f'{tag}-claudium', band)
+        failures = summarize(compare(RUN / f'{tag}-vanilla', RUN / f'{tag}-claudium'))
         print(f'  {version}: {"ok" if not failures else f"{failures} differences"}')
         total += failures
     if binary is not None:
         print('datafix parity', 'FAILED' if total else 'ok', f'({total} differences over {len(versions)} worlds)')
         if not total and not args.keep:
             for version in versions:  # vanilla outputs stay, for reuse
-                shutil.rmtree(RUN / f'{version}-band{band}-horizon' if band else RUN / f'{version}-horizon', ignore_errors=True)
+                shutil.rmtree(RUN / f'{version}-band{band}-claudium' if band else RUN / f'{version}-claudium', ignore_errors=True)
         sys.exit(1 if total else 0)
 
 
