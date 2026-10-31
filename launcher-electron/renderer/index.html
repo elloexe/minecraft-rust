@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline';" />
+  <title>Claudium</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar: account on top, nav below, version at the foot -->
+    <aside class="sidebar">
+      <button id="account" class="account" type="button">
+        <span class="avatar" id="avatar">C</span>
+        <span class="who">
+          <span class="name" id="account-name">Not signed in</span>
+          <span class="sub" id="account-sub">Click to sign in</span>
+        </span>
+      </button>
+
+      <nav class="nav">
+        <button class="nav-item active" data-tab="play" type="button"><span class="dot"></span>Play</button>
+        <button class="nav-item" data-tab="installations" type="button"><span class="dot"></span>Installations</button>
+        <button class="nav-item" data-tab="patch" type="button"><span class="dot"></span>Patch notes</button>
+      </nav>
+
+      <div class="foot">
+        <button class="nav-item" data-tab="settings" type="button"><span class="dot"></span>Settings</button>
+        <div class="version">Claudium Launcher 0.1.0</div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <section class="tab" data-tab="play">
+        <div class="hero">
+          <div class="wordmark">CLAUDIUM</div>
+          <div class="tagline">Minecraft: Java Edition — in Rust. Loads in about a second and a half.</div>
+        </div>
+
+        <div class="playbar">
+          <div class="side left">
+            <div class="picker">
+              <span class="label">Version</span>
+              <span class="value" id="version-value">Claudium 26.3</span>
+            </div>
+          </div>
+          <button id="play" class="play" type="button" disabled>SIGN IN TO PLAY</button>
+          <div class="side right">
+            <button class="ghost" id="folder" type="button">Folder</button>
+          </div>
+        </div>
+        <div class="status" id="status"></div>
+      </section>
+
+      <section class="tab hidden" data-tab="installations">
+        <h1>Installations</h1>
+        <p class="muted">One version for now — Claudium 26.3. Multiple installations are coming.</p>
+      </section>
+
+      <section class="tab hidden" data-tab="patch">
+        <h1>Patch notes</h1>
+        <p class="muted">Release notes will show here.</p>
+      </section>
+
+      <section class="tab hidden" data-tab="settings">
+        <h1>Settings</h1>
+        <div class="setting">
+          <div>
+            <div class="setting-name">Claudium game</div>
+            <div class="muted" id="game-path">Not set</div>
+          </div>
+          <button class="ghost" id="choose-game" type="button">Choose…</button>
+        </div>
+        <div class="setting">
+          <div>
+            <div class="setting-name">Microsoft sign-in</div>
+            <div class="muted" id="client-id-note"></div>
+          </div>
+          <button class="ghost" id="sign-out" type="button">Sign out</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
