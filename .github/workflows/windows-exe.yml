@@ -54,7 +54,7 @@ jobs:
         run: cargo build --release --locked --bin claudium-launcher
 
       - name: Build the game
-        run: cargo build --release --locked -p claudium-client -p claudium-prepare --bins
+        run: cargo build --release --locked -p claudium-client --bins -p claudium-prepare -p claudium-server
 
       # Compile the exporters here, once, so the player's first prepare does not. Needs the
       # pinned vanilla jars (public; fetched on the runner only, never shipped).
@@ -70,7 +70,11 @@ jobs:
           # --prepare imports the pinned jars; it may then fail on the sounds this skips, which
           # compile-exporters does not need.
           target/release/claudium-prepare.exe --prepare --server-jar vanilla/server.jar --minecraft-dir vanilla --root "$PWD" || true
-          target/release/claudium-prepare.exe compile-exporters --root "$PWD"
+          # It prints the bundle's folder (.local/exporters/<key>) last; the packager takes it
+          # from exporters/.
+          bundle=$(target/release/claudium-prepare.exe compile-exporters --root "$PWD" | tail -n 1 | tr -d '\r')
+          rm -rf exporters
+          cp -r "$bundle" exporters
           test -f exporters/manifest.json
 
       - name: Stage
@@ -78,14 +82,13 @@ jobs:
         run: |
           set -e
           out=dist/Claudium
-          mkdir -p "$out/game"
+          # The game folder as upstream's releases lay it out: the binaries, the exporters and
+          # the sources the preparer checks them against (without those it would compile them
+          # again, which needs a JDK).
+          cargo run --release --locked -p xtask -- package target/release/claudium-client.exe "$out/game"
           cp launcher/target/release/claudium-launcher.exe "$out/Claudium-Launcher.exe"
           cp packaging/icons/claudium.ico                 "$out/Claudium-Launcher.ico"
-          cp target/release/claudium-client.exe  "$out/game/"
-          cp target/release/claudium-ctl.exe     "$out/game/"
-          cp target/release/claudium-prepare.exe "$out/game/"
-          cp research-lock.json                  "$out/game/"
-          cp -r exporters                        "$out/game/exporters"
+          ls "$out" "$out/game"
 
       # A Temurin JRE of the major research-lock.json pins, flattened to runtime/bin/java.exe.
       - name: Bundle a Java runtime
