@@ -72,6 +72,10 @@ objc2-app-kit = { version = "0.3", default-features = false, features = ["NSAcce
 raw-window-handle = "0.6"
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }
+# The Microsoft sign-in window (account_window.rs): Microsoft's page in WebView2, which Windows
+# 10 and 11 ship, so the code is read from the page it lands on with nothing to copy.
+wry = { version = "0.57", default-features = false, features = ["os-webview"] }
+tao = { version = "0.37", default-features = false, features = ["rwh_06"] }
 
 [target.'cfg(windows)'.build-dependencies]
 # The icon resource in the .exe (build.rs).

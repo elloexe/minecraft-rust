@@ -164,6 +164,13 @@ starts the game directly, as Horizon does. It is now the only launcher.
   presses Continue, which reads it from the clipboard (`SignIn::submit`). Both the
   account settings row and the owner gate have it; strings in all seven languages.
   A configured `CLAUDIUM_MSA_CLIENT_ID` still uses the device code.
+- On Windows the public id signs in in a window of the launcher's own
+  (`launcher/src/account_window.rs`, WebView2 through `wry`/`tao`, in a child
+  process `claudium-launcher --sign-in-window URL` so its event loop never meets
+  GPUI's). It reads the code from the redirect to `oauth20_desktop.srf` before
+  the page loads: Microsoft now strips it from that page's address
+  (`?removed=true`), so the copy-the-address flow above cannot work in a normal
+  browser. That flow stays only where there is no window (macOS, Linux).
 - `windows-exe.yml` builds it all in one job: `Claudium-Setup.exe` (NSIS,
   `packaging/windows/installer.nsi`, per user, Start menu and desktop shortcuts)
   and the same folder unpacked (`Claudium-Launcher.exe`, `game/`, `runtime/`).

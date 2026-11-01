@@ -29,7 +29,7 @@ const LIVE_BASE: &str = "https://login.live.com";
 /// The public id's registered redirect: Microsoft lands here with `?code=...` in the address bar
 /// after sign-in, which the player pastes back (a terminal/GPUI launcher has no embedded browser to
 /// read it automatically, as an Electron one would).
-const LIVE_REDIRECT: &str = "https://login.live.com/oauth20_desktop.srf";
+pub(crate) const LIVE_REDIRECT: &str = "https://login.live.com/oauth20_desktop.srf";
 pub const NOT_CONFIGURED: &str =
     "This build of the launcher has no Microsoft sign-in (CLAUDIUM_MSA_CLIENT_ID), so it can't start the game.";
 /// What every Play says while no account in the launcher owns the game.
@@ -1369,11 +1369,14 @@ impl SignIn {
     pub fn start() -> Self {
         use std::sync::atomic::Ordering;
         let live = client_id().filter(|id| is_live_id(id));
-        // The public id signs in in the player's browser: the page to open is known now, so the
-        // window can open it on the same click.
+        // The public id signs in in a window of the launcher's own where there is one
+        // (account_window.rs): Microsoft hides the code from a normal browser. Elsewhere it signs
+        // in in the player's browser, whose page is known now, so the window opens it on the same
+        // click.
+        let windowed = live.is_some() && crate::account_window::available();
         let first = match &live {
-            Some(id) => SignInState::Browser(authorize_url(id)),
-            None => SignInState::Starting,
+            Some(id) if !windowed => SignInState::Browser(authorize_url(id)),
+            _ => SignInState::Starting,
         };
         let state = std::sync::Arc::new(Mutex::new(first));
         let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
@@ -1384,7 +1387,14 @@ impl SignIn {
             let result = (|| {
                 let ep = Endpoints::live();
                 let client_id = client_id().ok_or(NOT_CONFIGURED)?;
-                let ms = if live.is_some() {
+                let ms = if windowed {
+                    use crate::account_window::{sign_in, Outcome};
+                    match sign_in(&authorize_url(&client_id))? {
+                        Outcome::Code(code) => exchange_code(&client_id, &code)?,
+                        Outcome::Refused(e) => return Err(format!("Microsoft said: {e}")),
+                        Outcome::Closed => return Err("The sign-in window was closed.".into()),
+                    }
+                } else if live.is_some() {
                     let code = loop {
                         match rx.recv_timeout(Duration::from_millis(250)) {
                             Ok(code) => break code,

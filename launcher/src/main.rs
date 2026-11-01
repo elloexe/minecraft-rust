@@ -4331,6 +4331,13 @@ fn main() {
         eprintln!("Could not restore the launcher's terminal streams: {error}");
         std::process::exit(1);
     }
+    // The Microsoft sign-in window runs as a process of its own (account_window.rs).
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let [arg, url] = args.as_slice() {
+        if arg == claudium_launcher::account_window::ARG {
+            claudium_launcher::account_window::run(url);
+        }
+    }
     perf::process_started();
     backend::exe_path();
     // The Java runtime shipped beside the launcher, for the preparer (before any thread starts).
