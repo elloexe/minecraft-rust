@@ -50,18 +50,20 @@ function findGameBundle() {
   return null;
 }
 
-// The Java JDK bundled in the installer, used to prepare resources (compile the exporters and run
-// the game's data generators) without the player installing Java. Returns the JDK home, or null.
-function findJdk() {
-  const candidates = [
-    process.env.CLAUDIUM_BUNDLED_JDK,
-    process.resourcesPath && path.join(process.resourcesPath, 'jdk'),
-    path.join(path.dirname(process.execPath), 'jdk'),
-    path.join(__dirname, 'jdk'),
-  ].filter(Boolean);
-  const javac = process.platform === 'win32' ? 'javac.exe' : 'javac';
-  for (const c of candidates) {
-    try { if (fs.statSync(path.join(c, 'bin', javac)).isFile()) return c; } catch { /* keep looking */ }
+// The Java runtime bundled in the installer, used to run the precompiled exporters when preparing
+// the game from the player's Minecraft — so no Java install and no Mojang download. Returns its
+// home, or null. (Exporters are precompiled in CI, so a runtime is enough; no compiler needed.)
+function findJava() {
+  const bin = process.platform === 'win32' ? 'java.exe' : 'java';
+  const dirs = ['runtime', 'jdk'];
+  const bases = [process.resourcesPath, path.dirname(process.execPath), __dirname].filter(Boolean);
+  const envp = process.env.CLAUDIUM_BUNDLED_JAVA;
+  if (envp) { try { if (fs.statSync(path.join(envp, 'bin', bin)).isFile()) return envp; } catch { /* fall through */ } }
+  for (const base of bases) {
+    for (const d of dirs) {
+      const home = path.join(base, d);
+      try { if (fs.statSync(path.join(home, 'bin', bin)).isFile()) return home; } catch { /* keep looking */ }
+    }
   }
   return null;
 }
@@ -82,13 +84,13 @@ function run(args, onLine = () => {}) {
     const bin = findLauncher();
     if (!bin) return reject(new Error('The Claudium launcher engine is missing from this build.'));
     const env = { ...process.env, CLAUDIUM_LAUNCHER_HOME: dataHome() };
-    // Give every engine call the bundled JDK, so preparing the game needs no Java install and no
-    // download of Mojang's runtime: JAVA_HOME for the engine, and its bin on PATH for javac.
-    const jdk = findJdk();
-    if (jdk) {
-      env.JAVA_HOME = jdk;
+    // Give every engine call the bundled Java runtime, so preparing needs no Java install and no
+    // download of Mojang's runtime: JAVA_HOME for the engine, and its bin on PATH.
+    const java = findJava();
+    if (java) {
+      env.JAVA_HOME = java;
       const sep = process.platform === 'win32' ? ';' : ':';
-      env.PATH = path.join(jdk, 'bin') + sep + (env.PATH || '');
+      env.PATH = path.join(java, 'bin') + sep + (env.PATH || '');
     }
     const child = spawn(bin, args, { env });
     let out = '';

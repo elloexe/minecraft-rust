@@ -61,12 +61,10 @@ jobs:
           distribution: temurin
           java-version: "25"
 
-      # 2b) Precompile the exporters here so the player's FIRST LAUNCH is fast (no javac, no JDK
-      #     needed on their machine). Needs the pinned jars, which are public. Best-effort: on any
-      #     failure the installer still ships and the launcher compiles from the bundled sources on
-      #     first run instead (slower, but works). This is what makes first launch match Horizon.
-      - name: Precompile exporters (best-effort)
-        continue-on-error: true
+      # 2b) Precompile the exporters here so the player's FIRST LAUNCH is fast — no compiling on
+      #     their machine. Needs the pinned jars (public). Required: if it fails the build fails, so
+      #     every installer that ships is fast-launch. This is what makes first launch match Horizon.
+      - name: Precompile exporters
         shell: bash
         run: |
           set -e
@@ -75,7 +73,8 @@ jobs:
           # exit non-zero AFTER importing the jars — which is all compile-exporters needs.
           target/release/claudium-prepare.exe --prepare --server-jar vanilla/server.jar --minecraft-dir vanilla --root "$PWD" || true
           target/release/claudium-prepare.exe compile-exporters --root "$PWD"
-          test -f exporters/manifest.json && echo "exporters compiled OK"
+          test -f exporters/manifest.json
+          echo "exporters precompiled OK"
 
       # 3) Stage both into the Electron app so electron-builder bundles them as extraResources.
       - name: Stage engine and game
@@ -88,41 +87,30 @@ jobs:
           cp target/release/claudium-ctl.exe     launcher-electron/game/claudium-ctl.exe
           cp target/release/claudium-prepare.exe launcher-electron/game/claudium-prepare.exe
           cp research-lock.json                  launcher-electron/game/research-lock.json
-          # The exporter sources prepare compiles on the player's machine (javac). They must land
-          # at <version>/mods/claudium/src/test/java/... after the launcher installs the bundle.
-          mkdir -p launcher-electron/game/mods/claudium/src/test/java/dev/claudiumlab
-          cp -r mods/claudium/src/test/java/dev/claudiumlab/parity \
-                launcher-electron/game/mods/claudium/src/test/java/dev/claudiumlab/
-          # If the exporters were precompiled above, ship them: the launcher then uses them and the
-          # first launch skips compiling (fast, no JDK). The sources above stay as a fallback.
-          if [ -f exporters/manifest.json ]; then
-            cp -r exporters launcher-electron/game/exporters
-            echo "bundled PRECOMPILED exporters — first launch will be fast"
-          else
-            echo "no precompiled exporters — first launch compiles from source (slower)"
-          fi
+          # Ship the precompiled exporters (required step above): the launcher uses them, so the
+          # player's first launch skips compiling — no source tree and no JDK needed.
+          cp -r exporters launcher-electron/game/exporters
           ls -l launcher-electron/bin launcher-electron/game
-          echo "exporter sources: $(find launcher-electron/game/mods -name '*.java' | wc -l) .java files"
 
-      # 4) Bundle a Java JDK so preparing the game needs no Java install and no Mojang download.
-      #    research-lock.json pins java_major (25); Temurin (Adoptium) ships that as a redistributable
-      #    OpenJDK build. Flattened so launcher-electron/jdk/bin/javac.exe exists.
-      - name: Bundle a JDK
+      # 4) Bundle a small Java RUNTIME (JRE) so the player's first prepare can run the precompiled
+      #    exporters with no Java install and no Mojang download. research-lock.json pins java_major
+      #    (25); Temurin (Adoptium) ships a redistributable JRE. Flattened to runtime/bin/java.exe.
+      - name: Bundle a Java runtime
         shell: bash
         run: |
           set -e
           major=$(sed -n 's/.*"java_major": *\([0-9]*\).*/\1/p' research-lock.json | head -1)
           major=${major:-25}
-          url="https://api.adoptium.net/v3/binary/latest/${major}/ga/windows/x64/jdk/hotspot/normal/eclipse?project=jdk"
-          echo "Downloading Temurin JDK ${major} for Windows x64"
-          curl -fL --retry 4 --retry-delay 5 "$url" -o jdk.zip
-          mkdir -p jdk-extract
-          powershell -NoProfile -Command "Expand-Archive -Path jdk.zip -DestinationPath jdk-extract -Force"
-          inner=$(ls -d jdk-extract/*/ | head -1)
-          mkdir -p launcher-electron/jdk
-          cp -r "${inner}." launcher-electron/jdk/
-          test -f launcher-electron/jdk/bin/javac.exe
-          echo "JDK staged:"; launcher-electron/jdk/bin/javac.exe -version
+          url="https://api.adoptium.net/v3/binary/latest/${major}/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk"
+          echo "Downloading Temurin JRE ${major} for Windows x64"
+          curl -fL --retry 4 --retry-delay 5 "$url" -o jre.zip
+          mkdir -p jre-extract
+          powershell -NoProfile -Command "Expand-Archive -Path jre.zip -DestinationPath jre-extract -Force"
+          inner=$(ls -d jre-extract/*/ | head -1)
+          mkdir -p launcher-electron/runtime
+          cp -r "${inner}." launcher-electron/runtime/
+          test -f launcher-electron/runtime/bin/java.exe
+          echo "JRE staged:"; launcher-electron/runtime/bin/java.exe -version
 
       - uses: actions/setup-node@v4
         with:

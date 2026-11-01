@@ -680,10 +680,10 @@ pub fn install_from_dir(tag: &str, src: &Path) -> Result<(), String> {
     let target = version_dir(tag);
     if target.join(COMPLETE).exists() && target.join(CLIENT).exists() {
         // Already installed: keep it (its prepared resources live here). If an older bundle
-        // installed it without the exporter sources, merge the current bundle's files in on top
-        // (copy_dir adds/overwrites, it does not wipe), so the sources appear without losing a
-        // prepared game. Then ensure it is the selected version.
-        if !target.join("mods").exists() {
+        // installed it without the precompiled exporters, merge the current bundle's files in on
+        // top (copy_dir adds/overwrites, it does not wipe), so the exporters and refreshed binaries
+        // appear without losing a prepared game — no manual reinstall. Then ensure it is selected.
+        if !target.join("exporters").exists() {
             copy_dir(src, &target).map_err(|e| e.to_string())?;
         }
         let mut settings = Settings::load();
