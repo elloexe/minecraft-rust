@@ -24,9 +24,9 @@ impl Launcher {
     }
 
     /// Opens the screen and starts the sign-in on it.
-    pub(crate) fn sign_in_to_play(&mut self) {
+    pub(crate) fn sign_in_to_play(&mut self, cx: &mut App) {
         self.owner_screen_open = true;
-        self.start_sign_in();
+        self.start_sign_in(cx);
     }
 
     /// Closes it; it comes back with the next refused Play.
@@ -35,6 +35,7 @@ impl Launcher {
             s.cancel();
         }
         self.sign_in_state = None;
+        self.sign_in_error = None;
         self.owner_screen_open = false;
         if !self.settings.owner_notice_seen {
             self.settings.owner_notice_seen = true;
@@ -52,6 +53,7 @@ impl Launcher {
             _ if !configured => Shown::Error(tr(account::NOT_CONFIGURED)),
             Some(SignInState::Starting) => Shown::Starting,
             Some(SignInState::Code(code)) => Shown::Code(&code.verification_uri, &code.user_code),
+            Some(SignInState::Browser(_)) => Shown::Browser,
             Some(SignInState::Done(Err(e))) => Shown::Error(e),
             Some(SignInState::Done(Ok(_))) | None => Shown::Idle,
         };
@@ -97,65 +99,79 @@ impl Launcher {
                 .border_1()
                 .border_color(plate::alpha(n.stroke, n.stroke_alpha))
         };
-        body = match state {
-            Shown::Code(uri, user_code) => {
-                let copy = user_code.to_string();
-                body.child(
+        body =
+            match state {
+                Shown::Code(uri, user_code) => {
+                    let copy = user_code.to_string();
+                    body.child(
+                        raised()
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .gap(px(16.))
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(px(4.))
+                                    .child(
+                                        shell::text(theme::night::CAPTION, shell::c(n.ink_soft))
+                                            .child(trf(
+                                                "Open {link} in your browser and enter this code:",
+                                                // The page as the player would type it.
+                                                &[("link", short_link(uri))],
+                                            )),
+                                    )
+                                    .child(
+                                        div()
+                                            .font_family(theme::MONO)
+                                            .font_weight(FontWeight::BOLD)
+                                            .text_size(px(30.))
+                                            .line_height(px(38.))
+                                            .text_color(shell::c(n.ink))
+                                            .child(user_code.to_string()),
+                                    ),
+                            )
+                            .child(
+                                shell::action("owner-copy", shell::Action::Raised, &t)
+                                    .child(shell::label(tr("Copy code").to_string()))
+                                    .on_click(move |_, _, cx| {
+                                        copy_to_clipboard(
+                                            cx,
+                                            gpui::ClipboardItem::new_string(copy.clone()),
+                                        )
+                                    }),
+                            ),
+                    )
+                }
+                Shown::Browser => body.child(
                     raised()
                         .flex()
-                        .items_center()
-                        .justify_between()
-                        .gap(px(16.))
+                        .flex_col()
+                        .gap(px(6.))
                         .child(
-                            div()
-                                .flex_1()
-                                .min_w_0()
-                                .flex()
-                                .flex_col()
-                                .gap(px(4.))
-                                .child(
-                                    shell::text(theme::night::CAPTION, shell::c(n.ink_soft)).child(
-                                        trf(
-                                            "Open {link} in your browser and enter this code:",
-                                            // The page as the player would type it.
-                                            &[("link", short_link(uri))],
-                                        ),
-                                    ),
-                                )
-                                .child(
-                                    div()
-                                        .font_family(theme::MONO)
-                                        .font_weight(FontWeight::BOLD)
-                                        .text_size(px(30.))
-                                        .line_height(px(38.))
-                                        .text_color(shell::c(n.ink))
-                                        .child(user_code.to_string()),
-                                ),
+                            shell::text(theme::night::UI, shell::c(n.ink_soft))
+                                .child(tr(BROWSER_STEPS).to_string()),
                         )
-                        .child(
-                            shell::action("owner-copy", shell::Action::Raised, &t)
-                                .child(shell::label(tr("Copy code").to_string()))
-                                .on_click(move |_, _, cx| {
-                                    copy_to_clipboard(
-                                        cx,
-                                        gpui::ClipboardItem::new_string(copy.clone()),
-                                    )
-                                }),
-                        ),
-                )
-            }
-            Shown::Starting => body.child(
-                raised().child(
-                    shell::text(theme::night::UI, shell::c(n.ink_soft))
-                        .child(tr("Asking Microsoft…").to_string()),
+                        .children(self.sign_in_error.clone().map(|e| {
+                            shell::text(theme::night::CAPTION, shell::c(n.danger)).child(e)
+                        })),
                 ),
-            ),
-            Shown::Error(e) => body.child(
-                raised()
-                    .child(shell::text(theme::night::UI, shell::c(n.danger)).child(e.to_string())),
-            ),
-            Shown::Idle => body,
-        };
+                Shown::Starting => body.child(
+                    raised().child(
+                        shell::text(theme::night::UI, shell::c(n.ink_soft))
+                            .child(tr("Asking Microsoft…").to_string()),
+                    ),
+                ),
+                Shown::Error(e) => {
+                    body.child(raised().child(
+                        shell::text(theme::night::UI, shell::c(n.danger)).child(e.to_string()),
+                    ))
+                }
+                Shown::Idle => body,
+            };
         let main = match state {
             Shown::Code(uri, _) => {
                 let uri = uri.to_string();
@@ -165,13 +181,21 @@ impl Launcher {
                         .on_click(move |_, _, cx| cx.open_url(&uri)),
                 )
             }
+            Shown::Browser => Some(
+                shell::action("owner-continue", shell::Action::Main, &t)
+                    .child(shell::label(tr("Continue").to_string()))
+                    .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                        this.continue_sign_in(cx);
+                        cx.notify();
+                    })),
+            ),
             Shown::Starting => None,
             Shown::Error(_) if !configured => None,
             _ => Some(
                 shell::action("owner-sign-in", shell::Action::Main, &t)
                     .child(shell::label(tr("Sign in").to_string()))
                     .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                        this.sign_in_to_play();
+                        this.sign_in_to_play(cx);
                         cx.notify();
                     })),
             ),
@@ -240,6 +264,8 @@ enum Shown<'a> {
     Starting,
     /// The page and the code to enter there.
     Code(&'a str, &'a str),
+    /// Signing in in the browser at this page; then Continue reads the address copied.
+    Browser,
     Error(&'a str),
 }
 

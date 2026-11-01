@@ -230,5 +230,8 @@
   "No mod matches.": "没有匹配的模组。",
   "{source} · needed by another mod": "{source} · 其他模组需要",
   "Local file · {file}": "本地文件 · {file}",
-  "Update {version}": "更新到 {version}"
+  "Update {version}": "更新到 {version}",
+  "Continue": "继续",
+  "Open page again": "重新打开页面",
+  "Sign in on the Microsoft page that opened in your browser. When it turns blank, copy its address (Ctrl+L, then Ctrl+C) and press Continue.": "在浏览器中打开的 Microsoft 页面上登录。页面变为空白后，复制其地址（Ctrl+L，然后 Ctrl+C），再点击“继续”。"
 }

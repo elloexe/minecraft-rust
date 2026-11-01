@@ -1161,7 +1161,10 @@ fn execute(command: Cmd, as_json: bool) -> Result<(), String> {
                 println!("{:<15} {}  {}", r.tag, r.date, state);
             }
         }
-        Cmd::Install { tag, from: Some(dir) } => {
+        Cmd::Install {
+            tag,
+            from: Some(dir),
+        } => {
             backend::install_from_dir(&tag, &dir)?;
             if as_json {
                 json(

@@ -230,5 +230,8 @@
   "No mod matches.": "Ningún mod coincide.",
   "{source} · needed by another mod": "{source} · lo necesita otro mod",
   "Local file · {file}": "Archivo local · {file}",
-  "Update {version}": "Actualizar a {version}"
+  "Update {version}": "Actualizar a {version}",
+  "Continue": "Continuar",
+  "Open page again": "Abrir la página de nuevo",
+  "Sign in on the Microsoft page that opened in your browser. When it turns blank, copy its address (Ctrl+L, then Ctrl+C) and press Continue.": "Inicia sesión en la página de Microsoft que se abrió en tu navegador. Cuando quede en blanco, copia su dirección (Ctrl+L y luego Ctrl+C) y pulsa Continuar."
 }

@@ -192,6 +192,7 @@ impl Session {
                 let sign_in = self.sign_in.as_ref().map(|s| match s.state() {
                     SignInState::Starting => json!({ "state": "starting" }),
                     SignInState::Code(c) => json!({ "state": "waiting for the player", "link": c.verification_uri, "code": c.user_code }),
+                    SignInState::Browser(url) => json!({ "state": "waiting for the player to sign in in their browser", "link": url }),
                     SignInState::Done(Ok(a)) => json!({ "state": "signed in", "name": a.name }),
                     SignInState::Done(Err(e)) => json!({ "state": "failed", "error": e }),
                 });
@@ -227,6 +228,9 @@ impl Session {
                         "Ask the player to open {} and enter the code {}. Then check accounts.",
                         c.verification_uri, c.user_code
                     )),
+                    SignInState::Browser(_) => Ok(
+                        "The player signs in in the launcher's window: it opened Microsoft's page in their browser.".into(),
+                    ),
                     SignInState::Done(Err(e)) => Err(e),
                     _ => Err("Microsoft did not answer. Try again.".into()),
                 }

@@ -1348,6 +1348,9 @@ pub enum SignInState {
     Starting,
     /// Waiting for the player at `verification_uri` with `user_code`.
     Code(DeviceCode),
+    /// The public id's flow: waiting for the player to sign in at this page in their browser and
+    /// hand back the address it lands on (`SignIn::submit`).
+    Browser(String),
     Done(Result<Account, String>),
 }
 
@@ -1355,24 +1358,55 @@ pub enum SignInState {
 pub struct SignIn {
     state: std::sync::Arc<Mutex<SignInState>>,
     cancel: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    /// The public id's flow: where the address the player copied goes.
+    code: Mutex<Option<std::sync::mpsc::Sender<String>>>,
 }
+
+/// What `SignIn::submit` says when what the player copied holds no sign-in code.
+pub const NO_CODE: &str = "That is not the sign-in page's address. After signing in, copy the address of the blank page Microsoft shows (it ends with ?code=…), then press Continue.";
 
 impl SignIn {
     pub fn start() -> Self {
         use std::sync::atomic::Ordering;
-        let state = std::sync::Arc::new(Mutex::new(SignInState::Starting));
+        let live = client_id().filter(|id| is_live_id(id));
+        // The public id signs in in the player's browser: the page to open is known now, so the
+        // window can open it on the same click.
+        let first = match &live {
+            Some(id) => SignInState::Browser(authorize_url(id)),
+            None => SignInState::Starting,
+        };
+        let state = std::sync::Arc::new(Mutex::new(first));
         let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let (thread_state, thread_cancel) = (state.clone(), cancel.clone());
+        let (tx, rx) = std::sync::mpsc::channel::<String>();
         std::thread::spawn(move || {
             let set = |s| *thread_state.lock().unwrap() = s;
             let result = (|| {
                 let ep = Endpoints::live();
                 let client_id = client_id().ok_or(NOT_CONFIGURED)?;
-                let code = device_code(&ep, &client_id)?;
-                set(SignInState::Code(code.clone()));
-                let ms = wait_for_sign_in(&ep, &client_id, &code, &|| {
-                    thread_cancel.load(Ordering::Relaxed)
-                })?;
+                let ms = if live.is_some() {
+                    let code = loop {
+                        match rx.recv_timeout(Duration::from_millis(250)) {
+                            Ok(code) => break code,
+                            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                                if thread_cancel.load(Ordering::Relaxed) {
+                                    return Err("Sign-in cancelled.".to_string());
+                                }
+                            }
+                            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                                return Err("Sign-in cancelled.".to_string());
+                            }
+                        }
+                    };
+                    set(SignInState::Starting);
+                    exchange_code(&client_id, &code)?
+                } else {
+                    let code = device_code(&ep, &client_id)?;
+                    set(SignInState::Code(code.clone()));
+                    wait_for_sign_in(&ep, &client_id, &code, &|| {
+                        thread_cancel.load(Ordering::Relaxed)
+                    })?
+                };
                 let (account, secrets) = finish_sign_in(&ep, ms)?;
                 let mut accounts = Accounts::load();
                 accounts.add(store(), account.clone(), &secrets)?;
@@ -1381,7 +1415,26 @@ impl SignIn {
             })();
             set(SignInState::Done(result));
         });
-        Self { state, cancel }
+        Self {
+            state,
+            cancel,
+            code: Mutex::new(Some(tx)),
+        }
+    }
+    /// Hands the public id's flow the address (or the bare code) the player copied from their
+    /// browser after signing in. Errors when it holds no code, so the player can copy again.
+    pub fn submit(&self, pasted: &str) -> Result<(), String> {
+        let code = code_from_redirect(pasted)
+            .filter(|_| pasted.contains("code=") || !pasted.contains("://"))
+            .ok_or(NO_CODE)?;
+        let tx = self
+            .code
+            .lock()
+            .unwrap()
+            .take()
+            .ok_or("Already signing in.")?;
+        tx.send(code)
+            .map_err(|_| "Sign-in was cancelled.".to_string())
     }
     pub fn state(&self) -> SignInState {
         self.state.lock().unwrap().clone()

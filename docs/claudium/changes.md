@@ -122,12 +122,9 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 
 ## Known gaps
 
-- **The launcher cannot start the game without an Azure app id.** `client_id()`
-  reads `HORIZON_MSA_CLIENT_ID` from the environment or the build; with none,
-  Play says so and refuses. Upstream bakes theirs in from a CI variable we do
-  not have. Register one (`docs/microsoft-account.md`) and set the repository
-  variable `CLAUDIUM_MSA_CLIENT_ID`, which `windows-exe.yml` passes to the
-  build.
+- **Sign-in uses the public launcher id by default** (browser sign-in, see the
+  2026-11-01 entry). Set the repository variable `CLAUDIUM_MSA_CLIENT_ID` to use
+  a registered Azure app instead (`docs/microsoft-account.md`).
 - **Online-mode servers need that sign-in too.** Until it is configured,
   Claudium joins offline-mode and LAN servers only. A Claudium *server* hosts
   vanilla 26.3 clients either way, online mode included.
@@ -140,6 +137,40 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 - The window icon is still Horizon's (`packaging/icons/horizon.ico`).
 - The look has not been seen running. It is checked by `cargo fmt`, clippy and
   the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.
+
+## The Rust launcher is the launcher again; Electron removed (2026-11-01)
+
+The Electron launcher took about 15 minutes to start the game on every Play: it
+ran `claudium-launcher prepare` each time, and the CLI's `prepare` always does
+the whole preparation (data generators, exporters, assets) without asking whether
+the version is prepared already. The Rust launcher in `launcher/` (upstream's,
+already repainted in the Minecraft launcher's colours) prepares once and then
+starts the game directly, as Horizon does. It is now the only launcher.
+
+- Removed `launcher-electron/` and `.github/workflows/electron-launcher.yml`.
+- `launcher/src/bundle.rs`: on start, the launcher adopts the game shipped beside
+  it (`game/`: client, tools, `research-lock.json`, precompiled exporters) as an
+  installed version, so nothing is downloaded from a release. A newer bundle is
+  copied over the installed one without touching what was prepared (a stamp of
+  the client's size, mtime and pins). A Java runtime in `runtime/` becomes
+  `JAVA_HOME` when the player has none set. A version the Electron launcher
+  prepared in `%APPDATA%\Claudium` is moved over, so nobody prepares twice.
+- The window starts preparing the selected version on its own, once per run,
+  when it is installed and not prepared, so the one-time step is usually done
+  before Play is pressed. Play pressed while it runs starts the game when it ends.
+- Sign-in with no Azure app: the public launcher id has no device-code flow, so
+  the window now signs in through the browser (`SignInState::Browser`): it opens
+  Microsoft's page, the player copies the blank page's address it lands on and
+  presses Continue, which reads it from the clipboard (`SignIn::submit`). Both the
+  account settings row and the owner gate have it; strings in all seven languages.
+  A configured `CLAUDIUM_MSA_CLIENT_ID` still uses the device code.
+- `windows-exe.yml` builds it all in one job: `Claudium-Setup.exe` (NSIS,
+  `packaging/windows/installer.nsi`, per user, Start menu and desktop shortcuts)
+  and the same folder unpacked (`Claudium-Launcher.exe`, `game/`, `runtime/`).
+
+The prepared Minecraft resources are still made on the player's machine from
+their own copy, the first time only: they are Mojang's files and are never
+shipped, as upstream never ships them.
 
 ## Play the bundled game, no release needed (2026-10-31)
 

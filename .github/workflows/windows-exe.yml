@@ -1,16 +1,19 @@
 name: windows exe
-# Builds what players download on Windows: Claudium-Launcher.exe and Claudium.exe.
+# Builds what players download on Windows, in one job:
 #
-# Both have to be built on a Windows runner, not cross-compiled from Linux: wgpu and GPUI draw
-# through DirectX there, and the icon is embedded by a Windows-only build script (winresource).
+#   Claudium-Setup.exe      the installer (Start menu + desktop shortcut, per user, no admin)
+#   Claudium/               the same thing unpacked: run Claudium/Claudium-Launcher.exe
+#     Claudium-Launcher.exe   the launcher (Rust, GPUI)
+#     game/                   the game: claudium-client, its tools, research-lock.json and the
+#                             precompiled exporters
+#     runtime/                a Java runtime, for preparing the game from the player's Minecraft
 #
-# The launcher is the one players run. The game needs resources prepared from the player's own
-# copy of Minecraft before it will start, which is what the launcher does for them.
+# The launcher adopts game/ as an installed version on start (launcher/src/bundle.rs), so nothing
+# is downloaded from a release. The first Play prepares the game from the player's own Minecraft
+# once; every Play after that starts it directly.
 #
-# Every run uploads the exes as artifacts (Actions -> the run -> Artifacts). A `v*` tag also
-# attaches them to the release.
-# Only where an exe is actually wanted. Pull requests are compile-checked on Linux by ci.yml,
-# which is far cheaper than a cold 877k-line Windows build.
+# Everything is built on a Windows runner, not cross-compiled: wgpu and GPUI draw through
+# DirectX there, and the icon is embedded by a Windows-only build script (winresource).
 on:
   push:
     branches: [main]
@@ -25,10 +28,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  launcher:
-    name: launcher
+  windows:
+    name: launcher and game
     runs-on: windows-latest
-    timeout-minutes: 90
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -37,67 +40,91 @@ jobs:
           workspaces: launcher
           shared-key: launcher-windows
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # Without an Azure app id the launcher can sign nobody in, and so cannot start the game:
-      # it says so on Play. Set the repository variable CLAUDIUM_MSA_CLIENT_ID to bake one in
-      # (Settings -> Secrets and variables -> Actions -> Variables). Players can also set
-      # CLAUDIUM_MSA_CLIENT_ID in their own environment at run time, which wins over this.
-      # How to register the app: docs/microsoft-account.md.
-      - name: Build
-        working-directory: launcher
-        env:
-          CLAUDIUM_MSA_CLIENT_ID: ${{ vars.CLAUDIUM_MSA_CLIENT_ID }}
-        run: cargo build --release --locked --bin claudium-launcher
-      - name: Collect
-        shell: bash
-        run: |
-          mkdir -p dist
-          cp launcher/target/release/claudium-launcher.exe dist/Claudium-Launcher.exe
-          ls -l dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: claudium-launcher-windows
-          path: dist/Claudium-Launcher.exe
-          if-no-files-found: error
-
-  game:
-    name: game
-    runs-on: windows-latest
-    timeout-minutes: 180
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: game-windows
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - name: Build
-        run: cargo build --release --locked -p claudium-client --bins
-      - name: Collect
+
+      # Sign-in works with no Azure app (the public launcher id, through the browser). Set the
+      # repository variable CLAUDIUM_MSA_CLIENT_ID to use your own registered app instead.
+      - name: Build the launcher
+        working-directory: launcher
+        env:
+          CLAUDIUM_MSA_CLIENT_ID: ${{ vars.CLAUDIUM_MSA_CLIENT_ID }}
+        run: cargo build --release --locked --bin claudium-launcher
+
+      - name: Build the game
+        run: cargo build --release --locked -p claudium-client -p claudium-prepare --bins
+
+      # Compile the exporters here, once, so the player's first prepare does not. Needs the
+      # pinned vanilla jars (public; fetched on the runner only, never shipped).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - name: Precompile exporters
         shell: bash
         run: |
-          mkdir -p dist
-          # The crate is still named for upstream, so the binary is renamed on the way out
-          # rather than in Cargo.toml, where the library target's name is load-bearing.
-          cp target/release/claudium-client.exe dist/Claudium.exe
-          cp target/release/claudium-ctl.exe dist/claudium-ctl.exe
-          ls -l dist
+          set -e
+          python tools/ci/fetch_vanilla.py vanilla
+          # --prepare imports the pinned jars; it may then fail on the sounds this skips, which
+          # compile-exporters does not need.
+          target/release/claudium-prepare.exe --prepare --server-jar vanilla/server.jar --minecraft-dir vanilla --root "$PWD" || true
+          target/release/claudium-prepare.exe compile-exporters --root "$PWD"
+          test -f exporters/manifest.json
+
+      - name: Stage
+        shell: bash
+        run: |
+          set -e
+          out=dist/Claudium
+          mkdir -p "$out/game"
+          cp launcher/target/release/claudium-launcher.exe "$out/Claudium-Launcher.exe"
+          cp packaging/icons/claudium.ico                 "$out/Claudium-Launcher.ico"
+          cp target/release/claudium-client.exe  "$out/game/"
+          cp target/release/claudium-ctl.exe     "$out/game/"
+          cp target/release/claudium-prepare.exe "$out/game/"
+          cp research-lock.json                  "$out/game/"
+          cp -r exporters                        "$out/game/exporters"
+
+      # A Temurin JRE of the major research-lock.json pins, flattened to runtime/bin/java.exe.
+      - name: Bundle a Java runtime
+        shell: bash
+        run: |
+          set -e
+          major=$(sed -n 's/.*"java_major": *\([0-9]*\).*/\1/p' research-lock.json | head -1)
+          major=${major:-25}
+          url="https://api.adoptium.net/v3/binary/latest/${major}/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk"
+          curl -fL --retry 4 --retry-delay 5 "$url" -o jre.zip
+          powershell -NoProfile -Command "Expand-Archive -Path jre.zip -DestinationPath jre-extract -Force"
+          inner=$(ls -d jre-extract/*/ | head -1)
+          mkdir -p dist/Claudium/runtime
+          cp -r "${inner}." dist/Claudium/runtime/
+          test -f dist/Claudium/runtime/bin/java.exe
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $nsis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
+          if (-not $nsis) { $nsis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe" }
+          if (-not (Test-Path $nsis)) { choco install nsis -y --no-progress; $nsis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe" }
+          & $nsis "/DSRC=$PWD\dist\Claudium" "/DOUT=$PWD\dist\Claudium-Setup.exe" packaging\windows\installer.nsi
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - uses: actions/upload-artifact@v4
         with:
-          name: claudium-game-windows
-          path: dist/*.exe
+          name: Claudium-Setup
+          path: dist/Claudium-Setup.exe
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Claudium-portable
+          path: dist/Claudium
           if-no-files-found: error
 
-  release:
-    name: attach to the release
-    needs: [launcher, game]
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
         with:
-          path: dist
-          merge-multiple: true
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*.exe
+          files: dist/Claudium-Setup.exe
           generate_release_notes: true

@@ -229,6 +229,8 @@ struct Launcher {
     accounts: Accounts,
     sign_in: Option<SignIn>,
     sign_in_state: Option<SignInState>,
+    /// What went wrong with the address the player copied, in the browser sign-in.
+    sign_in_error: Option<String>,
     /// What to say when the keychain doesn't keep sign-ins ([`account::no_keychain`]).
     keychain: Option<String>,
     /// Whether an account here owns the game, by the keychain's last answers (the owner gate);
@@ -245,6 +247,8 @@ struct Launcher {
     starting_client: Option<String>,
     /// Play was pressed on a version not prepared yet: it starts once this preparation ends well.
     play_when_prepared: Option<String>,
+    /// The first-run preparation was started on its own once, so Play is ready when pressed.
+    auto_prepared: bool,
     /// Join a friend: the code typed on the Play page, and the one the game
     /// starting now joins.
     friend_code: line_edit::LineEdit,
@@ -441,6 +445,7 @@ impl Launcher {
             accounts: Accounts::load(),
             sign_in: None,
             sign_in_state: None,
+            sign_in_error: None,
             keychain: None,
             owner: None,
             owner_screen_open: false,
@@ -448,6 +453,7 @@ impl Launcher {
             dev_options: false,
             starting_client: None,
             play_when_prepared: None,
+            auto_prepared: false,
             friend_code: line_edit::LineEdit::new(String::new(), 256, 32),
             friend_focused: false,
             friend_focus: cx.focus_handle(),
@@ -1022,6 +1028,7 @@ impl Launcher {
                 }
             }
         }
+        changed |= self.auto_prepare();
         changed |= self.servers_tick();
         changed |= self.mods_tick();
         changed |= self.github_tick();
@@ -1039,6 +1046,9 @@ impl Launcher {
                         self.settings.owner_notice_seen = true;
                         self.settings.save();
                     }
+                }
+                if !matches!(state, SignInState::Browser(_)) {
+                    self.sign_in_error = None;
                 }
                 self.sign_in_state = Some(state);
                 changed = true;
@@ -1182,6 +1192,28 @@ impl Launcher {
         self.download_seen = None;
     }
 
+    /// Starts preparing the selected version in the background the first time the window finds
+    /// it installed and not yet prepared, from the player's own Minecraft. That one-time step is
+    /// then usually done before Play is pressed; once prepared, Play starts the game directly.
+    /// Once per run: a failure shows on the page and Play retries it.
+    fn auto_prepare(&mut self) -> bool {
+        if self.auto_prepared || self.preparing || self.installing.is_some() {
+            return false;
+        }
+        if self.selected_instance().is_some_and(|i| i.java.is_some()) {
+            return false;
+        }
+        let Some(tag) = self.selected().cloned() else {
+            return false;
+        };
+        if !self.installed.contains(&tag) || backend::is_prepared(&tag) {
+            return false;
+        }
+        self.auto_prepared = true;
+        self.prepare(backend::MinecraftFrom::Install);
+        true
+    }
+
     fn play(&mut self) {
         let java = self
             .selected_instance()
@@ -1284,11 +1316,35 @@ impl Launcher {
     }
 
     /// Starts the Microsoft sign-in; Settings and the owner gate's screen show its code.
-    fn start_sign_in(&mut self) {
-        if let Some(old) = self.sign_in.replace(SignIn::start()) {
+    /// Starts a sign-in. With the public id it signs in in the player's browser, so the
+    /// Microsoft page opens on the same click.
+    pub(crate) fn start_sign_in(&mut self, cx: &mut App) {
+        let sign_in = SignIn::start();
+        let state = sign_in.state();
+        if let SignInState::Browser(url) = &state {
+            cx.open_url(url);
+        }
+        if let Some(old) = self.sign_in.replace(sign_in) {
             old.cancel();
         }
-        self.sign_in_state = Some(SignInState::Starting);
+        self.sign_in_state = Some(state);
+    }
+
+    /// The public id's flow: the address the player copied from their browser after signing in,
+    /// read from the clipboard.
+    pub(crate) fn continue_sign_in(&mut self, cx: &mut App) {
+        let pasted = cx
+            .read_from_clipboard()
+            .and_then(|item| item.text())
+            .unwrap_or_default();
+        let Some(sign_in) = &self.sign_in else {
+            return;
+        };
+        if let Err(e) = sign_in.submit(&pasted) {
+            self.sign_in_error = Some(e);
+        } else {
+            self.sign_in_error = None;
+        }
     }
 
     fn choose_folder(&mut self, cx: &mut Context<Self>) {
@@ -2469,7 +2525,7 @@ impl Launcher {
             Some(false) => div().child(
                 button("prepare-sign-in", "Sign in", Kind::Secondary, &t).on_click(cx.listener(
                     |this, _: &ClickEvent, _, cx| {
-                        this.sign_in_to_play();
+                        this.sign_in_to_play(cx);
                         cx.notify();
                     },
                 )),
@@ -2550,7 +2606,7 @@ impl Launcher {
                     Some(
                         button("gate-sign-in", "Sign in", Kind::Primary, &t)
                             .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                                this.sign_in_to_play();
+                                this.sign_in_to_play(cx);
                                 cx.notify();
                             }))
                             .into_any_element(),
@@ -3381,11 +3437,21 @@ impl Launcher {
         let configured = account::client_id().is_some();
         let busy = matches!(
             self.sign_in_state,
-            Some(SignInState::Starting | SignInState::Code(_))
+            Some(SignInState::Starting | SignInState::Code(_) | SignInState::Browser(_))
         );
         let detail = match &self.sign_in_state {
             _ if !configured => div().child(tr(account::NOT_CONFIGURED)),
             Some(SignInState::Starting) => div().child(tr("Asking Microsoft…")),
+            Some(SignInState::Browser(_)) => div()
+                .flex()
+                .flex_col()
+                .gap(px(6.))
+                .child(tr(BROWSER_STEPS))
+                .children(
+                    self.sign_in_error
+                        .clone()
+                        .map(|e| div().text_color(t.danger).child(e)),
+                ),
             Some(SignInState::Code(code)) => div()
                 .flex()
                 .flex_col()
@@ -3418,6 +3484,38 @@ impl Launcher {
         };
         let action = if !configured {
             None
+        } else if let Some(SignInState::Browser(url)) = &self.sign_in_state {
+            let url = url.clone();
+            Some(
+                div()
+                    .flex()
+                    .gap(px(4.))
+                    .child(
+                        button("sign-in-continue", "Continue", Kind::Primary, &t).on_click(
+                            cx.listener(|this, _: &ClickEvent, _, cx| {
+                                this.continue_sign_in(cx);
+                                cx.notify();
+                            }),
+                        ),
+                    )
+                    .child(
+                        button("sign-in-open", "Open page again", Kind::Secondary, &t)
+                            .on_click(move |_, _, cx| cx.open_url(&url)),
+                    )
+                    .child(
+                        button("sign-in-cancel", "Cancel", Kind::Ghost, &t).on_click(cx.listener(
+                            |this, _: &ClickEvent, _, cx| {
+                                if let Some(s) = this.sign_in.take() {
+                                    s.cancel();
+                                }
+                                this.sign_in_state = None;
+                                this.sign_in_error = None;
+                                cx.notify();
+                            },
+                        )),
+                    )
+                    .into_any_element(),
+            )
         } else if let Some(SignInState::Code(code)) = &self.sign_in_state {
             let (uri, user_code) = (code.verification_uri.clone(), code.user_code.clone());
             Some(
@@ -3457,7 +3555,7 @@ impl Launcher {
             Some(
                 button("sign-in", "Sign in with Microsoft", Kind::Secondary, &t)
                     .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                        this.start_sign_in();
+                        this.start_sign_in(cx);
                         cx.notify();
                     }))
                     .into_any_element(),
@@ -4225,6 +4323,9 @@ fn menus() -> Vec<Menu> {
     ]
 }
 
+/// The browser sign-in's steps (the public id's flow, `SignInState::Browser`).
+pub(crate) const BROWSER_STEPS: &str = "Sign in on the Microsoft page that opened in your browser. When it turns blank, copy its address (Ctrl+L, then Ctrl+C) and press Continue.";
+
 fn main() {
     if let Err(error) = console::attach_for_cli() {
         eprintln!("Could not restore the launcher's terminal streams: {error}");
@@ -4232,11 +4333,17 @@ fn main() {
     }
     perf::process_started();
     backend::exe_path();
+    // The Java runtime shipped beside the launcher, for the preparer (before any thread starts).
+    claudium_launcher::bundle::use_bundled_java();
     // What the launcher downloads goes through the player's proxy, if they set one: the parts
     // that build their own agents (`claudium-port-pack`) are told before anything starts.
     claudium_launcher::proxy::announce(claudium_launcher::backend::Settings::load().proxy);
     if let Some(code) = cli::run() {
         std::process::exit(code);
+    }
+    // The game shipped beside the launcher becomes an installed version: no release to download.
+    if let Some(Err(e)) = claudium_launcher::bundle::adopt() {
+        eprintln!("Could not set up the bundled game: {e}");
     }
     Application::new()
         .with_assets(blocks::Assets)

@@ -166,10 +166,17 @@ impl Launcher {
                 .items_center()
                 .gap(px(10.))
                 .child(
+                    // Pressed while getting ready (the first-run preparation starts on its own):
+                    // the game starts as soon as it is done.
                     action("play", Action::Main, &t)
                         .min_w(px(260.))
-                        .cursor_default()
-                        .child(label(busy)),
+                        .child(label(busy))
+                        .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                            if this.play_when_prepared.is_none() {
+                                this.play_when_prepared = this.selected().cloned();
+                                cx.notify();
+                            }
+                        })),
                 )
                 .children(download.map(|_| {
                     action("download-cancel", Action::Quiet, &t)

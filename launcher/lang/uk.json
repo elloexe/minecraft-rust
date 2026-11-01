@@ -230,5 +230,8 @@
   "No mod matches.": "Немає відповідних модів.",
   "{source} · needed by another mod": "{source} · потрібен іншому моду",
   "Local file · {file}": "Локальний файл · {file}",
-  "Update {version}": "Оновити до {version}"
+  "Update {version}": "Оновити до {version}",
+  "Continue": "Продовжити",
+  "Open page again": "Відкрити сторінку знову",
+  "Sign in on the Microsoft page that opened in your browser. When it turns blank, copy its address (Ctrl+L, then Ctrl+C) and press Continue.": "Увійдіть на сторінці Microsoft, що відкрилася в браузері. Коли вона стане порожньою, скопіюйте її адресу (Ctrl+L, потім Ctrl+C) і натисніть «Продовжити»."
 }
