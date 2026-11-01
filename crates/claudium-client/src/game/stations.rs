@@ -2419,6 +2419,7 @@ impl Game<'_> {
         // Native mods last, once getTooltipLines has built every line; a
         // tooltip the stack hides stays hidden.
         if !nested && !lines.is_empty() {
+            self.builtin_tooltip(stack, &mut lines);
             self.native_tooltip(stack, &mut lines);
         }
         lines

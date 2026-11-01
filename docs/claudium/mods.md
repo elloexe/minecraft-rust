@@ -55,9 +55,9 @@ queue, roughly in the order we expect to build it.
 | 17 | Inventory and chest sorting | client | Inventory Sorter | Inherited |
 | 18 | Auto-reconnect | client | AutoReconnect | Inherited |
 | 19 | Own name tag in third person | client | — | Inherited |
-| 20 | Recipe and item viewer | client | JEI, REI, EMI | Planned: the item panel hooks (API 2) are there |
+| 20 | Item and recipe viewer: search, recipes, uses, station tabs, fill the grid | client | JEI, REI, EMI | Done |
 | 21 | Waypoints, with a death waypoint | client | Xaero's, JourneyMap | Planned |
-| 22 | Food saturation and exhaustion in the HUD | client | AppleSkin | Planned |
+| 22 | Saturation on the hunger bar, food preview, food values in tooltips | client | AppleSkin | Done |
 | 23 | Shulker box contents in its tooltip | client | Shulker Box Tooltip | Planned: tooltip hook (API 12) |
 | 24 | Exact durability in tooltips | client | Durability tooltips | Planned: tooltip hook |
 | 25 | Enchantment descriptions in tooltips | client | Enchantment Descriptions | Planned: tooltip hook |
@@ -69,9 +69,9 @@ queue, roughly in the order we expect to build it.
 | 31 | Spawn-proofing light overlay | client | Light Level Overlay | Planned: needs a world overlay |
 | 32 | Block outline colour and thickness | client | Block outline mods | Planned |
 | 33 | Hotbar swap rows | client | Inventory Profiles | Planned |
-| 34 | Better ping/player list | client | Better Ping Display | Planned |
+| 34 | What you look at: block or mob, tool, mod, health | client | Jade, WTHIT | Done |
 | 35 | Screenshot to clipboard | client | Screenshot tools | Planned |
-| 36 | Vein mining | world | Veinminer | Planned: block destroy hook (API 14) |
+| 36 | Vein mining: sneak-mine whole ore veins and trees, 64 blocks | world | VeinMiner | Done |
 | 37 | Tree felling | world | TreeCapitator, FallingTree | Planned: block destroy hook |
 | 38 | Graves for your items on death | world | Gravestones, Corpse | Planned |
 | 39 | One player sleeping skips the night | world | One Player Sleep | Planned |
@@ -87,4 +87,6 @@ queue, roughly in the order we expect to build it.
 | 49 | Villager trade cycling without breaking blocks | world | Easy Villagers | Planned |
 | 50 | Silk Touch picks up spawners | world | Silk Spawners | Planned |
 
-Counted honestly: 13 are new in Claudium, 6 came with Horizon, 31 are queued.
+Counted honestly: 17 are new in Claudium, 6 came with Horizon, 27 are queued. Of the 17,
+the four real mod ports are the item viewer (JEI), block info (Jade), food info (AppleSkin)
+and vein mining (VeinMiner); the other 13 are smaller HUD and quality-of-life features.

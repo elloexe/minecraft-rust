@@ -25,7 +25,12 @@ pub(super) struct BuiltinState {
     dead: bool,
     /// The low-durability alert already given: main hand, off hand, head, chest, legs, feet.
     warned: [bool; 6],
+    /// The item viewer (`builtin_jei`).
+    pub(super) jei: super::builtin_jei::JeiState,
 }
+
+/// The most blocks vein mining breaks at once, the first one included.
+const VEIN_LIMIT: usize = 64;
 
 /// Durability at or under this share of the most warns (`Mod::LowDurability`).
 const LOW_SHARE: u32 = 10;
@@ -73,8 +78,9 @@ impl Game<'_> {
         }
     }
 
-    /// Once per client tick: the speedometer's sample and the alerts.
+    /// Once per client tick: the item viewer, the speedometer's sample and the alerts.
     pub(super) fn builtin_tick(&mut self) {
+        self.jei_tick();
         let e = &self.settings.extras;
         let (speedometer, death, durability) = (
             e.on(Mod::Speedometer),
@@ -171,6 +177,12 @@ impl Game<'_> {
         }
         if e.keystrokes && visible(e.keystrokes_corner) {
             self.draw_keystrokes(batch, corners, e.keystrokes_corner, e.keystrokes_cps);
+        }
+        if e.on(Mod::BlockInfo) {
+            self.draw_block_info(batch);
+        }
+        if e.on(Mod::FoodInfo) {
+            self.draw_food_info(batch);
         }
         if !visible(e.info_corner) {
             return;
@@ -364,6 +376,297 @@ impl Game<'_> {
     }
 }
 
+impl Game<'_> {
+    /// Block info: what the crosshair is on, in a box at the top middle of the screen, as
+    /// Jade shows it: the item's icon, its name, the tool it needs, the mod it is from; a
+    /// mob's name and health.
+    fn draw_block_info(&mut self, batch: &mut HudBatch) {
+        if !self.native_playing() || self.ui.hide_gui {
+            return;
+        }
+        let block = self.pick();
+        let eye_distance = |point: [f64; 3]| {
+            self.aim().map_or(f64::INFINITY, |(eye, _)| {
+                ((point[0] - eye[0]).powi(2)
+                    + (point[1] - eye[1]).powi(2)
+                    + (point[2] - eye[2]).powi(2))
+                .sqrt()
+            })
+        };
+        let block_distance = block
+            .as_ref()
+            .map_or(f64::INFINITY, |h| eye_distance(h.point));
+        let mob = self.mob_hit().filter(|&(_, d)| d < block_distance);
+        let (icon, lines): (Option<String>, Vec<(String, u32)>) = if let Some((i, _)) = mob {
+            let m = &self.mobs[i];
+            let id = m.kind.id.clone();
+            let name = self.translate(&format!("entity.{}", id.replace(':', ".")), &pretty_id(&id));
+            let health = format!(
+                "Health: {:.0} / {:.0}",
+                m.health.max(0.0),
+                m.kind.max_health
+            );
+            (
+                None,
+                vec![
+                    (name, 0xFFFFFF),
+                    (health, 0xFF5555),
+                    (mod_name(&id), 0x5555FF),
+                ],
+            )
+        } else if let Some(hit) = block {
+            let state = self.world.block(hit.pos[0], hit.pos[1], hit.pos[2]);
+            let facts = self.res.facts().get(state);
+            let id = facts.name.to_string();
+            if id.ends_with(":air") {
+                return;
+            }
+            let name = self.translate(&format!("block.{}", id.replace(':', ".")), &pretty_id(&id));
+            let items = self.res.items();
+            let mut lines = vec![(name, 0xFFFFFF)];
+            if let Some(tool) = TOOLS
+                .iter()
+                .find(|(tag, _)| items.block_in_tag(tag, &id))
+                .map(|(_, tool)| *tool)
+            {
+                let ok = !facts.requires_tool || items.correct_for_drops(self.held(), &id);
+                let (mark, color) = if ok {
+                    ("can harvest", 0x55FF55)
+                } else {
+                    ("can't harvest", 0xFF5555)
+                };
+                lines.push((format!("Tool: {tool} ({mark})"), color));
+            }
+            lines.push((mod_name(&id), 0x5555FF));
+            let icon = items.get(&id).is_some().then_some(id);
+            (icon, lines)
+        } else {
+            return;
+        };
+        let atlas = &self.gui.atlas;
+        let text_w = lines
+            .iter()
+            .map(|(t, _)| HudBatch::text_width(atlas, t))
+            .fold(0.0, f32::max);
+        let icon_w = if icon.is_some() { 20.0 } else { 0.0 };
+        let (w, h) = (text_w + icon_w + 8.0, 10.0 * lines.len() as f32 + 6.0);
+        let (x, y) = ((batch.width - w) / 2.0, 4.0);
+        batch.fill(atlas, x, y, w, h, rgba(16, 0, 16, 0xD0));
+        batch.fill(atlas, x, y, w, 1.0, rgba(80, 0, 255, 0x80));
+        batch.fill(atlas, x, y + h - 1.0, w, 1.0, rgba(80, 0, 255, 0x80));
+        for (i, (text, color)) in lines.iter().enumerate() {
+            let [_, r, g, b] = color.to_be_bytes();
+            batch.text(
+                atlas,
+                text,
+                x + 4.0 + icon_w,
+                y + 4.0 + 10.0 * i as f32,
+                rgba(r, g, b, 255),
+                true,
+            );
+        }
+        if let Some(icon) = icon {
+            self.native_item(batch, &icon, [x + 4.0, y + (h - 16.0) / 2.0], 16.0);
+        }
+    }
+
+    /// Food info: the saturation hidden under the hunger bar, drawn as a yellow frame on the
+    /// shanks it covers, and what the food in hand would fill, as AppleSkin shows them.
+    fn draw_food_info(&mut self, batch: &mut HudBatch) {
+        if !self.native_playing() || self.ui.hide_gui || self.creative || self.spectator() {
+            return;
+        }
+        let Some(p) = self.player.as_ref() else {
+            return;
+        };
+        let (food, saturation) = (p.health.food.food, p.health.food.saturation);
+        let gain = self
+            .held()
+            .and_then(|s| self.res.items().get(&s.item))
+            .and_then(|i| i.food);
+        let atlas = &self.gui.atlas;
+        let right = (batch.width / 2.0).floor() + 91.0;
+        let y = batch.height - 39.0;
+        let shank = |n: i32| right - n as f32 * 8.0 - 9.0;
+        // Saturation: a yellow frame on each shank it covers (2 points a shank).
+        let points = saturation.min(20.0);
+        for n in 0..10 {
+            let covered = (points - n as f32 * 2.0).clamp(0.0, 2.0);
+            if covered <= 0.0 {
+                break;
+            }
+            let x = shank(n);
+            let color = rgba(255, 215, 0, if covered >= 2.0 { 0xE0 } else { 0x80 });
+            batch.fill(atlas, x, y, 9.0, 1.0, color);
+            batch.fill(atlas, x, y + 8.0, 9.0, 1.0, color);
+            batch.fill(atlas, x, y, 1.0, 9.0, color);
+            batch.fill(atlas, x + 8.0, y, 1.0, 9.0, color);
+        }
+        // The food in hand: the shanks it would fill, pulsing.
+        if let Some((nutrition, _)) = gain {
+            let after = (food + nutrition as i32).min(20);
+            let alpha = (0x60 as f32
+                + 0x60 as f32 * (self.started.elapsed().as_secs_f32() * 4.0).sin().abs())
+                as u8;
+            for n in 0..10 {
+                let (lo, hi) = (n * 2, n * 2 + 2);
+                if hi <= food || lo >= after {
+                    continue;
+                }
+                let x = shank(n);
+                batch.fill(
+                    atlas,
+                    x + 1.0,
+                    y + 1.0,
+                    7.0,
+                    7.0,
+                    rgba(255, 255, 255, alpha),
+                );
+            }
+        }
+    }
+
+    /// Food info's tooltip line: what a food restores.
+    pub(super) fn builtin_tooltip(
+        &self,
+        stack: &ItemStack,
+        lines: &mut Vec<(claudium_client::text::Text, u32)>,
+    ) {
+        if !self.settings.extras.on(Mod::FoodInfo) {
+            return;
+        }
+        if let Some((nutrition, saturation)) =
+            self.res.items().get(&stack.item).and_then(|i| i.food)
+        {
+            let line = food_line(nutrition, saturation);
+            lines.push((
+                claudium_client::text::Text::literal(line),
+                rgba(255, 215, 0, 255),
+            ));
+        }
+    }
+
+    /// Vein mining: the block's name when breaking the block at `pos` should take its vein
+    /// with it (the switch is on, the player sneaks with a tool, not in creative, and it is an
+    /// ore or a log). Asked before the block breaks.
+    pub(super) fn vein_target(&self, pos: [i32; 3]) -> Option<String> {
+        if !self.settings.extras.on(Mod::VeinMining) || self.creative {
+            return None;
+        }
+        let crouching = self
+            .player
+            .as_ref()
+            .is_some_and(|p| p.pose == claudium_client::pose::Pose::Crouching);
+        let tool = self
+            .held()
+            .and_then(|s| self.res.items().get(&s.item))
+            .is_some_and(|i| i.max_damage > 0);
+        let name = self
+            .res
+            .facts()
+            .get(self.world.block(pos[0], pos[1], pos[2]))
+            .name
+            .to_string();
+        (crouching && tool && veinable(&name)).then_some(name)
+    }
+
+    /// Breaks the vein of `name` around `start` (already broken), nearest first, as the player
+    /// would one by one: tool wear, drops and every rule of a normal break. Stops at the limit,
+    /// or when the tool breaks or changes.
+    pub(super) fn vein_mine(&mut self, start: [i32; 3], name: &str) {
+        let tool = self.held().map(|s| s.item.clone());
+        let mut queue = std::collections::VecDeque::from([start]);
+        let mut seen = std::collections::HashSet::from([start]);
+        let mut broken = 1;
+        while let Some(at) = queue.pop_front() {
+            for next in neighbours(at) {
+                if broken >= VEIN_LIMIT {
+                    return;
+                }
+                if !seen.insert(next) {
+                    continue;
+                }
+                let here = self
+                    .res
+                    .facts()
+                    .get(self.world.block(next[0], next[1], next[2]))
+                    .name
+                    .clone();
+                if &*here != name {
+                    continue;
+                }
+                if self.held().map(|s| s.item.clone()) != tool {
+                    return;
+                }
+                if self.break_block_as_player(next).is_err() {
+                    return;
+                }
+                broken += 1;
+                queue.push_back(next);
+            }
+        }
+    }
+}
+
+/// The tool each `mineable` tag asks for.
+const TOOLS: [(&str, &str); 4] = [
+    ("minecraft:mineable/pickaxe", "Pickaxe"),
+    ("minecraft:mineable/axe", "Axe"),
+    ("minecraft:mineable/shovel", "Shovel"),
+    ("minecraft:mineable/hoe", "Hoe"),
+];
+
+/// `minecraft:stone` is from Minecraft; `create:cogwheel` from Create.
+fn mod_name(id: &str) -> String {
+    match id.split_once(':') {
+        Some(("minecraft", _)) | None => "Minecraft".into(),
+        Some((ns, _)) => pretty_id(ns),
+    }
+}
+
+/// Ores and logs (and the Nether's stems), the blocks vein mining takes in veins.
+fn veinable(name: &str) -> bool {
+    let path = name.rsplit(':').next().unwrap_or(name);
+    path.ends_with("_ore")
+        || path == "ancient_debris"
+        || path.ends_with("_log")
+        || path.ends_with("_stem")
+        || path.ends_with("_wood")
+        || path.ends_with("_hyphae")
+}
+
+/// The 26 blocks around `p`, faces first, so a vein grows from its nearest blocks.
+fn neighbours(p: [i32; 3]) -> Vec<[i32; 3]> {
+    let mut out = Vec::with_capacity(26);
+    for d in [
+        [1, 0, 0],
+        [-1, 0, 0],
+        [0, 1, 0],
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, 0, -1],
+    ] {
+        out.push([p[0] + d[0], p[1] + d[1], p[2] + d[2]]);
+    }
+    for dx in -1..=1 {
+        for dy in -1..=1 {
+            for dz in -1..=1 {
+                let n = i32::abs(dx) + i32::abs(dy) + i32::abs(dz);
+                if n >= 2 {
+                    out.push([p[0] + dx, p[1] + dy, p[2] + dz]);
+                }
+            }
+        }
+    }
+    out
+}
+
+/// `Restores 4 hunger, 2.4 saturation`; food components store saturation as the points it
+/// adds (`FoodProperties.saturation`).
+fn food_line(nutrition: u32, saturation: f32) -> String {
+    format!("Restores {nutrition} hunger, {saturation:.1} saturation")
+}
+
 /// The compass point the player faces, with the axis it runs along (yaw 0 faces south).
 fn facing(yaw: f32) -> &'static str {
     match ((yaw / 90.0).round() as i32).rem_euclid(4) {
@@ -490,6 +793,38 @@ fn roman(n: i32) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn veins_are_ores_and_logs() {
+        assert!(veinable("minecraft:deepslate_iron_ore"));
+        assert!(veinable("minecraft:nether_quartz_ore"));
+        assert!(veinable("minecraft:ancient_debris"));
+        assert!(veinable("minecraft:oak_log"));
+        assert!(veinable("minecraft:crimson_stem"));
+        assert!(!veinable("minecraft:stone"));
+        assert!(!veinable("minecraft:oak_planks"));
+        let n = neighbours([0, 0, 0]);
+        assert_eq!(n.len(), 26);
+        assert_eq!(
+            &n[..6],
+            &[
+                [1, 0, 0],
+                [-1, 0, 0],
+                [0, 1, 0],
+                [0, -1, 0],
+                [0, 0, 1],
+                [0, 0, -1]
+            ]
+        );
+        assert!(!n.contains(&[0, 0, 0]));
+    }
+
+    #[test]
+    fn jade_names_the_mod_and_appleskin_the_food() {
+        assert_eq!(mod_name("minecraft:stone"), "Minecraft");
+        assert_eq!(mod_name("farmers_delight:tomato"), "Farmers Delight");
+        assert_eq!(food_line(4, 2.4), "Restores 4 hunger, 2.4 saturation");
+    }
 
     #[test]
     fn facing_follows_vanillas_yaw() {

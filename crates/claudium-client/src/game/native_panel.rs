@@ -204,6 +204,10 @@ impl Game<'_> {
     /// The player did `event` on `owner`'s panel.
     pub(super) fn panel_event(&mut self, owner: &Owner, event: BrowserEvent) {
         let Owner::Native(id) = owner;
+        if id == super::builtin_jei::OWNER {
+            self.jei_event(&event);
+            return;
+        }
         self.native_panel_event(id, &event);
     }
     /// The panel's parts: right of the window, from the top of the screen to

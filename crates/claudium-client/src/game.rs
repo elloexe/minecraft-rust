@@ -59,6 +59,7 @@ mod books;
 mod bossbars;
 mod breezes;
 mod brush;
+mod builtin_jei;
 mod builtin_mods;
 mod bundles;
 mod campfire;
@@ -4587,7 +4588,17 @@ impl Game<'_> {
     }
     fn break_block(&mut self, pos: [i32; 3]) -> Result<()> {
         self.lan_break_pos = Some(pos);
-        let broken = self.with_player_actor(|game| game.break_block_as_player(pos));
+        let broken = self.with_player_actor(|game| {
+            // Vein mining (builtin_mods.rs): asked before the block goes.
+            let vein = game.vein_target(pos);
+            let broken = game.break_block_as_player(pos);
+            if broken.is_ok()
+                && let Some(name) = vein
+            {
+                game.vein_mine(pos, &name);
+            }
+            broken
+        });
         self.lan_break_pos = None;
         broken
     }

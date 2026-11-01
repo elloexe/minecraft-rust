@@ -17,6 +17,10 @@ pub const ZOOM_KEY: &str = "claudium.zoom";
 /// are built in too, with settings of their own on `Extras`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Mod {
+    ItemViewer,
+    BlockInfo,
+    FoodInfo,
+    VeinMining,
     Coordinates,
     Biome,
     LightLevel,
@@ -28,7 +32,11 @@ pub enum Mod {
     LowDurability,
 }
 impl Mod {
-    pub const ALL: [Mod; 9] = [
+    pub const ALL: [Mod; 13] = [
+        Mod::ItemViewer,
+        Mod::BlockInfo,
+        Mod::FoodInfo,
+        Mod::VeinMining,
         Mod::Coordinates,
         Mod::Biome,
         Mod::LightLevel,
@@ -42,6 +50,10 @@ impl Mod {
     /// Its name in `claudium-extras.txt`.
     pub fn id(self) -> &'static str {
         match self {
+            Mod::ItemViewer => "itemViewer",
+            Mod::BlockInfo => "blockInfo",
+            Mod::FoodInfo => "foodInfo",
+            Mod::VeinMining => "veinMining",
             Mod::Coordinates => "coordinates",
             Mod::Biome => "biome",
             Mod::LightLevel => "lightLevel",
@@ -55,6 +67,10 @@ impl Mod {
     }
     pub fn caption(self) -> &'static str {
         match self {
+            Mod::ItemViewer => "Item viewer (JEI)",
+            Mod::BlockInfo => "Block info (Jade)",
+            Mod::FoodInfo => "Food info (AppleSkin)",
+            Mod::VeinMining => "Vein mining (VeinMiner)",
             Mod::Coordinates => "Coordinates",
             Mod::Biome => "Biome",
             Mod::LightLevel => "Light level",
@@ -68,6 +84,18 @@ impl Mod {
     }
     pub fn description(self) -> &'static str {
         match self {
+            Mod::ItemViewer => {
+                "Every item beside your inventory, with search (@mod, #tag). Click an item for its recipes, right-click or press U for its uses, R for recipes; + fills the crafting grid."
+            }
+            Mod::BlockInfo => {
+                "What you're looking at, at the top of the screen: the block or mob, the mod it's from, the tool it needs, and a mob's health."
+            }
+            Mod::FoodInfo => {
+                "Your hidden saturation drawn over the hunger bar, what the food you hold would fill, and food values in tooltips."
+            }
+            Mod::VeinMining => {
+                "Sneak while mining an ore or a log to break the whole connected vein, up to 64 blocks, with your tool's durability and the drops of each. In worlds you host; reopen the world after switching it."
+            }
             Mod::Coordinates => "Your position and the direction you face, in the info corner.",
             Mod::Biome => "The biome you stand in, in the info corner.",
             Mod::LightLevel => {
@@ -526,6 +554,11 @@ pub enum Item {
 pub fn rows() -> Vec<Result<Item, &'static str>> {
     use Item::*;
     vec![
+        Err("Mods"),
+        Ok(Mod(self::Mod::ItemViewer)),
+        Ok(Mod(self::Mod::BlockInfo)),
+        Ok(Mod(self::Mod::FoodInfo)),
+        Ok(Mod(self::Mod::VeinMining)),
         Err("Lighting"),
         Ok(Fullbright),
         Ok(DynamicLights),

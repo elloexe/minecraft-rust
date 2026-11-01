@@ -138,6 +138,26 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 - The look has not been seen running. It is checked by `cargo fmt`, clippy and
   the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.
 
+## Built-in mods, batch 2: JEI, Jade, AppleSkin, VeinMiner (2026-11-01)
+
+Our own Rust versions of four of Modrinth's most used mods, switches under Extras → Mods,
+off by default.
+
+- **Item viewer** (`game/builtin_jei.rs`): drives the item panel upstream built for a
+  recipe-viewer native mod. Search by name, `@mod`, `#tag`; click for recipes, right-click
+  or U for uses, R for recipes; tabs per station; the + button fills the crafting grid
+  (shift for as many as fit) through the recipe book's placement.
+- **Block info**: the block or mob under the crosshair at the top of the screen, with its
+  icon, the tool its `mineable` tag asks for and whether the held item harvests it, the mod
+  it comes from, and a mob's health (single player mobs).
+- **Food info**: saturation as a gold frame over the hunger shanks, the shanks the held food
+  would fill, and "Restores N hunger, S saturation" in food tooltips. Drawn over the HUD; the
+  vanilla HUD layout is untouched.
+- **Vein mining**: sneaking with a tool, breaking an ore, log or stem breaks the connected
+  vein (26 neighbours, up to 64 blocks), each through `break_block_as_player`, so tool wear,
+  drops, statistics and every rule of a normal break apply. Stops if the tool breaks. In
+  worlds the player hosts; the world's server reads the switch when the world opens.
+
 ## Built-in mods, batch 1 (2026-11-01)
 
 Mods are now built into the game instead of being native mods each player has to build
