@@ -38,3 +38,7 @@
 # Local Microsoft client ID (never commit)
 scripts/client-id.txt
 client-id.txt
+
+# CI exporter precompile outputs
+/vanilla/
+/exporters/

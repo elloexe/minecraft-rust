@@ -6,3 +6,4 @@ game/*.exe
 game/research-lock.json
 jdk/
 game/mods/
+game/exporters/

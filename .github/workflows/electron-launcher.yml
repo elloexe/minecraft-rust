@@ -56,6 +56,27 @@ jobs:
       - name: Build the game
         run: cargo build --release --locked -p claudium-client -p claudium-prepare --bins
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      # 2b) Precompile the exporters here so the player's FIRST LAUNCH is fast (no javac, no JDK
+      #     needed on their machine). Needs the pinned jars, which are public. Best-effort: on any
+      #     failure the installer still ships and the launcher compiles from the bundled sources on
+      #     first run instead (slower, but works). This is what makes first launch match Horizon.
+      - name: Precompile exporters (best-effort)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -e
+          python tools/ci/fetch_vanilla.py vanilla
+          # --prepare imports the pinned jars; it also copies sounds (assets we skip), so it may
+          # exit non-zero AFTER importing the jars — which is all compile-exporters needs.
+          target/release/claudium-prepare.exe --prepare --server-jar vanilla/server.jar --minecraft-dir vanilla --root "$PWD" || true
+          target/release/claudium-prepare.exe compile-exporters --root "$PWD"
+          test -f exporters/manifest.json && echo "exporters compiled OK"
+
       # 3) Stage both into the Electron app so electron-builder bundles them as extraResources.
       - name: Stage engine and game
         shell: bash
@@ -72,6 +93,14 @@ jobs:
           mkdir -p launcher-electron/game/mods/claudium/src/test/java/dev/claudiumlab
           cp -r mods/claudium/src/test/java/dev/claudiumlab/parity \
                 launcher-electron/game/mods/claudium/src/test/java/dev/claudiumlab/
+          # If the exporters were precompiled above, ship them: the launcher then uses them and the
+          # first launch skips compiling (fast, no JDK). The sources above stay as a fallback.
+          if [ -f exporters/manifest.json ]; then
+            cp -r exporters launcher-electron/game/exporters
+            echo "bundled PRECOMPILED exporters — first launch will be fast"
+          else
+            echo "no precompiled exporters — first launch compiles from source (slower)"
+          fi
           ls -l launcher-electron/bin launcher-electron/game
           echo "exporter sources: $(find launcher-electron/game/mods -name '*.java' | wc -l) .java files"
 

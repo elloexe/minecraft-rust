@@ -13,14 +13,37 @@ const els = {
   folder: $('#folder'),
   signOut: $('#sign-out'),
   clientIdNote: $('#client-id-note'),
+  progress: $('#progress'),
+  bar: $('#bar'),
 };
 
-let state = { signedIn: false, engineFound: false };
+let state = { signedIn: false, owner: false, engineFound: false };
 let busy = false;
 
 function setStatus(text, kind = '') {
   els.status.textContent = text || '';
-  els.status.className = `status ${kind}`;
+  els.status.className = `status ${kind}${busy && !kind ? ' working' : ''}`;
+}
+
+function showProgress(on) {
+  els.progress.classList.toggle('show', on);
+  if (!on) { els.bar.classList.remove('indeterminate'); els.bar.style.width = '0'; }
+}
+
+// Turn a status line into a bar: "126 of 411", or "73%", else an indeterminate sweep.
+function updateProgress(text) {
+  const ofM = text.match(/(\d+)\s+of\s+(\d+)/i);
+  const pct = text.match(/(\d+)\s*%/);
+  if (ofM) {
+    els.bar.classList.remove('indeterminate');
+    els.bar.style.width = `${Math.min(100, Math.round((100 * +ofM[1]) / Math.max(1, +ofM[2])))}%`;
+  } else if (pct) {
+    els.bar.classList.remove('indeterminate');
+    els.bar.style.width = `${Math.min(100, +pct[1])}%`;
+  } else {
+    els.bar.classList.add('indeterminate');
+    els.bar.style.width = '';
+  }
 }
 
 function render() {
@@ -72,11 +95,13 @@ els.account.addEventListener('click', async () => {
 });
 
 els.play.addEventListener('click', async () => {
-  busy = true; render();
+  busy = true; render(); showProgress(true); setStatus('Starting…');
   try {
     await window.claudium.play([]);
+    showProgress(false);
     setStatus('Claudium is running.', 'ok');
   } catch (e) {
+    showProgress(false);
     setStatus(e.message || 'Could not start the game.', 'error');
   } finally {
     busy = false; render();
@@ -97,6 +122,6 @@ function switchTab(name) {
 document.querySelectorAll('.nav-item').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
 // Progress from the main process and the Rust launcher (install, prepare, launch).
-window.claudium.onStatus((text) => setStatus(text));
+window.claudium.onStatus((text) => { setStatus(text); if (busy) updateProgress(text); });
 
 refresh();
