@@ -59,6 +59,7 @@ mod books;
 mod bossbars;
 mod breezes;
 mod brush;
+mod builtin_mods;
 mod bundles;
 mod campfire;
 mod campfire_douse;
@@ -5922,6 +5923,7 @@ impl Game<'_> {
         self.update_totem_ready();
         self.tick_command_extras();
         self.native_tick();
+        self.builtin_tick();
         self.tell_native_now();
         let camera_eye = self.camera_eye_height();
         let stick = self.pad_move();

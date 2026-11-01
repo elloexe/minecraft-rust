@@ -60,7 +60,12 @@ in Controls, and adding one would put a non-vanilla mapping into `options.txt`.
 - Off: nothing is gathered and the shaders' loop runs zero times (the count is 0), so it costs
   nothing measurable (numbers in the pull request, #814).
 
-### Moved to native mods
+### Built-in mods
+
+Zoom, the FPS counter, keystrokes, the minimap and the switch-only mods of `extras::Mod`
+are built into this copy of the game: see [claudium/mods.md](claudium/mods.md).
+
+### Moved to native mods (upstream)
 
 The **FPS counter**, **Keystrokes**, **Zoom** and the **Minimap** are official native mods now (in
 elloexe/claudium-mods under `native/<name>/`, [mods.md](mods.md#claudiums-official-mods)), with the same look and

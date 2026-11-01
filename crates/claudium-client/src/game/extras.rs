@@ -19,13 +19,15 @@ use winit::event::MouseButton;
 pub(super) struct ExtrasState {
     fps: FpsCounter,
     /// Left and right mouse buttons: held, and their clicks.
-    mouse: [bool; 2],
+    pub(super) mouse: [bool; 2],
     cps: [Cps; 2],
     minimap: Minimap,
     /// The dimension the minimap's tiles belong to.
     minimap_dim: Option<Dim>,
     /// Auto-reconnect's attempts at the current server.
     reconnect: Tracker,
+    /// The built-in mods' state (`builtin_mods`).
+    pub(super) builtin: super::builtin_mods::BuiltinState,
 }
 /// CPU time the minimap's tiles may take per frame.
 const MINIMAP_BUDGET: Duration = Duration::from_micros(300);
@@ -148,7 +150,7 @@ impl Game<'_> {
     }
     /// The minimap shown: a native mod's (`native_minimap`).
     fn minimap_wanted(&self) -> Option<NativeMinimap> {
-        self.native_minimap_now()
+        self.native_minimap_now().or_else(|| self.builtin_minimap())
     }
     /// Refresh the minimap's tiles within the frame budget, recompose its
     /// image when the view or a tile changed, and queue the upload.
@@ -205,9 +207,11 @@ impl Game<'_> {
     /// A mod's zoom in effect (`native_zoom`): (factor, smooth, turning
     /// scale); none is 1.
     fn zoom_now(&self) -> (f32, bool, f64) {
-        self.native_zoom_now().map_or((1.0, true, 1.0), |z| {
-            (z.factor, z.smooth, f64::from(z.turn))
-        })
+        self.native_zoom_now()
+            .or_else(|| self.builtin_zoom())
+            .map_or((1.0, true, 1.0), |z| {
+                (z.factor, z.smooth, f64::from(z.turn))
+            })
     }
     /// The field-of-view modifier target, divided by a smooth zoom.
     pub(super) fn zoomed_fov_target(&self, vanilla: f32) -> f32 {
@@ -254,6 +258,7 @@ impl Game<'_> {
             extras_hud::draw_minimap(batch, atlas, &mut corners, &look);
         }
         self.native_hud(batch, &mut corners);
+        self.builtin_hud(batch, &mut corners);
     }
     /// The height the status effect icons take at the top right
     /// (`Hud.extractEffects`: beneficial at y 1, harmful at y 26).

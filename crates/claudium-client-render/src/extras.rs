@@ -8,6 +8,91 @@ use std::{collections::VecDeque, fs, path::Path};
 pub const FILE: &str = "claudium-extras.txt";
 /// The name the options screen uses while the sort key waits for a key.
 pub const SORT_KEY: &str = "claudium.sort";
+/// The same for the zoom key.
+pub const ZOOM_KEY: &str = "claudium.zoom";
+
+/// Claudium's built-in mods that are a switch and nothing more (docs/claudium/mods.md):
+/// HUD lines in the info corner and alerts. Each is our own implementation of what a
+/// well-known mod does, never its code. Zoom, the FPS counter, keystrokes and the minimap
+/// are built in too, with settings of their own on `Extras`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Mod {
+    Coordinates,
+    Biome,
+    LightLevel,
+    Clock,
+    Speedometer,
+    ArmorHud,
+    EffectTimers,
+    DeathCoordinates,
+    LowDurability,
+}
+impl Mod {
+    pub const ALL: [Mod; 9] = [
+        Mod::Coordinates,
+        Mod::Biome,
+        Mod::LightLevel,
+        Mod::Clock,
+        Mod::Speedometer,
+        Mod::ArmorHud,
+        Mod::EffectTimers,
+        Mod::DeathCoordinates,
+        Mod::LowDurability,
+    ];
+    /// Its name in `claudium-extras.txt`.
+    pub fn id(self) -> &'static str {
+        match self {
+            Mod::Coordinates => "coordinates",
+            Mod::Biome => "biome",
+            Mod::LightLevel => "lightLevel",
+            Mod::Clock => "clock",
+            Mod::Speedometer => "speedometer",
+            Mod::ArmorHud => "armorHud",
+            Mod::EffectTimers => "effectTimers",
+            Mod::DeathCoordinates => "deathCoordinates",
+            Mod::LowDurability => "lowDurability",
+        }
+    }
+    pub fn caption(self) -> &'static str {
+        match self {
+            Mod::Coordinates => "Coordinates",
+            Mod::Biome => "Biome",
+            Mod::LightLevel => "Light level",
+            Mod::Clock => "Clock",
+            Mod::Speedometer => "Speedometer",
+            Mod::ArmorHud => "Armor HUD",
+            Mod::EffectTimers => "Effect timers",
+            Mod::DeathCoordinates => "Death coordinates",
+            Mod::LowDurability => "Low durability alert",
+        }
+    }
+    pub fn description(self) -> &'static str {
+        match self {
+            Mod::Coordinates => "Your position and the direction you face, in the info corner.",
+            Mod::Biome => "The biome you stand in, in the info corner.",
+            Mod::LightLevel => {
+                "The block light and sky light where you stand, in the info corner. Mobs spawn at block light 0."
+            }
+            Mod::Clock => "The day and the time of day in the world, in the info corner.",
+            Mod::Speedometer => "How fast you move, in blocks per second, in the info corner.",
+            Mod::ArmorHud => {
+                "Your armor and the items in your hands with their durability left, in the info corner."
+            }
+            Mod::EffectTimers => {
+                "Your status effects with the time each has left, in the info corner."
+            }
+            Mod::DeathCoordinates => {
+                "When you die, says in chat where, so you can find your items."
+            }
+            Mod::LowDurability => {
+                "Warns in chat when the tool or armor you use is about to break (10% left)."
+            }
+        }
+    }
+    fn parse(id: &str) -> Option<Mod> {
+        Self::ALL.into_iter().find(|m| m.id() == id)
+    }
+}
 
 /// The minimap's sizes in GUI pixels, and its zooms in blocks per pixel.
 pub const MINIMAP_SIZES: [(u8, &str); 3] = [(64, "Small"), (96, "Medium"), (128, "Large")];
@@ -113,6 +198,10 @@ pub struct Extras {
     pub agent_control: bool,
     /// "Playing Claudium" on the player's Discord profile (`discord_presence`; on by default).
     pub discord_presence: bool,
+    /// The built-in mods turned on (`builtinMods`), in `Mod::ALL`'s order.
+    pub mods: Vec<Mod>,
+    /// Where the HUD mods' lines go (`infoCorner`).
+    pub info_corner: Corner,
 }
 impl Default for Extras {
     fn default() -> Self {
@@ -146,6 +235,8 @@ impl Default for Extras {
             no_ai: false,
             agent_control: false,
             discord_presence: true,
+            mods: Vec::new(),
+            info_corner: Corner::TopLeft,
         }
     }
 }
@@ -221,6 +312,14 @@ impl Extras {
                 claudium_core::no_ai::KEY => e.no_ai = flag(e.no_ai),
                 "agentControl" => e.agent_control = flag(e.agent_control),
                 "discordPresence" => e.discord_presence = flag(e.discord_presence),
+                "builtinMods" => {
+                    let on: Vec<Mod> = value
+                        .split(',')
+                        .filter_map(|id| Mod::parse(id.trim()))
+                        .collect();
+                    e.mods = Mod::ALL.into_iter().filter(|m| on.contains(m)).collect();
+                }
+                "infoCorner" => e.info_corner = Corner::parse(value, e.info_corner),
                 _ => {}
             }
         }
@@ -228,7 +327,7 @@ impl Extras {
     }
     pub fn serialize(&self) -> String {
         format!(
-            "fullbright:{}\ndynamicLights:{}\nzoom:{}\nzoomKey:{}\nzoomLevel:{}\nzoomSmooth:{}\nzoomSensitivity:{}\nfps:{}\nfpsCorner:{}\nfpsLows:{}\nkeystrokes:{}\nkeystrokesCorner:{}\nkeystrokesCps:{}\nmovedToMods:{}\nminimap:{}\nminimapCorner:{}\nminimapSize:{}\nminimapShape:{}\nminimapZoom:{}\nminimapRotate:{}\nautoReconnect:{}\nownNameTag:{}\nmouseTweaks:{}\nmouseTweaksWheel:{}\nsort:{}\nsortKey:{}\n{}:{}\nagentControl:{}\ndiscordPresence:{}\n",
+            "fullbright:{}\ndynamicLights:{}\nzoom:{}\nzoomKey:{}\nzoomLevel:{}\nzoomSmooth:{}\nzoomSensitivity:{}\nfps:{}\nfpsCorner:{}\nfpsLows:{}\nkeystrokes:{}\nkeystrokesCorner:{}\nkeystrokesCps:{}\nmovedToMods:{}\nminimap:{}\nminimapCorner:{}\nminimapSize:{}\nminimapShape:{}\nminimapZoom:{}\nminimapRotate:{}\nautoReconnect:{}\nownNameTag:{}\nmouseTweaks:{}\nmouseTweaksWheel:{}\nsort:{}\nsortKey:{}\n{}:{}\nagentControl:{}\ndiscordPresence:{}\nbuiltinMods:{}\ninfoCorner:{}\n",
             bool_text(self.fullbright),
             bool_text(self.dynamic_lights),
             bool_text(self.zoom),
@@ -263,13 +362,32 @@ impl Extras {
             bool_text(self.no_ai),
             bool_text(self.agent_control),
             bool_text(self.discord_presence),
+            self.mods
+                .iter()
+                .map(|m| m.id())
+                .collect::<Vec<_>>()
+                .join(","),
+            self.info_corner.name(),
         )
+    }
+    /// Whether the built-in mod `m` is on.
+    pub fn on(&self, m: Mod) -> bool {
+        self.mods.contains(&m)
+    }
+    /// Turns `m` on or off, keeping `Mod::ALL`'s order.
+    pub fn set(&mut self, m: Mod, on: bool) {
+        let mut set: Vec<Mod> = self.mods.iter().copied().filter(|&x| x != m).collect();
+        if on {
+            set.push(m);
+        }
+        self.mods = Mod::ALL.into_iter().filter(|x| set.contains(x)).collect();
     }
     /// Binds the extra key `name` (`SORT_KEY`); false for
     /// another name (a vanilla mapping).
     pub fn set_key(&mut self, name: &str, value: String) -> bool {
         match name {
             SORT_KEY => self.sort_key = value,
+            ZOOM_KEY => self.zoom_key = value,
             _ => return false,
         }
         true
@@ -393,6 +511,16 @@ pub enum Item {
     AgentControl,
     /// On the Claudium Settings page.
     DiscordPresence,
+    /// Hold a key to zoom in, as OptiFine's and Zoomify's zoom do.
+    Zoom,
+    ZoomKey,
+    Fps,
+    Keystrokes,
+    Minimap,
+    MinimapRotate,
+    InfoCorner,
+    /// A built-in mod's switch.
+    Mod(Mod),
 }
 /// The Extras page: headers and items.
 pub fn rows() -> Vec<Result<Item, &'static str>> {
@@ -410,6 +538,25 @@ pub fn rows() -> Vec<Result<Item, &'static str>> {
         Ok(SortKey),
         Err("Multiplayer"),
         Ok(AutoReconnect),
+        Err("Camera"),
+        Ok(Zoom),
+        Ok(ZoomKey),
+        Err("HUD"),
+        Ok(Fps),
+        Ok(Keystrokes),
+        Ok(Minimap),
+        Ok(MinimapRotate),
+        Ok(InfoCorner),
+        Ok(Mod(self::Mod::Coordinates)),
+        Ok(Mod(self::Mod::Biome)),
+        Ok(Mod(self::Mod::LightLevel)),
+        Ok(Mod(self::Mod::Clock)),
+        Ok(Mod(self::Mod::Speedometer)),
+        Ok(Mod(self::Mod::ArmorHud)),
+        Ok(Mod(self::Mod::EffectTimers)),
+        Err("Alerts"),
+        Ok(Mod(self::Mod::DeathCoordinates)),
+        Ok(Mod(self::Mod::LowDurability)),
     ]
 }
 impl Item {
@@ -426,6 +573,14 @@ impl Item {
             Item::NoAi => "No AI",
             Item::AgentControl => "Agent Control",
             Item::DiscordPresence => "Discord Rich Presence",
+            Item::Zoom => "Zoom",
+            Item::ZoomKey => "Zoom key",
+            Item::Fps => "FPS counter",
+            Item::Keystrokes => "Keystrokes",
+            Item::Minimap => "Minimap",
+            Item::MinimapRotate => "Minimap turns",
+            Item::InfoCorner => "Info corner",
+            Item::Mod(m) => m.caption(),
         }
     }
     /// The switch this setting belongs to: it does nothing while that is off.
@@ -434,8 +589,11 @@ impl Item {
         Some(match self {
             MouseTweaksWheel => MouseTweaks,
             SortKey => Sort,
+            ZoomKey => Zoom,
+            MinimapRotate => Minimap,
             Fullbright | DynamicLights | OwnNameTag | MouseTweaks | Sort | AutoReconnect | NoAi
-            | AgentControl | DiscordPresence => {
+            | AgentControl | DiscordPresence | Zoom | Fps | Keystrokes | Minimap | InfoCorner
+            | Mod(_) => {
                 return None;
             }
         })
@@ -474,6 +632,18 @@ impl Item {
             Item::AgentControl => {
                 "Your own AI agent can play this game through claudium-ctl or an MCP client, on this computer only."
             }
+            Item::Zoom => {
+                "Hold the zoom key to look closer, 4 times by default. The spyglass works as before."
+            }
+            Item::ZoomKey => "The key to hold for zoom. Click, then press a key.",
+            Item::Fps => "Frames per second, in the top left corner.",
+            Item::Keystrokes => {
+                "The movement keys and mouse buttons as you press them, with clicks per second."
+            }
+            Item::Minimap => "A map of the area around you in the top right corner.",
+            Item::MinimapRotate => "The map turns with you instead of keeping north up.",
+            Item::InfoCorner => "The corner the HUD lines below go in.",
+            Item::Mod(m) => m.description(),
         }
     }
     /// The frame-time cost the main switch of an extra shows.
@@ -485,6 +655,8 @@ impl Item {
             Item::OwnNameTag | Item::AutoReconnect | Item::MouseTweaks | Item::Sort => {
                 Some(Cost::None)
             }
+            Item::Zoom | Item::Fps | Item::Keystrokes | Item::Mod(_) => Some(Cost::None),
+            Item::Minimap => Some(Cost::Low),
             _ => None,
         }
     }
@@ -501,6 +673,12 @@ impl Item {
             Item::NoAi => e.no_ai,
             Item::AgentControl => e.agent_control,
             Item::DiscordPresence => e.discord_presence,
+            Item::Zoom => e.zoom,
+            Item::Fps => e.fps,
+            Item::Keystrokes => e.keystrokes,
+            Item::Minimap => e.minimap,
+            Item::MinimapRotate => e.minimap_rotate,
+            Item::Mod(m) => e.on(m),
             _ => return None,
         })
     }
@@ -508,6 +686,8 @@ impl Item {
     pub fn value(self, e: &Extras) -> String {
         match self {
             Item::SortKey => crate::keybinds::display_name(&e.sort_key).plain(),
+            Item::ZoomKey => crate::keybinds::display_name(&e.zoom_key).plain(),
+            Item::InfoCorner => e.info_corner.label().into(),
             other => match other.switch(e) {
                 Some(true) => "On".into(),
                 _ => "Off".into(),
@@ -528,13 +708,28 @@ impl Item {
             Item::NoAi => e.no_ai = !e.no_ai,
             Item::AgentControl => e.agent_control = !e.agent_control,
             Item::DiscordPresence => e.discord_presence = !e.discord_presence,
-            Item::SortKey => {}
+            Item::Zoom => e.zoom = !e.zoom,
+            Item::Fps => e.fps = !e.fps,
+            Item::Keystrokes => e.keystrokes = !e.keystrokes,
+            Item::Minimap => e.minimap = !e.minimap,
+            Item::MinimapRotate => e.minimap_rotate = !e.minimap_rotate,
+            Item::InfoCorner => {
+                let i = Corner::ALL
+                    .iter()
+                    .position(|&c| c == e.info_corner)
+                    .unwrap_or(0);
+                let step = if _back { Corner::ALL.len() - 1 } else { 1 };
+                e.info_corner = Corner::ALL[(i + step) % Corner::ALL.len()];
+            }
+            Item::Mod(m) => e.set(m, !e.on(m)),
+            Item::SortKey | Item::ZoomKey => {}
         }
     }
     /// The key name the options screen waits on for a key item.
     pub fn key_name(self) -> Option<&'static str> {
         match self {
             Item::SortKey => Some(SORT_KEY),
+            Item::ZoomKey => Some(ZOOM_KEY),
             _ => None,
         }
     }
@@ -581,6 +776,26 @@ mod tests {
         e.sort_key = "key.keyboard.r".into();
         e.discord_presence = false;
         assert_eq!(Extras::parse(&e.serialize()), e);
+        Item::Mod(Mod::Clock).cycle(&mut e, false);
+        Item::Mod(Mod::Coordinates).cycle(&mut e, false);
+        assert_eq!(
+            e.mods,
+            vec![Mod::Coordinates, Mod::Clock],
+            "kept in Mod::ALL's order"
+        );
+        Item::InfoCorner.cycle(&mut e, false);
+        assert_eq!(e.info_corner, Corner::TopRight);
+        Item::InfoCorner.cycle(&mut e, true);
+        assert_eq!(e.info_corner, Corner::TopLeft);
+        assert!(e.set_key(ZOOM_KEY, "key.keyboard.c".into()));
+        assert_eq!(Extras::parse(&e.serialize()), e);
+        Item::Mod(Mod::Clock).cycle(&mut e, false);
+        assert!(!e.on(Mod::Clock) && e.on(Mod::Coordinates));
+        // Unknown mod ids from a newer Claudium are dropped, not kept as garbage.
+        assert_eq!(
+            Extras::parse("builtinMods:clock,teleporter").mods,
+            vec![Mod::Clock]
+        );
     }
 
     #[test]

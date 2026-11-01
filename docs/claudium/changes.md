@@ -138,6 +138,23 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 - The look has not been seen running. It is checked by `cargo fmt`, clippy and
   the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.
 
+## Built-in mods, batch 1 (2026-11-01)
+
+Mods are now built into the game instead of being native mods each player has to build
+(20 to 30 minutes on first install). They are switches on the Extras page, all off by
+default, so a fresh install still plays as vanilla 26.3. [mods.md](mods.md) is the list of
+50 and where each stands.
+
+- New: zoom, FPS counter, keystrokes with clicks per second and the minimap, which upstream
+  had moved out to its own mods repository (`horizon-rust/horizon-mods`, not in this copy).
+  The game already drew them for native mods; the built-in ones feed the same paths, and a
+  native mod's zoom or minimap still wins.
+- New switch-only mods (`extras::Mod`): coordinates and facing, biome, light level, clock,
+  speedometer, armor HUD, effect timers (info corner), death coordinates and a low-durability
+  alert (chat).
+- `crates/claudium-client/src/game/builtin_mods.rs` holds them; `game.rs`, `game/remote.rs`
+  and `game/extras.rs` each gained one line to call it.
+
 ## The Rust launcher is the launcher again; Electron removed (2026-11-01)
 
 The Electron launcher took about 15 minutes to start the game on every Play: it
