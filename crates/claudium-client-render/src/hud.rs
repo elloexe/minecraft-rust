@@ -5,7 +5,6 @@ use crate::Result;
 use claudium_assets::animation::AnimationMetadata;
 use std::{
     collections::{HashMap, HashSet},
-    fs,
     path::{Path, PathBuf},
 };
 use wgpu::util::DeviceExt;
@@ -108,7 +107,7 @@ pub const PACK_ICON_SIZE: u32 = 128;
 /// size of the largest trim texture.
 pub const TRIM_SLOTS: usize = 32;
 pub fn decode(path: &Path) -> Result<(u32, u32, Vec<u8>)> {
-    decode_bytes(&fs::read(path)?)
+    decode_bytes(&claudium_core::vfs::read(path)?)
 }
 /// A PNG in memory as RGBA pixels.
 pub fn decode_bytes(data: &[u8]) -> Result<(u32, u32, Vec<u8>)> {
@@ -131,15 +130,14 @@ pub fn decode_bytes(data: &[u8]) -> Result<(u32, u32, Vec<u8>)> {
 }
 /// A PNG's width and height, from its header alone.
 fn png_size(path: &Path) -> Option<(u32, u32)> {
-    use std::io::Read;
-    let mut header = [0u8; 24];
-    fs::File::open(path).ok()?.read_exact(&mut header).ok()?;
+    let bytes = claudium_core::vfs::read(path).ok()?;
+    let header: [u8; 24] = bytes.get(..24)?.try_into().ok()?;
     let field = |at: usize| u32::from_be_bytes(header[at..at + 4].try_into().unwrap_or_default());
     (header[..8] == *b"\x89PNG\r\n\x1a\n" && header[12..16] == *b"IHDR")
         .then(|| (field(16), field(20)))
 }
 fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = fs::read_dir(dir) else {
+    let Ok(entries) = claudium_core::vfs::read_dir(dir) else {
         return;
     };
     for entry in entries.flatten() {
@@ -266,7 +264,10 @@ fn atlas_sprites(root: &Path, packed: &[PackedImage]) -> (Vec<PackedImage>, Vec<
                         // Animated strips keep their first frame and animate,
                         // like the packed files.
                         if path.starts_with("block/") || path.starts_with("item/") {
-                            let mcmeta = fs::read_to_string(file.with_extension("png.mcmeta")).ok();
+                            let mcmeta = claudium_core::vfs::read_to_string(
+                                file.with_extension("png.mcmeta"),
+                            )
+                            .ok();
                             let animation = animation_of(mcmeta.as_deref());
                             animated = animation.is_some();
                             first_frame(image, animation.as_ref())
@@ -466,7 +467,7 @@ impl HudAtlas {
         }
         let assets = root.join("assets");
         // Content mods' GUI textures, for their screens: `<namespace>:gui/...`.
-        if full && let Ok(namespaces) = fs::read_dir(&assets) {
+        if full && let Ok(namespaces) = claudium_core::vfs::read_dir(&assets) {
             for ns in namespaces.flatten() {
                 if ns.file_name() != "minecraft" {
                     walk(&ns.path().join("textures/gui"), &mut files);
@@ -489,7 +490,7 @@ impl HudAtlas {
                 }
             };
             let image = decode(path).ok()?;
-            let mcmeta = fs::read_to_string(path.with_extension("png.mcmeta")).ok();
+            let mcmeta = claudium_core::vfs::read_to_string(path.with_extension("png.mcmeta")).ok();
             let animation = animation_of(mcmeta.as_deref());
             // An animated strip keeps its first frame.
             let frames = name.starts_with("block/") || name.starts_with("item/");
@@ -1933,6 +1934,7 @@ impl HudRenderer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn clip_since_keeps_the_visible_part_of_a_straddling_triangle() {

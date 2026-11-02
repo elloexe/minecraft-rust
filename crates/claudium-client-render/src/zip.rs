@@ -3,7 +3,6 @@
 //! vanilla's `FilePackResources` reads with), entries aren't CRC-checked.
 use std::{
     collections::BTreeMap,
-    fs,
     io::{self, Cursor, Read},
     path::Path,
     sync::Arc,
@@ -29,7 +28,7 @@ fn invalid(e: impl std::fmt::Display) -> io::Error {
 }
 impl Zip {
     pub fn open(path: &Path) -> io::Result<Self> {
-        Self::from_bytes(fs::read(path)?)
+        Self::from_bytes(claudium_core::vfs::read(path)?)
     }
     pub fn from_bytes(mut data: Vec<u8>) -> io::Result<Self> {
         normalize_end(&mut data);

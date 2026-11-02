@@ -104,7 +104,7 @@ use claudium_core::{
 use claudium_world::block_collision::BlockCollisionRegistry;
 pub use data::MobData;
 use serde_json::Value;
-use std::{collections::HashMap, fs, path::Path, sync::Arc};
+use std::{collections::HashMap, path::Path, sync::Arc};
 
 #[derive(Clone, Debug)]
 pub struct Polygon {
@@ -410,10 +410,11 @@ pub struct MobTypes {
 }
 impl MobTypes {
     pub fn load(root: &Path) -> crate::Result<Self> {
-        let bytes = fs::read(root.join("entity-types.json"))?;
+        let bytes = claudium_core::vfs::read(root.join("entity-types.json"))?;
         let types: Value = serde_json::from_slice(&bytes)?;
         let exact = exact_attributes(&bytes);
-        let models: Value = serde_json::from_slice(&fs::read(root.join("entity-models.json"))?)?;
+        let models: Value =
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("entity-models.json"))?)?;
         let item_tags =
             crate::items::load_tags(root, "item", &claudium_world::loot::PackOverlay::NONE)
                 .unwrap_or_default();
@@ -2820,7 +2821,7 @@ pub struct EntityModelDocument(Value);
 
 impl EntityModelDocument {
     pub fn load(root: &Path) -> crate::Result<Self> {
-        Ok(Self(serde_json::from_slice(&fs::read(
+        Ok(Self(serde_json::from_slice(&claudium_core::vfs::read(
             root.join("entity-models.json"),
         )?)?))
     }

@@ -21,7 +21,6 @@ use claudium_world::{
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs,
     path::Path,
 };
 
@@ -64,7 +63,7 @@ impl StateModels {
         sprites: &mut Sprites,
     ) -> Result<Self> {
         let facts: BTreeMap<String, Value> =
-            serde_json::from_slice(&fs::read(root.join("model-states.json"))?)?;
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("model-states.json"))?)?;
         Self::from_facts(root, registry, blocks, sprites, &facts)
     }
     /// Bind and bake models using an already parsed model-state document.
@@ -147,7 +146,7 @@ impl StateModels {
             // Vanilla's BlockStateModelLoader: a definition that does not
             // read or bind is logged and its block gets no model; the other
             // blocks still load.
-            let loaded = fs::read_to_string(
+            let loaded = claudium_core::vfs::read_to_string(
                 root.join(format!("assets/{namespace}/blockstates/{path}.json")),
             )
             .map_err(|e| e.to_string())

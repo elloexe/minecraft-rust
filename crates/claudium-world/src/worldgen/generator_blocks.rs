@@ -13,7 +13,6 @@ use crate::{
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs,
     path::Path,
     sync::Arc,
 };
@@ -106,7 +105,9 @@ impl BlockBehavior {
                 .map_err(|e| resource(format!("{name}: {e}")))
         };
         let json = |name: &str| -> Result<Value, GeneratorError> {
-            Ok(serde_json::from_str(&fs::read_to_string(dir.join(name))?)?)
+            Ok(serde_json::from_str(&claudium_core::vfs::read_to_string(
+                dir.join(name),
+            )?)?)
         };
         // The support table reads on its own thread while the collision and
         // property tables (which need the collisions) read on this one.

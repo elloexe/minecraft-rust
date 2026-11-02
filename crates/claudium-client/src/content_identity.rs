@@ -18,7 +18,7 @@ pub fn identity(root: &Path) -> Result<[u8; 32], String> {
     if let Some(hash) = identities.get(root) {
         return Ok(*hash);
     }
-    let bytes = std::fs::read(root.join("facts.json")).map_err(|e| e.to_string())?;
+    let bytes = claudium_core::vfs::read(root.join("facts.json")).map_err(|e| e.to_string())?;
     let hash = hash_facts(&bytes)?;
     identities.insert(root.to_owned(), hash);
     Ok(hash)

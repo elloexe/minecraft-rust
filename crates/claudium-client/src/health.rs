@@ -21,7 +21,7 @@ use claudium_world::{
     server_player_damage::ServerDamageEnvironment,
     synced_floats::{FloatValue, Observer, SyncedFloats},
 };
-use std::{fs, io, path::Path};
+use std::{io, path::Path};
 pub(crate) type Attributes = LiveAttributes<Box<dyn FnMut() -> i32>>;
 pub(crate) type State = HurtState<DamageTypeId>;
 
@@ -33,7 +33,9 @@ pub struct HealthResources {
 impl HealthResources {
     pub fn load(root: &Path) -> Result<Self> {
         let read = |name: &str| -> Result<serde_json::Value> {
-            Ok(serde_json::from_slice(&fs::read(root.join(name))?)?)
+            Ok(serde_json::from_slice(&claudium_core::vfs::read(
+                root.join(name),
+            )?)?)
         };
         let ids = read("player-float-ids.json")?;
         let id = |name: &str| -> Result<u8> {

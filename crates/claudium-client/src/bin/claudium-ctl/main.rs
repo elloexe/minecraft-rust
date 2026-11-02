@@ -299,7 +299,7 @@ fn logs(home: &Path, words: &[String]) -> Result<Value, Failure> {
                 logging::crash_reports_dir(home).display()
             ))
         })?;
-        let text = std::fs::read_to_string(&path)
+        let text = claudium_core::vfs::read_to_string(&path)
             .map_err(|e| missing(format!("{}: {e}", path.display())))?;
         return Ok(json!({ "path": path, "text": text }));
     }

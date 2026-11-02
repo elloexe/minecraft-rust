@@ -145,7 +145,7 @@ pub fn format_line(
 
 /// Gzips `text` into the next archive for `date` in `dir`.
 fn archive(dir: &Path, date: NaiveDate, text: &[u8]) -> io::Result<()> {
-    let names: Vec<String> = fs::read_dir(dir)?
+    let names: Vec<String> = claudium_core::vfs::read_dir(dir)?
         .flatten()
         .filter_map(|e| e.file_name().into_string().ok())
         .collect();
@@ -451,7 +451,7 @@ pub fn flush() {
 
 /// The last `lines` lines of a text file.
 pub fn tail(path: &Path, lines: usize) -> io::Result<Vec<String>> {
-    let text = fs::read(path)?;
+    let text = claudium_core::vfs::read(path)?;
     let text = String::from_utf8_lossy(&text);
     let all: Vec<&str> = text.lines().collect();
     Ok(all[all.len().saturating_sub(lines)..]
@@ -462,7 +462,7 @@ pub fn tail(path: &Path, lines: usize) -> io::Result<Vec<String>> {
 
 /// The newest `crash-*.txt` in a game folder's crash-reports (names sort by time).
 pub fn newest_crash_report(home: &Path) -> Option<PathBuf> {
-    fs::read_dir(crash_reports_dir(home))
+    claudium_core::vfs::read_dir(crash_reports_dir(home))
         .ok()?
         .flatten()
         .map(|e| e.path())
@@ -552,7 +552,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         // Empty: nothing is archived (OnStartupTriggeringPolicy's minSize is 1 byte).
         drop(open_latest(&dir).unwrap().unwrap());
-        assert_eq!(fs::read_dir(&dir).unwrap().count(), 2);
+        assert_eq!(claudium_core::vfs::read_dir(&dir).unwrap().count(), 2);
         fs::write(
             dir.join("latest.log"),
             "[10:00:00] [Render thread/INFO]: first run\n",
@@ -571,7 +571,7 @@ mod tests {
             .unwrap();
         assert_eq!(text, "[10:00:00] [Render thread/INFO]: first run\n");
         assert_eq!(
-            fs::read_to_string(dir.join("latest.log")).unwrap(),
+            claudium_core::vfs::read_to_string(dir.join("latest.log")).unwrap(),
             "second run\n"
         );
         assert_eq!(

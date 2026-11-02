@@ -37,7 +37,7 @@ pub fn version_parts(tag: &str) -> Vec<u64> {
 
 /// Installed launcher versions, newest first.
 pub fn installed(versions: &Path) -> Vec<String> {
-    let mut tags: Vec<String> = std::fs::read_dir(versions)
+    let mut tags: Vec<String> = claudium_core::vfs::read_dir(versions)
         .into_iter()
         .flatten()
         .flatten()
@@ -50,7 +50,7 @@ pub fn installed(versions: &Path) -> Vec<String> {
 
 /// A folder's prepared resources, as the launcher prepares them.
 pub fn prepared_resources(dir: &Path) -> Option<PathBuf> {
-    let version = std::fs::read_to_string(dir.join("research-lock.json"))
+    let version = claudium_core::vfs::read_to_string(dir.join("research-lock.json"))
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
         .and_then(|v| v["minecraft"]["version"].as_str().map(str::to_owned))
@@ -236,7 +236,7 @@ pub fn launch(socket: &Path, args: &[String]) -> Result<Value, Value> {
             return Ok(reply);
         }
         if let Ok(Some(status)) = child.try_wait() {
-            let tail = std::fs::read_to_string(&log).unwrap_or_default();
+            let tail = claudium_core::vfs::read_to_string(&log).unwrap_or_default();
             let tail: Vec<&str> = tail.lines().rev().take(15).collect();
             return Err(json!({
                 "error": format!("the game exited ({status}) before opening the control socket"),

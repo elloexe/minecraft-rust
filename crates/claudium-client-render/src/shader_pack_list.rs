@@ -25,7 +25,7 @@ pub struct Entry {
 
 /// The packs in `dir`, Claudium's first, each kind by title. A missing folder has none.
 pub fn scan(dir: &Path) -> Vec<Entry> {
-    let Ok(entries) = std::fs::read_dir(dir) else {
+    let Ok(entries) = claudium_core::vfs::read_dir(dir) else {
         return Vec::new();
     };
     let mut packs: Vec<Entry> = entries.flatten().filter_map(|e| entry(&e.path())).collect();
@@ -45,7 +45,7 @@ fn entry(path: &Path) -> Option<Entry> {
         // Its manifest's name; a pack that can't be read is still listed, under its file
         // name: picking it says why in the chat.
         let manifest = if path.is_dir() {
-            std::fs::read_to_string(path.join(claudium_shader_api::MANIFEST))
+            claudium_core::vfs::read_to_string(path.join(claudium_shader_api::MANIFEST))
                 .ok()
                 .and_then(|t| claudium_shader_api::Manifest::parse(&t).ok())
         } else {

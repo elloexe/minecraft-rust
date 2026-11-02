@@ -5,7 +5,6 @@ use crate::{Result, items::ItemStack, ui::EditBox};
 use serde_json::Value;
 use std::{
     collections::HashMap,
-    fs,
     path::Path,
     sync::{Arc, Mutex},
 };
@@ -102,7 +101,7 @@ pub struct Names {
 impl Names {
     pub fn load(root: &Path) -> Self {
         let read = |namespace: &str| {
-            fs::read(root.join(format!("assets/{namespace}/lang/en_us.json")))
+            claudium_core::vfs::read(root.join(format!("assets/{namespace}/lang/en_us.json")))
                 .ok()
                 .and_then(|b| serde_json::from_slice::<HashMap<String, String>>(&b).ok())
                 .unwrap_or_default()
@@ -227,9 +226,9 @@ impl Creative {
     pub fn load(root: &Path) -> Result<Self> {
         let path = root.join("creative-inventory.json");
         if path.exists() {
-            Self::from_json(&serde_json::from_slice(&fs::read(path)?)?)
+            Self::from_json(&serde_json::from_slice(&claudium_core::vfs::read(path)?)?)
         } else {
-            Self::from_legacy(&serde_json::from_slice(&fs::read(
+            Self::from_legacy(&serde_json::from_slice(&claudium_core::vfs::read(
                 root.join("creative-tabs.json"),
             )?)?)
         }

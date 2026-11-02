@@ -232,7 +232,8 @@ impl GameRules {
         rules
     }
     pub fn load(world: &Path) -> Self {
-        let Ok(bytes) = fs::read(world.join("data/minecraft/game_rules.dat")) else {
+        let Ok(bytes) = claudium_core::vfs::read(world.join("data/minecraft/game_rules.dat"))
+        else {
             return Self::default();
         };
         let Ok(raw) = Compression::Gzip.decode(&bytes, 16 << 20) else {

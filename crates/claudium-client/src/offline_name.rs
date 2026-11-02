@@ -27,7 +27,10 @@ pub fn generate(seed: u64) -> String {
 /// still yields a name for this run.
 pub fn load_or_create(dir: &Path) -> String {
     let path = dir.join(FILE);
-    if let Some(name) = fs::read_to_string(&path).ok().and_then(|text| parse(&text)) {
+    if let Some(name) = claudium_core::vfs::read_to_string(&path)
+        .ok()
+        .and_then(|text| parse(&text))
+    {
         return name;
     }
     let name = generate(seed());
@@ -89,7 +92,7 @@ mod tests {
         let d = dir("kept");
         let first = load_or_create(&d);
         assert_eq!(
-            fs::read_to_string(d.join(FILE)).unwrap(),
+            claudium_core::vfs::read_to_string(d.join(FILE)).unwrap(),
             format!("name:{first}\n")
         );
         assert_eq!(load_or_create(&d), first);

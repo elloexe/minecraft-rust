@@ -1,6 +1,6 @@
 //! The namespaces content mods add to a resource root, which loaders read
 //! besides `minecraft`.
-use std::{fs, path::Path};
+use std::path::Path;
 
 /// In a root built here: the namespaces the content mods own (their ids and
 /// listed namespaces), which loaders read besides `minecraft`.
@@ -9,7 +9,7 @@ pub const MARKER: &str = "claudium-mod-content.json";
 /// The content mods' namespaces in a root built by `mod_content::build`; none in any
 /// other root, so vanilla's loaders read exactly what they did.
 pub fn namespaces(root: &Path) -> Vec<String> {
-    fs::read(root.join(MARKER))
+    claudium_core::vfs::read(root.join(MARKER))
         .ok()
         .and_then(|b| serde_json::from_slice(&b).ok())
         .unwrap_or_default()

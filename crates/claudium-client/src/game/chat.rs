@@ -210,7 +210,7 @@ fn command_export(dir: &Path) -> Option<Arc<serde_json::Value>> {
     if let Some((_, export)) = cache.iter().find(|(cached, _)| cached == dir) {
         return export.clone();
     }
-    let export = std::fs::read(dir.join("command-registries.json"))
+    let export = claudium_core::vfs::read(dir.join("command-registries.json"))
         .ok()
         .and_then(|bytes| serde_json::from_slice(&bytes).ok())
         .map(Arc::new);
@@ -226,7 +226,7 @@ fn ids_under(root: &Path, extension: &str) -> Vec<String> {
 /// The templates of every namespace folder under `root` (vanilla's and the
 /// content mods'), as `namespace:path`, sorted.
 fn templates_under(root: &Path) -> Vec<String> {
-    let Ok(namespaces) = std::fs::read_dir(root) else {
+    let Ok(namespaces) = claudium_core::vfs::read_dir(root) else {
         return Vec::new();
     };
     let mut out: Vec<String> = namespaces
@@ -243,7 +243,7 @@ fn ids_in(root: &Path, extension: &str, namespace: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut stack = vec![root.to_owned()];
     while let Some(dir) = stack.pop() {
-        let Ok(entries) = std::fs::read_dir(&dir) else {
+        let Ok(entries) = claudium_core::vfs::read_dir(&dir) else {
             continue;
         };
         for e in entries.flatten() {
@@ -389,7 +389,7 @@ impl Game<'_> {
         reg.summonable = summonable;
         let root = self.options.resources.clone();
         let mut types: Vec<String> = serde_json::from_slice::<serde_json::Value>(
-            &std::fs::read(root.join("entity-types.json")).unwrap_or_default(),
+            &claudium_core::vfs::read(root.join("entity-types.json")).unwrap_or_default(),
         )
         .ok()
         .and_then(|v| {
@@ -407,7 +407,7 @@ impl Game<'_> {
         types.sort();
         reg.entity_types = types;
         let list = |dir: &str| -> Vec<String> {
-            let mut out: Vec<String> = std::fs::read_dir(root.join(dir))
+            let mut out: Vec<String> = claudium_core::vfs::read_dir(root.join(dir))
                 .into_iter()
                 .flatten()
                 .flatten()
@@ -447,7 +447,7 @@ impl Game<'_> {
                 name.trim_start_matches("minecraft:")
             ));
             let Ok(v) = serde_json::from_slice::<serde_json::Value>(
-                &std::fs::read(path).unwrap_or_default(),
+                &claudium_core::vfs::read(path).unwrap_or_default(),
             ) else {
                 continue;
             };
@@ -1204,7 +1204,8 @@ impl Game<'_> {
         self.ui.clock = WorldClock::default();
         // PrimaryLevelData: the difficulty comes back from level.dat's difficulty_settings.
         self.ui.difficulty = self.level.difficulty_id();
-        if let Ok(bytes) = std::fs::read(self.world_root.join("data/minecraft/world_clocks.dat"))
+        if let Ok(bytes) =
+            claudium_core::vfs::read(self.world_root.join("data/minecraft/world_clocks.dat"))
             && let Ok(raw) = claudium_world::compression::Compression::Gzip.decode(&bytes, 1 << 20)
             && let Ok((root, _)) =
                 claudium_world::nbt::read_named(&raw, claudium_world::nbt::Limits::default())

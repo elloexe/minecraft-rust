@@ -70,7 +70,7 @@ pub fn delete(saves: &Path, folder: &str) -> crate::Result<()> {
 }
 
 fn remove_contents(world: &Path, lock: &Path) -> io::Result<()> {
-    for entry in fs::read_dir(world)? {
+    for entry in claudium_core::vfs::read_dir(world)? {
         let entry = entry?;
         let path = entry.path();
         if path == lock {
@@ -156,7 +156,7 @@ fn write_tree(
     dir: &Path,
     folder: &str,
 ) -> crate::Result<()> {
-    for entry in fs::read_dir(dir)? {
+    for entry in claudium_core::vfs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
         let kind = entry.file_type()?;

@@ -695,14 +695,18 @@ impl RecipeIndex {
             );
         };
         let dir = root.join("data/minecraft/recipe");
-        for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        for entry in claudium_core::vfs::read_dir(dir)
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
             let path = entry.path();
             if path.extension().is_none_or(|e| e != "json") {
                 continue;
             }
             let (Some(stem), Some(v)) = (
                 path.file_stem().and_then(|s| s.to_str()),
-                std::fs::read(&path)
+                claudium_core::vfs::read(&path)
                     .ok()
                     .and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok()),
             ) else {

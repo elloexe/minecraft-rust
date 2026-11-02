@@ -875,7 +875,8 @@ impl BlockEntityRenderer {
         registry: &BlockRegistry,
         visibility: FaceVisibility,
     ) -> crate::Result<Self> {
-        let all: Value = serde_json::from_slice(&std::fs::read(root.join("entity-models.json"))?)?;
+        let all: Value =
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("entity-models.json"))?)?;
         let models = MODELS
             .iter()
             .filter_map(|(key, layer)| all.get(*layer).map(|v| (*key, ModelPart::parse(v))))
@@ -883,7 +884,7 @@ impl BlockEntityRenderer {
         let mut renderer = Self::new(models, registry);
         renderer.visibility = Some(Mutex::new(visibility));
         // Sherd items: provides_pottery_pattern -> decorated_pot_pattern asset id.
-        if let Ok(bytes) = std::fs::read(root.join("items.json")) {
+        if let Ok(bytes) = claudium_core::vfs::read(root.join("items.json")) {
             let items: Value = serde_json::from_slice(&bytes)?;
             for (item, components) in items.as_object().into_iter().flatten() {
                 let Some(pattern) = components["minecraft:provides_pottery_pattern"].as_str()
@@ -892,7 +893,7 @@ impl BlockEntityRenderer {
                 };
                 let name = pattern.strip_prefix("minecraft:").unwrap_or(pattern);
                 let file = root.join(format!("data/minecraft/decorated_pot_pattern/{name}.json"));
-                let Ok(def) = std::fs::read(file) else {
+                let Ok(def) = claudium_core::vfs::read(file) else {
                     continue;
                 };
                 let def: Value = serde_json::from_slice(&def)?;
@@ -2004,7 +2005,7 @@ mod tests {
             "copper_chest",
         ];
         let mut facts: std::collections::BTreeMap<String, Value> =
-            serde_json::from_slice(&std::fs::read(root.join("model-states.json"))?)?;
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("model-states.json"))?)?;
         let states = names.map(|name| {
             let name = format!("minecraft:{name}");
             let mut first = facts[&name]["states"][0].clone();
@@ -2046,7 +2047,8 @@ mod tests {
             };
             assert_eq!(models[0].1.particle, Some(sprites.layers[particle]));
         }
-        let all: Value = serde_json::from_slice(&std::fs::read(root.join("entity-models.json"))?)?;
+        let all: Value =
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("entity-models.json"))?)?;
         let renderer = BlockEntityRenderer::new(
             MODELS
                 .iter()

@@ -9,7 +9,7 @@ use crate::{
 };
 use claudium_world::loot::PackOverlay;
 use serde_json::Value;
-use std::{collections::HashSet, fs, path::Path};
+use std::{collections::HashSet, path::Path};
 
 pub use claudium_client_core::potions::{
     BASE_POTION_COLOR, Category, EFFECTS, EffectDef, POTIONS, PotionDef, effect, namespaced,
@@ -161,12 +161,12 @@ pub struct Brewing {
 impl Brewing {
     pub fn load(root: &Path, items: &Items, overlay: &PackOverlay) -> Self {
         let mut sources: Vec<(String, Value)> =
-            fs::read_dir(root.join("data/minecraft/recipe/brewing"))
+            claudium_core::vfs::read_dir(root.join("data/minecraft/recipe/brewing"))
                 .into_iter()
                 .flatten()
                 .flatten()
                 .filter_map(|e| {
-                    let bytes = fs::read(e.path()).ok()?;
+                    let bytes = claudium_core::vfs::read(e.path()).ok()?;
                     let v = serde_json::from_slice::<Value>(&bytes).ok()?;
                     Some((
                         format!(

@@ -363,7 +363,8 @@ fn patch_components(
 }
 
 fn read_json(path: &Path) -> Result<J> {
-    Ok(serde_json::from_slice(&fs::read(path)?).map_err(|e| format!("{}: {e}", path.display()))?)
+    Ok(serde_json::from_slice(&claudium_core::vfs::read(path)?)
+        .map_err(|e| format!("{}: {e}", path.display()))?)
 }
 
 impl<'a> Plan<'a> {
@@ -1110,7 +1111,7 @@ impl Overlay<'_> {
         Ok(overlay)
     }
     fn link_children(&self, rel: &Path) -> Result<()> {
-        let Ok(read) = fs::read_dir(self.base.join(rel)) else {
+        let Ok(read) = claudium_core::vfs::read_dir(self.base.join(rel)) else {
             return Ok(());
         };
         for entry in read.flatten() {
@@ -1164,7 +1165,7 @@ fn link(target: &Path, at: &Path) -> std::io::Result<()> {
 fn link(target: &Path, at: &Path) -> std::io::Result<()> {
     if target.is_dir() {
         fs::create_dir_all(at)?;
-        for entry in fs::read_dir(target)?.flatten() {
+        for entry in claudium_core::vfs::read_dir(target)?.flatten() {
             link(&entry.path(), &at.join(entry.file_name()))?;
         }
         Ok(())
@@ -1352,8 +1353,9 @@ fn tables(base: &Path, plan: &Plan, overlay: &Overlay<'_>) -> Result<()> {
                 .map_err(|e| format!("{name}: {e}"))?;
             serde_json::to_vec(&doc)?
         } else {
-            let (mut named, _) = nbt::read_named(&fs::read(&path)?, Limits::tables())
-                .map_err(|e| format!("{name}: {e}"))?;
+            let (mut named, _) =
+                nbt::read_named(&claudium_core::vfs::read(&path)?, Limits::tables())
+                    .map_err(|e| format!("{name}: {e}"))?;
             plan.nbt(&mut named.tag);
             if name == "cached-collision.nbt" || name == "worldgen/blocks/cached-collision.nbt" {
                 plan.collision_shapes(&mut named.tag)?;
@@ -1462,7 +1464,7 @@ pub fn build(base: &Path, mods: &[ContentMod], out: &Path) -> Result<Vec<String>
         }
     }
     for (file, merge) in &tags {
-        let vanilla = fs::read_to_string(base.join(file))
+        let vanilla = claudium_core::vfs::read_to_string(base.join(file))
             .ok()
             .filter(|_| !merge.replaced);
         overlay.write(
@@ -1566,7 +1568,7 @@ pub fn build(base: &Path, mods: &[ContentMod], out: &Path) -> Result<Vec<String>
             }
             let template = block.template.trim_start_matches("minecraft:");
             let vanilla = base.join(format!("assets/minecraft/blockstates/{template}.json"));
-            overlay.write(&own, &fs::read(&vanilla)?)?;
+            overlay.write(&own, &claudium_core::vfs::read(&vanilla)?)?;
         }
     }
     let mut namespaces: Vec<&str> = mods
@@ -1594,9 +1596,9 @@ pub fn resource_root(base: &Path, mods: &[ContentMod], cache: &Path) -> Result<P
     }
     let out = cache.join("mod-content");
     let stamp = stamp(base, mods)?;
-    if fs::read(out.join(STAMP)).is_ok_and(|s| s == stamp.as_bytes()) {
+    if claudium_core::vfs::read(out.join(STAMP)).is_ok_and(|s| s == stamp.as_bytes()) {
         // A reused root warns as the build did.
-        let warnings = fs::read_to_string(out.join(WARNINGS)).unwrap_or_default();
+        let warnings = claudium_core::vfs::read_to_string(out.join(WARNINGS)).unwrap_or_default();
         warnings.lines().for_each(|w| log::warn!("Claudium: {w}"));
         return Ok(out);
     }
@@ -1635,7 +1637,10 @@ fn stamp(base: &Path, mods: &[ContentMod]) -> Result<String> {
     parts.push(meta(&std::env::current_exe()?)?);
     let base = std::path::absolute(base)?;
     parts.push(
-        String::from_utf8_lossy(&fs::read(base.join("claudium-resources.json"))?).into_owned(),
+        String::from_utf8_lossy(&claudium_core::vfs::read(
+            base.join("claudium-resources.json"),
+        )?)
+        .into_owned(),
     );
     for name in JSON_TABLES.iter().chain(&NBT_TABLES).chain(&TAG_BUNDLES) {
         if base.join(name).exists() {

@@ -61,9 +61,10 @@ pub(super) fn pack_stack(
 ) -> PackStack {
     let builtin = (!vanilla_disabled).then(|| DataPack::builtin(resources));
     let packs = datapack::discover(world_root);
-    let saved: Option<serde_json::Value> = std::fs::read(world_root.join("datapacks.json"))
-        .ok()
-        .and_then(|b| serde_json::from_slice(&b).ok());
+    let saved: Option<serde_json::Value> =
+        claudium_core::vfs::read(world_root.join("datapacks.json"))
+            .ok()
+            .and_then(|b| serde_json::from_slice(&b).ok());
     let list = |key: &str| -> Vec<String> {
         saved
             .as_ref()

@@ -9,7 +9,7 @@ use crate::{
 };
 use claudium_core::random::{RandomSource, XoroshiroRandom, mix_stafford13, seed_from_hash};
 use serde_json::Value;
-use std::{collections::HashMap, fs, path::Path, sync::Arc};
+use std::{collections::HashMap, path::Path, sync::Arc};
 
 /// `VillagerData.NEXT_LEVEL_XP_THRESHOLDS`.
 pub const LEVEL_XP: [i32; 5] = [0, 10, 70, 150, 250];
@@ -448,7 +448,7 @@ pub struct Trades {
     pub potion_tags: HashMap<String, Vec<String>>,
 }
 fn walk(dir: &Path, base: &Path, out: &mut HashMap<String, Value>) {
-    let Ok(entries) = fs::read_dir(dir) else {
+    let Ok(entries) = claudium_core::vfs::read_dir(dir) else {
         return;
     };
     for e in entries.flatten() {
@@ -457,7 +457,7 @@ fn walk(dir: &Path, base: &Path, out: &mut HashMap<String, Value>) {
             walk(&p, base, out);
         } else if p.extension().is_some_and(|x| x == "json")
             && let Ok(rel) = p.strip_prefix(base)
-            && let Ok(bytes) = fs::read(&p)
+            && let Ok(bytes) = claudium_core::vfs::read(&p)
             && let Ok(v) = serde_json::from_slice(&bytes)
         {
             out.insert(

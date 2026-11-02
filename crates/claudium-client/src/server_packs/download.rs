@@ -326,7 +326,7 @@ pub fn vacuum(dir: &Path, max_files: usize) {
     let mut files = Vec::new();
     let mut stack = vec![dir.to_path_buf()];
     while let Some(d) = stack.pop() {
-        let Ok(entries) = fs::read_dir(&d) else {
+        let Ok(entries) = claudium_core::vfs::read_dir(&d) else {
             continue;
         };
         for e in entries.flatten() {
@@ -435,7 +435,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(path, dir.join(sha1(&body)));
-        assert_eq!(fs::read(&path).unwrap(), body);
+        assert_eq!(claudium_core::vfs::read(&path).unwrap(), body);
         let sent = server.join().unwrap();
         assert!(sent.contains("X-Minecraft-Username: Alex"), "{sent}");
         assert!(sent.contains("X-Minecraft-Pack-Format: 97.1"), "{sent}");
@@ -559,7 +559,7 @@ mod tests {
                 Progress::RequestFinished(true),
             ]
         );
-        let log = fs::read_to_string(dir.join("log.json")).unwrap();
+        let log = claudium_core::vfs::read_to_string(dir.join("log.json")).unwrap();
         let entry: serde_json::Value = serde_json::from_str(log.trim()).unwrap();
         assert_eq!(entry["id"], "5b2c7a4e-1f3d-4c8b-9a6e-2d4f8b1c3e5a");
         assert_eq!(entry["file"]["size"], 3);

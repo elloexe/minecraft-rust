@@ -27,7 +27,7 @@ fn invalid(message: impl Into<String>) -> io::Error {
 
 /// `NbtIo.readCompressed`: the root compound of a gzip NBT file, if it exists.
 pub fn read_dat(path: &Path) -> io::Result<Option<Tag>> {
-    let bytes = match fs::read(path) {
+    let bytes = match claudium_core::vfs::read(path) {
         Ok(b) => b,
         Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
         Err(e) => return Err(e),
@@ -40,7 +40,7 @@ pub fn read_dat(path: &Path) -> io::Result<Option<Tag>> {
 
 /// `SavedDataStorage.readTagFromDisk`: a file without the gzip header is plain NBT.
 pub fn read_saved_dat(path: &Path) -> io::Result<Option<Tag>> {
-    let bytes = match fs::read(path) {
+    let bytes = match claudium_core::vfs::read(path) {
         Ok(b) => b,
         Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
         Err(e) => return Err(e),
@@ -120,11 +120,11 @@ fn move_file(base: &Path, from: &str, to: &str) -> io::Result<()> {
 fn delete(base: &Path, relative: &str) -> io::Result<()> {
     let path = resolve(base, relative);
     if path.is_dir() {
-        let entries: Vec<_> = fs::read_dir(&path)?.collect::<Result<_, _>>()?;
+        let entries: Vec<_> = claudium_core::vfs::read_dir(&path)?.collect::<Result<_, _>>()?;
         if entries.len() == 1 && entries[0].file_name() == ".DS_Store" {
             let _ = fs::remove_file(entries[0].path());
         }
-        if fs::read_dir(&path)?.next().is_some() {
+        if claudium_core::vfs::read_dir(&path)?.next().is_some() {
             return Ok(());
         }
         fs::remove_dir(&path)
@@ -136,7 +136,7 @@ fn delete(base: &Path, relative: &str) -> io::Result<()> {
 }
 
 fn subdirectories(path: &Path) -> Vec<PathBuf> {
-    let mut out: Vec<PathBuf> = fs::read_dir(path)
+    let mut out: Vec<PathBuf> = claudium_core::vfs::read_dir(path)
         .map(|r| {
             r.filter_map(Result::ok)
                 .map(|e| e.path())
@@ -310,7 +310,7 @@ fn regex_move(folder: &Path, rename: impl Fn(&str) -> Option<String>) -> io::Res
     if !folder.is_dir() {
         return Ok(());
     }
-    let mut names: Vec<String> = fs::read_dir(folder)?
+    let mut names: Vec<String> = claudium_core::vfs::read_dir(folder)?
         .filter_map(Result::ok)
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect();
@@ -663,7 +663,7 @@ fn generators(base: &Path) -> io::Result<Vec<(String, String)>> {
 }
 
 fn files_with_suffix(folder: &Path, suffix: &str) -> Vec<PathBuf> {
-    let mut out: Vec<PathBuf> = fs::read_dir(folder)
+    let mut out: Vec<PathBuf> = claudium_core::vfs::read_dir(folder)
         .map(|r| {
             r.filter_map(Result::ok)
                 .map(|e| e.path())
@@ -717,7 +717,7 @@ fn upgrade_saved_data(data: &Path) -> io::Result<()> {
     let mut files = Vec::new();
     let mut stack = vec![data.to_path_buf()];
     while let Some(dir) = stack.pop() {
-        for entry in fs::read_dir(&dir)?.filter_map(Result::ok) {
+        for entry in claudium_core::vfs::read_dir(&dir)?.filter_map(Result::ok) {
             let p = entry.path();
             if p.is_dir() {
                 stack.push(p);
@@ -780,7 +780,7 @@ fn upgrade_json(path: &Path, ty: Ty) -> io::Result<()> {
 }
 
 fn upgrade_json_to(path: &Path, ty: Ty, to: i32) -> io::Result<()> {
-    let text = fs::read_to_string(path)?;
+    let text = claudium_core::vfs::read_to_string(path)?;
     let units: Vec<u16> = text.encode_utf16().collect();
     let parsed = json::parse_lenient(&units)
         .ok_or_else(|| invalid(format!("bad JSON in {}", path.display())))?;

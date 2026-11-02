@@ -41,7 +41,7 @@ pub(crate) struct SpriteCache {
 /// summed so the directory order does not matter.
 fn fingerprint(root: &Path) -> Option<u64> {
     fn walk(dir: &Path, base: &Path, sum: &mut u64) -> Option<()> {
-        for entry in fs::read_dir(dir).ok()? {
+        for entry in claudium_core::vfs::read_dir(dir).ok()? {
             let entry = entry.ok()?;
             let meta = entry.metadata().ok()?;
             if meta.is_dir() {
@@ -57,7 +57,7 @@ fn fingerprint(root: &Path) -> Option<u64> {
         Some(())
     }
     let mut sum = 0;
-    for namespace in fs::read_dir(root.join("assets")).ok()? {
+    for namespace in claudium_core::vfs::read_dir(root.join("assets")).ok()? {
         let textures = namespace.ok()?.path().join("textures");
         if textures.is_dir() {
             walk(&textures, root, &mut sum)?;
@@ -72,7 +72,7 @@ impl SpriteCache {
     pub fn open(root: &Path) -> Option<Self> {
         let fingerprint = fingerprint(root)?;
         let path = root.join(FILE);
-        let entries = fs::read(&path)
+        let entries = claudium_core::vfs::read(&path)
             .ok()
             .and_then(|bytes| parse(&bytes, fingerprint))
             .unwrap_or_default();

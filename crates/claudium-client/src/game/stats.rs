@@ -109,7 +109,7 @@ impl Stats {
             loaded: true,
             ..Self::default()
         };
-        let Some(json) = std::fs::read_to_string(path)
+        let Some(json) = claudium_core::vfs::read_to_string(path)
             .ok()
             .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
         else {

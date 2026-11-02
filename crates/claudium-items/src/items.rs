@@ -8,7 +8,6 @@ use claudium_world::registry::{BlockRegistry, BlockStateId};
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
-    fs,
     path::Path,
     sync::Arc,
 };
@@ -234,7 +233,7 @@ pub struct ItemStack {
 /// `order`'s items in the registry's order (`command-registries.json`'s
 /// `items`, exported from the game); `order` itself when that is missing.
 fn registry_order(root: &Path, order: &[Arc<str>]) -> Vec<Arc<str>> {
-    let listed: Vec<String> = fs::read(root.join("command-registries.json"))
+    let listed: Vec<String> = claudium_core::vfs::read(root.join("command-registries.json"))
         .ok()
         .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
         .and_then(|v| serde_json::from_value(v["items"].clone()).ok())
@@ -341,13 +340,15 @@ fn parse_instrument(v: &Value) -> Instrument {
 }
 fn load_instruments(root: &Path) -> HashMap<String, Instrument> {
     let mut instruments = HashMap::new();
-    let Ok(dir) = fs::read_dir(root.join("data/minecraft/instrument")) else {
+    let Ok(dir) = claudium_core::vfs::read_dir(root.join("data/minecraft/instrument")) else {
         return instruments;
     };
     for entry in dir.flatten() {
         let path = entry.path();
-        let (Some(stem), Ok(bytes)) = (path.file_stem().and_then(|s| s.to_str()), fs::read(&path))
-        else {
+        let (Some(stem), Ok(bytes)) = (
+            path.file_stem().and_then(|s| s.to_str()),
+            claudium_core::vfs::read(&path),
+        ) else {
             continue;
         };
         let Ok(v) = serde_json::from_slice::<Value>(&bytes) else {
@@ -359,13 +360,15 @@ fn load_instruments(root: &Path) -> HashMap<String, Instrument> {
 }
 fn load_songs(root: &Path) -> HashMap<String, Song> {
     let mut songs = HashMap::new();
-    let Ok(dir) = fs::read_dir(root.join("data/minecraft/jukebox_song")) else {
+    let Ok(dir) = claudium_core::vfs::read_dir(root.join("data/minecraft/jukebox_song")) else {
         return songs;
     };
     for entry in dir.flatten() {
         let path = entry.path();
-        let (Some(stem), Ok(bytes)) = (path.file_stem().and_then(|s| s.to_str()), fs::read(&path))
-        else {
+        let (Some(stem), Ok(bytes)) = (
+            path.file_stem().and_then(|s| s.to_str()),
+            claudium_core::vfs::read(&path),
+        ) else {
             continue;
         };
         let Ok(v) = serde_json::from_slice::<Value>(&bytes) else {
@@ -412,7 +415,7 @@ pub(crate) fn load_tag_lists(
         namespace: &str,
         raw: &mut HashMap<String, Vec<String>>,
     ) -> Result<()> {
-        for entry in fs::read_dir(dir)?.flatten() {
+        for entry in claudium_core::vfs::read_dir(dir)?.flatten() {
             let p = entry.path();
             if p.is_dir() {
                 walk(&p, base, namespace, raw)?;
@@ -424,7 +427,7 @@ pub(crate) fn load_tag_lists(
                         .to_string_lossy()
                         .replace('\\', "/")
                 );
-                let v: Value = serde_json::from_slice(&fs::read(&p)?)?;
+                let v: Value = serde_json::from_slice(&claudium_core::vfs::read(&p)?)?;
                 let values = v["values"]
                     .as_array()
                     .into_iter()
@@ -571,7 +574,7 @@ impl Items {
         overlay: &PackOverlay,
     ) -> Result<Self> {
         let raw: BTreeMap<String, Value> =
-            serde_json::from_slice(&fs::read(root.join("items.json"))?)?;
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("items.json"))?)?;
         let entity_tags = load_tags(root, "entity_type", overlay)?;
         let mut items = HashMap::new();
         let mut order = Vec::new();
@@ -842,7 +845,7 @@ impl Items {
             namespace: &str,
             loot: &mut HashMap<String, Value>,
         ) -> Result<()> {
-            for entry in fs::read_dir(dir)?.flatten() {
+            for entry in claudium_core::vfs::read_dir(dir)?.flatten() {
                 let p = entry.path();
                 if p.is_dir() {
                     walk_loot(&p, base, namespace, loot)?;
@@ -854,7 +857,7 @@ impl Items {
                         .replace('\\', "/");
                     loot.insert(
                         format!("{namespace}:{id}"),
-                        serde_json::from_slice(&fs::read(&p)?)?,
+                        serde_json::from_slice(&claudium_core::vfs::read(&p)?)?,
                     );
                 }
             }
@@ -1915,9 +1918,10 @@ pub(crate) fn prepared_items() -> Option<Items> {
     if !root.join("items.json").exists() {
         return None;
     }
-    let (registry, _) =
-        BlockRegistry::from_facts_json_with_flags(fs::File::open(root.join("facts.json")).ok()?)
-            .ok()?;
+    let (registry, _) = BlockRegistry::from_facts_json_with_flags(
+        std::fs::File::open(root.join("facts.json")).ok()?,
+    )
+    .ok()?;
     let facts = BlockFacts::load(&root, &registry).ok()?;
     Items::load(&root, &registry, &facts, &PackOverlay::NONE).ok()
 }

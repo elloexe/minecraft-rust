@@ -192,7 +192,7 @@ fn command_output(program: &str, args: &[&str]) -> Option<String> {
 }
 
 fn read(path: &str) -> Option<String> {
-    std::fs::read_to_string(path).ok()
+    claudium_core::vfs::read_to_string(path).ok()
 }
 
 /// `PRETTY_NAME` of /etc/os-release and the kernel, or the system's own version string.
@@ -763,7 +763,7 @@ mod tests {
         assert!(text.contains("\tCPU: "));
         let home = std::env::temp_dir().join(format!("claudium-crash-save-{}", std::process::id()));
         let path = report.save(&home).unwrap();
-        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+        assert_eq!(claudium_core::vfs::read_to_string(&path).unwrap(), text);
         assert!(
             path.file_name()
                 .unwrap()

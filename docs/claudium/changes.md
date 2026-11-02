@@ -138,6 +138,31 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 - The look has not been seen running. It is checked by `cargo fmt`, clippy and
   the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.
 
+## Fast start on Windows: the resources as one bundle (2026-11-02)
+
+The game opened about 26,000 small files on every launch before the title screen, and about
+16,000 more entering a world (the world's server reads the recipes, loot tables, tags and
+worldgen data again). That is a few seconds on Linux, but on Windows each open is slow and
+passes the antivirus: a ~30 second black window at every start, and a slow world load.
+
+- `claudium_core::vfs`: the prepared root's small files (`assets/`, `data/`, `worldgen/`;
+  not the sounds or anything over 1 MB) packed into `claudium-bundle.bin`, about 17 MB, read
+  into memory in one go. It mirrors the `std::fs` calls the loaders use (`read`,
+  `read_to_string`, `read_dir`), and everything else, including every write, goes to `std::fs`.
+  A file missing from a directory the bundle holds whole is answered as missing without asking
+  the disk (optional `.mcmeta` files are looked for a lot).
+- Kept current: keyed on `claudium-resources.json` (every preparation writes it) and on the
+  modification times of the directories it lists, so a file added after it (sounds, fonts,
+  languages) makes a new one. A missing, stale or damaged bundle only means reading the files
+  one by one, as before.
+- Made at the end of preparing (`claudium-prepare`), else by the game on its first start.
+  The game mounts it in `load_resources` and logs how long it took.
+- Every `fs::read`, `fs::read_to_string` and `fs::read_dir` of the loader crates
+  (claudium-items, -world, -client-render, -client-core, -client) goes through it, plus the
+  PNG decoders and header reads that opened files directly.
+- Measured on Linux (llvmpipe), start to a loaded world: **41,738 file opens before, 121
+  after**; the bundle loads in 20 to 30 ms. Not yet measured on Windows.
+
 ## Built-in mods, batch 2: JEI, Jade, AppleSkin, VeinMiner (2026-11-01)
 
 Our own Rust versions of four of Modrinth's most used mods, switches under Extras → Mods,

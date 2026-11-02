@@ -5,7 +5,7 @@
 use crate::sound_engine::{InstanceId, MUSIC, PlayResult, SoundEngine, SoundInstance, Sounds};
 use claudium_core::random::{LegacyRandom, RandomSource};
 use serde_json::Value;
-use std::{collections::HashMap, fs, path::Path};
+use std::{collections::HashMap, path::Path};
 
 /// `Music`: a sound event and the delay range (ticks) before it starts.
 #[derive(Clone, Debug, PartialEq)]
@@ -161,7 +161,8 @@ pub struct MusicTables {
 impl MusicTables {
     pub fn load(root: &Path) -> Self {
         let read = |dir: &str| -> HashMap<String, Layer> {
-            let Ok(entries) = fs::read_dir(root.join("data/minecraft").join(dir)) else {
+            let Ok(entries) = claudium_core::vfs::read_dir(root.join("data/minecraft").join(dir))
+            else {
                 return HashMap::new();
             };
             entries
@@ -169,7 +170,8 @@ impl MusicTables {
                 .filter_map(|e| {
                     let path = e.path();
                     let name = path.file_stem()?.to_str()?.to_owned();
-                    let json: Value = serde_json::from_slice(&fs::read(&path).ok()?).ok()?;
+                    let json: Value =
+                        serde_json::from_slice(&claudium_core::vfs::read(&path).ok()?).ok()?;
                     Some((format!("minecraft:{name}"), Layer::parse(&json)))
                 })
                 .collect()

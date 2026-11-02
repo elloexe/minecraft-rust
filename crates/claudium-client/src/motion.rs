@@ -38,7 +38,7 @@ use claudium_world::{
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs, io,
+    io,
     path::Path,
     sync::Arc,
 };
@@ -86,13 +86,13 @@ impl MotionResources {
         assets: &Assets,
         facts: &crate::blocks::BlockFacts,
     ) -> Result<Self> {
-        let attributes = Arc::new(Catalog::from_json(&serde_json::from_slice(&fs::read(
-            root.join("attributes.json"),
-        )?)?)?);
+        let attributes = Arc::new(Catalog::from_json(&serde_json::from_slice(
+            &claudium_core::vfs::read(root.join("attributes.json"))?,
+        )?)?);
         let file = BlockTableFile::open(&root.join("movement-properties.nbt"), assets.registry)?;
         let properties = MovementProperties::from_table(file.table("movement")?)?;
         let bundle: BTreeMap<String, String> =
-            serde_json::from_slice(&fs::read(root.join("block-tags.json"))?)?;
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("block-tags.json"))?)?;
         let mut definitions = TagDefinitions::default();
         for (name, text) in bundle {
             definitions.apply_json(&name, "vanilla", &text)?;

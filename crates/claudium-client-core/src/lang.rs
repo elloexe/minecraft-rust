@@ -76,13 +76,13 @@ impl ResourceSource for Bundled {
 }
 impl ResourceSource for std::path::PathBuf {
     fn read(&self, path: &str) -> Option<Vec<u8>> {
-        std::fs::read(self.join(path)).ok()
+        claudium_core::vfs::read(self.join(path)).ok()
     }
     fn exists(&self, path: &str) -> bool {
         self.join(path).is_file()
     }
     fn namespaces(&self) -> Vec<String> {
-        std::fs::read_dir(self.join("assets"))
+        claudium_core::vfs::read_dir(self.join("assets"))
             .into_iter()
             .flatten()
             .flatten()

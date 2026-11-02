@@ -275,7 +275,8 @@ pub fn migrate_legacy(world: &Path) -> Result<()> {
                 fs::rename(&src, &dst)?;
             }
         }
-        if !old.is_empty() && from.is_dir() && fs::read_dir(&from)?.next().is_none() {
+        if !old.is_empty() && from.is_dir() && claudium_core::vfs::read_dir(&from)?.next().is_none()
+        {
             let _ = fs::remove_dir(&from);
         }
     }
@@ -2493,7 +2494,7 @@ pub fn read_dat(path: &Path) -> Option<Tag> {
 }
 /// `read_dat`, with why the file did not read.
 fn try_read_dat(path: &Path) -> std::result::Result<Tag, DatIssue> {
-    let bytes = fs::read(path).map_err(|e| match e.kind() {
+    let bytes = claudium_core::vfs::read(path).map_err(|e| match e.kind() {
         std::io::ErrorKind::NotFound => DatIssue::Missing,
         _ => DatIssue::Unreadable(e.to_string()),
     })?;
@@ -3250,7 +3251,7 @@ impl Level {
         });
         let player = owner
             .or_else(|| {
-                fs::read_dir(&player_dir)
+                claudium_core::vfs::read_dir(&player_dir)
                     .ok()
                     .and_then(|d| {
                         d.flatten()
@@ -5031,7 +5032,7 @@ mod tests {
     }
     #[test]
     fn region_files_kept_open_stay_under_vanillas_cache_size() {
-        let open_fds = || std::fs::read_dir("/dev/fd").map_or(0, |d| d.count());
+        let open_fds = || claudium_core::vfs::read_dir("/dev/fd").map_or(0, |d| d.count());
         let dir = std::env::temp_dir().join(format!("claudium-save-fds-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let save = super::SaveDir::new(dir.clone(), LevelShape::OVERWORLD);
@@ -5150,7 +5151,7 @@ mod tests {
         // Windows refuses a read through another handle while the file is
         // locked, so the bytes are read once the lock is released.
         assert_eq!(
-            std::fs::read(dir.join("session.lock")).unwrap(),
+            claudium_core::vfs::read(dir.join("session.lock")).unwrap(),
             [0x26, 0x03]
         );
         assert!(super::SessionLock::acquire(&dir).is_ok());

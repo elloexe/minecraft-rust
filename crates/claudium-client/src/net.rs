@@ -833,7 +833,7 @@ pub fn load_language(resources: &std::path::Path) -> Language {
     if let Some(lang) = crate::lang::current() {
         return lang.map().clone();
     }
-    std::fs::read(resources.join("assets/minecraft/lang/en_us.json"))
+    claudium_core::vfs::read(resources.join("assets/minecraft/lang/en_us.json"))
         .ok()
         .and_then(|b| serde_json::from_slice(&b).ok())
         .unwrap_or_default()

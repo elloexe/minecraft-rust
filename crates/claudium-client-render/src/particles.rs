@@ -1128,7 +1128,8 @@ impl ParticleEngine {
     fn load_sprites(&mut self, root: &Path) {
         let dir = root.join("assets/minecraft/particles");
         for &ty in ParticleType::ALL {
-            let Ok(bytes) = std::fs::read(dir.join(format!("{}.json", ty.name()))) else {
+            let Ok(bytes) = claudium_core::vfs::read(dir.join(format!("{}.json", ty.name())))
+            else {
                 continue;
             };
             let Ok(json) = serde_json::from_slice::<serde_json::Value>(&bytes) else {

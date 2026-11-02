@@ -81,7 +81,7 @@ pub fn uses_tcp(path: &Path) -> bool {
 
 /// The TCP endpoint file: (port, token).
 fn read_endpoint(path: &Path) -> io::Result<(u16, String)> {
-    let text = std::fs::read_to_string(path)?;
+    let text = claudium_core::vfs::read_to_string(path)?;
     let bad = || io::Error::new(io::ErrorKind::InvalidData, "not a control endpoint file");
     let v: serde_json::Value = serde_json::from_str(&text).map_err(|_| bad())?;
     let port = v["port"]
@@ -373,7 +373,7 @@ mod tests {
         let path =
             std::env::temp_dir().join(format!("claudium-ctl-test-{}.json", std::process::id()));
         let server = Server::start(&path).unwrap();
-        let text = std::fs::read_to_string(&path).unwrap();
+        let text = claudium_core::vfs::read_to_string(&path).unwrap();
         assert!(text.contains("\"tcp\""));
         let mut client = connect(&path).unwrap();
         writeln!(client, "status").unwrap();

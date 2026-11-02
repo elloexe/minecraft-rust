@@ -1180,6 +1180,7 @@ dependencies = [
 name = "claudium-prepare"
 version = "0.1.0"
 dependencies = [
+ "claudium-core",
  "crc32fast",
  "libc",
  "regex",

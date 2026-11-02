@@ -312,7 +312,7 @@ pub fn parse_seed(text: &str) -> Option<i64> {
     }))
 }
 pub fn list_worlds(saves: &Path) -> Vec<WorldEntry> {
-    let mut worlds: Vec<WorldEntry> = std::fs::read_dir(saves)
+    let mut worlds: Vec<WorldEntry> = claudium_core::vfs::read_dir(saves)
         .into_iter()
         .flatten()
         .flatten()
@@ -445,8 +445,10 @@ impl Title {
             toast: None,
             icons: RefCell::new(std::collections::HashMap::new()),
             splash: choose_splash(
-                &std::fs::read_to_string(resources.join("assets/minecraft/texts/splashes.txt"))
-                    .unwrap_or_default(),
+                &claudium_core::vfs::read_to_string(
+                    resources.join("assets/minecraft/texts/splashes.txt"),
+                )
+                .unwrap_or_default(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()

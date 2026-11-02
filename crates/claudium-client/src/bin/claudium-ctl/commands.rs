@@ -813,7 +813,7 @@ mod tests {
             env!("CARGO_MANIFEST_DIR"),
             "/../../docs/claudium-ctl-commands.md"
         );
-        let on_disk = std::fs::read_to_string(path).unwrap_or_default();
+        let on_disk = claudium_core::vfs::read_to_string(path).unwrap_or_default();
         assert!(
             on_disk == markdown(),
             "docs/claudium-ctl-commands.md is out of date: run `claudium-ctl help --markdown > docs/claudium-ctl-commands.md`"

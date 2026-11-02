@@ -255,7 +255,7 @@ mod tests {
         if std::env::var_os("CLAUDIUM_WRITE_DOCS").is_some() {
             std::fs::write(&path, &want).unwrap();
         }
-        let have = std::fs::read_to_string(&path)
+        let have = claudium_core::vfs::read_to_string(&path)
             .unwrap_or_default()
             .replace("\r\n", "\n");
         assert!(

@@ -366,7 +366,7 @@ fn backup_zip_preserves_nested_files_excludes_lock_and_keeps_duplicate_backups()
     for _ in 0..2 {
         assert!(world_management::backup(&f.title.saves, "World").unwrap() > 0);
     }
-    let archives: Vec<_> = fs::read_dir(f.root.join("backups"))
+    let archives: Vec<_> = claudium_core::vfs::read_dir(f.root.join("backups"))
         .unwrap()
         .map(|e| e.unwrap().path())
         .collect();
@@ -377,7 +377,10 @@ fn backup_zip_preserves_nested_files_excludes_lock_and_keeps_duplicate_backups()
         let mut bytes = Vec::new();
         std::io::Read::read_to_end(&mut zip.by_name("World/level.dat").unwrap(), &mut bytes)
             .unwrap();
-        assert_eq!(bytes, fs::read(world.join("level.dat")).unwrap());
+        assert_eq!(
+            bytes,
+            claudium_core::vfs::read(world.join("level.dat")).unwrap()
+        );
         bytes.clear();
         std::io::Read::read_to_end(
             &mut zip
@@ -441,7 +444,7 @@ fn failed_backup_returns_to_the_selected_world_with_an_error_toast() {
         "World"
     );
     assert_eq!(
-        fs::read(f.root.join("backups")).unwrap(),
+        claudium_core::vfs::read(f.root.join("backups")).unwrap(),
         b"not a directory"
     );
 }
@@ -521,7 +524,12 @@ fn backup_rejects_symlinks_and_removes_incomplete_archive() {
     f.world("World", "World");
     std::os::unix::fs::symlink(f.root.join("outside"), f.title.saves.join("World/link")).unwrap();
     assert!(world_management::backup(&f.title.saves, "World").is_err());
-    assert_eq!(fs::read_dir(f.root.join("backups")).unwrap().count(), 0);
+    assert_eq!(
+        claudium_core::vfs::read_dir(f.root.join("backups"))
+            .unwrap()
+            .count(),
+        0
+    );
 }
 
 #[test]
@@ -1190,7 +1198,10 @@ fn world_with_unreadable_level_dat_is_listed_and_recovers_from_level_dat_old() {
         Some(crate::save::DatIssue::Unreadable(_))
     ));
     assert_eq!(issues[1], None);
-    assert_eq!(fs::read(dir.join("level.dat")).unwrap(), b"truncated");
+    assert_eq!(
+        claudium_core::vfs::read(dir.join("level.dat")).unwrap(),
+        b"truncated"
+    );
 
     // restoreLevelDataFromOld: level.dat_old back in place, the broken file kept aside.
     f.click("Attempt to Restore");
@@ -1200,7 +1211,7 @@ fn world_with_unreadable_level_dat_is_listed_and_recovers_from_level_dat_old() {
     ));
     assert_eq!(Level::read_summary(&dir).unwrap().name, "My World");
     assert!(!dir.join("level.dat_old").exists());
-    let kept: Vec<_> = fs::read_dir(&dir)
+    let kept: Vec<_> = claudium_core::vfs::read_dir(&dir)
         .unwrap()
         .flatten()
         .filter(|e| {
@@ -1210,7 +1221,10 @@ fn world_with_unreadable_level_dat_is_listed_and_recovers_from_level_dat_old() {
         })
         .collect();
     assert_eq!(kept.len(), 1);
-    assert_eq!(fs::read(kept[0].path()).unwrap(), b"truncated");
+    assert_eq!(
+        claudium_core::vfs::read(kept[0].path()).unwrap(),
+        b"truncated"
+    );
     assert_eq!(
         f.click("Continue"),
         Action::Play {
@@ -1251,7 +1265,10 @@ fn world_with_nothing_to_recover_from_is_listed_but_never_opened() {
         f.title.mode,
         Mode::Recovered { success: false, .. }
     ));
-    assert_eq!(fs::read(dir.join("level.dat")).unwrap(), b"garbage");
+    assert_eq!(
+        claudium_core::vfs::read(dir.join("level.dat")).unwrap(),
+        b"garbage"
+    );
     f.click("Back");
     assert!(matches!(f.title.mode, Mode::Select { .. }));
 }

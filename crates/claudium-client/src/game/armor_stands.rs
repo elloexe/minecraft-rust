@@ -79,7 +79,8 @@ impl ArmorStandAssets {
         let namespaces = std::iter::once("minecraft".to_owned())
             .chain(claudium_client::mod_content::namespaces(root));
         for namespace in namespaces {
-            let Ok(entries) = std::fs::read_dir(root.join(format!("assets/{namespace}/equipment")))
+            let Ok(entries) =
+                claudium_core::vfs::read_dir(root.join(format!("assets/{namespace}/equipment")))
             else {
                 continue;
             };
@@ -88,8 +89,8 @@ impl ArmorStandAssets {
                 let Some(name) = path.file_stem().and_then(|s| s.to_str()) else {
                     continue;
                 };
-                let Ok(v) =
-                    std::fs::read(&path).map(|b| serde_json::from_slice::<serde_json::Value>(&b))
+                let Ok(v) = claudium_core::vfs::read(&path)
+                    .map(|b| serde_json::from_slice::<serde_json::Value>(&b))
                 else {
                     continue;
                 };

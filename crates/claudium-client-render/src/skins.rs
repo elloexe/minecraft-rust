@@ -515,7 +515,7 @@ pub fn offline_cape() -> Option<&'static [u8]> {
     static CAPE: std::sync::OnceLock<Option<Vec<u8>>> = std::sync::OnceLock::new();
     CAPE.get_or_init(|| {
         let path = std::env::var_os("CLAUDIUM_OFFLINE_CAPE").filter(|p| !p.is_empty())?;
-        let image = std::fs::read(&path)
+        let image = claudium_core::vfs::read(&path)
             .map_err(|e| e.to_string())
             .and_then(|bytes| crate::hud::decode_bytes(&bytes).map_err(|e| e.to_string()))
             .and_then(|(w, h, rgba)| process_cape(w, h, &rgba).ok_or("not an image".into()));
@@ -542,7 +542,7 @@ pub fn offline_skin() -> Option<&'static (Vec<u8>, bool)> {
     .as_ref()
 }
 fn read_offline_skin(path: &std::path::Path, model: &str) -> Result<(Vec<u8>, bool), String> {
-    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+    let bytes = claudium_core::vfs::read(path).map_err(|e| e.to_string())?;
     let (w, h, rgba) = crate::hud::decode_bytes(&bytes).map_err(|e| e.to_string())?;
     let skin = process_legacy_skin(w, h, &rgba).ok_or("not a 64x64 or 64x32 skin")?;
     Ok((skin, model == "slim"))
@@ -738,7 +738,7 @@ impl Downloader {
             .join(&digest);
         let (url, send) = (url.to_owned(), self.send.clone());
         std::thread::spawn(move || {
-            let bytes = std::fs::read(&file).ok().or_else(|| {
+            let bytes = claudium_core::vfs::read(&file).ok().or_else(|| {
                 let body = http_get(&url)?;
                 let _ = std::fs::create_dir_all(file.parent()?);
                 let _ = std::fs::write(&file, &body);
@@ -793,7 +793,8 @@ impl Downloader {
                 .root
                 .join(if digest.len() > 2 { &digest[..2] } else { "xx" })
                 .join(digest);
-            let (w, h, rgba) = crate::hud::decode_bytes(&std::fs::read(&file).ok()?).ok()?;
+            let (w, h, rgba) =
+                crate::hud::decode_bytes(&claudium_core::vfs::read(&file).ok()?).ok()?;
             process(w, h, &rgba)
         });
         let Some(image) = image else {

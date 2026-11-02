@@ -45,7 +45,7 @@ impl DataPack {
         let Source::Dir(root) = &self.source else {
             return self.list("data/");
         };
-        let Ok(entries) = std::fs::read_dir(root.join("data")) else {
+        let Ok(entries) = claudium_core::vfs::read_dir(root.join("data")) else {
             return Vec::new();
         };
         let mut namespaces: Vec<_> = entries.flatten().map(|e| e.path()).collect();
@@ -61,7 +61,7 @@ impl DataPack {
     fn read(&self, path: &str) -> Option<Vec<u8>> {
         match &self.source {
             Source::Zip(z) => z.read(path).ok(),
-            Source::Dir(root) => std::fs::read(root.join(path)).ok(),
+            Source::Dir(root) => claudium_core::vfs::read(root.join(path)).ok(),
         }
     }
     /// The `description` of `pack.mcmeta`, as text.
@@ -77,11 +77,11 @@ impl DataPack {
     }
 }
 fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
+    let Ok(entries) = claudium_core::vfs::read_dir(dir) else {
         return;
     };
     let mut entries: Vec<_> = entries.flatten().collect();
-    entries.sort_by_key(std::fs::DirEntry::file_name);
+    entries.sort_by_key(claudium_core::vfs::DirEntry::file_name);
     for e in entries {
         let p = e.path();
         if p.is_dir() {
@@ -102,7 +102,7 @@ impl DataPack {
 }
 /// The packs in `<world>/datapacks`, sorted by name.
 pub fn discover(world: &Path) -> Vec<DataPack> {
-    let Ok(entries) = std::fs::read_dir(world.join("datapacks")) else {
+    let Ok(entries) = claudium_core::vfs::read_dir(world.join("datapacks")) else {
         return Vec::new();
     };
     let mut packs = Vec::new();
@@ -164,7 +164,7 @@ pub fn screen_packs(dir: &Path, resources: &Path) -> Vec<crate::pack_screen::Pac
         description_style: Style::default(),
         source: Source::BuiltIn,
         compat: Compat::Compatible,
-        icon: std::fs::read(resources.join("pack.png"))
+        icon: claudium_core::vfs::read(resources.join("pack.png"))
             .ok()
             .as_deref()
             .and_then(load_icon),
@@ -188,7 +188,7 @@ pub fn temp_folder() -> std::io::Result<PathBuf> {
 /// What's in a folder of packs, to notice packs added or removed while the
 /// screen shows it (`PackSelectionScreen.Watcher`).
 pub fn folder_stamp(dir: &Path) -> Vec<(String, Option<std::time::SystemTime>)> {
-    let mut stamp: Vec<_> = std::fs::read_dir(dir)
+    let mut stamp: Vec<_> = claudium_core::vfs::read_dir(dir)
         .into_iter()
         .flatten()
         .flatten()
@@ -230,7 +230,7 @@ fn copy(from: &Path, to: &Path) -> Result<(), String> {
         return std::fs::copy(from, to).map(drop).map_err(err);
     }
     std::fs::create_dir_all(to).map_err(err)?;
-    for e in std::fs::read_dir(from).map_err(err)?.flatten() {
+    for e in claudium_core::vfs::read_dir(from).map_err(err)?.flatten() {
         copy(&e.path(), &to.join(e.file_name()))?;
     }
     Ok(())
@@ -591,7 +591,7 @@ fn hash_normalize(s: &str) -> String {
 /// priority first: those `<world>/datapacks.json` lists as enabled, in its
 /// order, then every pack it lists neither way, in name order.
 pub fn enabled_ids(world: &Path, packs: &[DataPack]) -> Vec<String> {
-    let saved: Option<serde_json::Value> = std::fs::read(world.join("datapacks.json"))
+    let saved: Option<serde_json::Value> = claudium_core::vfs::read(world.join("datapacks.json"))
         .ok()
         .and_then(|b| serde_json::from_slice(&b).ok());
     let list = |key: &str| -> Vec<String> {
@@ -932,8 +932,10 @@ mod tests {
         let packs = discover(&world);
         let ids: Vec<&str> = packs.iter().map(|p| p.id.as_str()).collect();
         assert_eq!(ids, ["file/fns", "file/off", "file/old.zip"]);
-        let saved: serde_json::Value =
-            serde_json::from_slice(&std::fs::read(world.join("datapacks.json")).unwrap()).unwrap();
+        let saved: serde_json::Value = serde_json::from_slice(
+            &claudium_core::vfs::read(world.join("datapacks.json")).unwrap(),
+        )
+        .unwrap();
         assert_eq!(
             saved,
             serde_json::json!({"enabled": selected, "disabled": ["file/off"]})

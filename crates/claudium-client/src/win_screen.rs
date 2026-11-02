@@ -69,7 +69,7 @@ impl WinScreen {
             direction: 1,
         };
         let texts = root.join("assets/minecraft/texts");
-        let read = |name: &str| match std::fs::read_to_string(texts.join(name)) {
+        let read = |name: &str| match claudium_core::vfs::read_to_string(texts.join(name)) {
             Ok(s) => Some(s),
             Err(e) => {
                 log::error!("Couldn't load credits from file minecraft:texts/{name}: {e}");

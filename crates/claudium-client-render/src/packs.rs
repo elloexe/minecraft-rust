@@ -268,14 +268,14 @@ impl Pack {
     /// The pack's `pack.png` (`PackResources.getRootResource`), for its icon.
     pub fn icon_png(&self) -> Option<Vec<u8>> {
         match &self.source {
-            Source::Dir(d) => fs::read(d.join("pack.png")).ok(),
+            Source::Dir(d) => claudium_core::vfs::read(d.join("pack.png")).ok(),
             Source::Zip(z) => Zip::open(z).ok()?.read("pack.png").ok(),
         }
     }
 }
 fn read_meta(source: &Source) -> Option<serde_json::Value> {
     let bytes = match source {
-        Source::Dir(d) => fs::read(d.join("pack.mcmeta")).ok()?,
+        Source::Dir(d) => claudium_core::vfs::read(d.join("pack.mcmeta")).ok()?,
         Source::Zip(z) => Zip::open(z).ok()?.read("pack.mcmeta").ok()?,
     };
     // Gson reads past a UTF-8 byte order mark; serde_json rejects it.
@@ -322,7 +322,7 @@ pub fn discover(resources: &Path, packs_dir: &Path) -> Vec<Pack> {
 /// The packs (folders and zips) in `dir`, by name, as `FolderRepositorySource`
 /// finds them; their compatibility is against `format`.
 pub fn folder(dir: &Path, format: (i64, i64)) -> Vec<Pack> {
-    let mut user: Vec<Pack> = fs::read_dir(dir)
+    let mut user: Vec<Pack> = claudium_core::vfs::read_dir(dir)
         .into_iter()
         .flatten()
         .flatten()
@@ -357,7 +357,7 @@ fn pack_files(pack: &Pack) -> io::Result<BTreeMap<String, Provided>> {
                 let base = d.join(root.trim_end_matches('/'));
                 let mut stack = vec![base.join("assets")];
                 while let Some(dir) = stack.pop() {
-                    let Ok(entries) = fs::read_dir(&dir) else {
+                    let Ok(entries) = claudium_core::vfs::read_dir(&dir) else {
                         continue;
                     };
                     for e in entries.flatten() {
@@ -508,13 +508,13 @@ fn build_overlay_uncached(
         let mut layers = Vec::new();
         dependencies.file(&vanilla.join(name));
         if !filters.iter().any(|f| f.blocks(name))
-            && let Ok(bytes) = fs::read(vanilla.join(name))
+            && let Ok(bytes) = claudium_core::vfs::read(vanilla.join(name))
         {
             layers.push(bytes);
         }
         for (owner, (path, inner)) in stack {
             let bytes = match path {
-                Some(p) => fs::read(p).ok(),
+                Some(p) => claudium_core::vfs::read(p).ok(),
                 None => zips
                     .get(*owner)
                     .and_then(Option::as_ref)
@@ -554,7 +554,7 @@ fn build_overlay_uncached(
         fs::create_dir_all(&dst)?;
         dependencies.directory(&src);
         let mut names: BTreeSet<String> = BTreeSet::new();
-        if let Ok(entries) = fs::read_dir(&src) {
+        if let Ok(entries) = claudium_core::vfs::read_dir(&src) {
             names.extend(
                 entries
                     .flatten()
@@ -1099,21 +1099,25 @@ mod tests {
         let out = base.join("overlay");
         build_overlay(&vanilla, &packs, &out).unwrap();
         assert_eq!(
-            fs::read(out.join("assets/minecraft/textures/block/stone.png")).unwrap(),
+            claudium_core::vfs::read(out.join("assets/minecraft/textures/block/stone.png"))
+                .unwrap(),
             b"pack"
         );
         assert_eq!(
-            fs::read(out.join("assets/minecraft/textures/block/dirt.png")).unwrap(),
+            claudium_core::vfs::read(out.join("assets/minecraft/textures/block/dirt.png")).unwrap(),
             b"vanilla dirt"
         );
         // A pack's language file adds to vanilla's instead of replacing it.
         assert_eq!(
-            fs::read(out.join("assets/minecraft/lang/en_us.json")).unwrap(),
+            claudium_core::vfs::read(out.join("assets/minecraft/lang/en_us.json")).unwrap(),
             br#"{"a":"vanilla","b":"pack"}"#
         );
-        assert_eq!(fs::read(out.join("facts.json")).unwrap(), b"[]");
         assert_eq!(
-            fs::read(out.join("assets/minecraft/textures/font/ascii.png")).unwrap(),
+            claudium_core::vfs::read(out.join("facts.json")).unwrap(),
+            b"[]"
+        );
+        assert_eq!(
+            claudium_core::vfs::read(out.join("assets/minecraft/textures/font/ascii.png")).unwrap(),
             b"font"
         );
         // Linked, not mirrored: a junction on Windows, a symlink on unix.
@@ -1211,7 +1215,8 @@ mod tests {
         let out = base.join("overlay");
         build_overlay(&vanilla, &packs, &out).unwrap();
         assert_eq!(
-            fs::read(out.join("assets/minecraft/textures/block/stone.png")).unwrap(),
+            claudium_core::vfs::read(out.join("assets/minecraft/textures/block/stone.png"))
+                .unwrap(),
             b"overlay"
         );
         assert!(

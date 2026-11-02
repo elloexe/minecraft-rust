@@ -6,7 +6,7 @@
 use crate::sound_engine::{AMBIENT, InstanceId, PLAYERS, SoundEngine, SoundInstance, Sounds};
 use claudium_core::random::{LegacyRandom, RandomSource};
 use serde_json::Value;
-use std::{collections::HashMap, fs, path::Path};
+use std::{collections::HashMap, path::Path};
 
 /// `AmbientMoodSettings`.
 #[derive(Clone, Debug, PartialEq)]
@@ -54,7 +54,8 @@ pub struct AmbientTables {
 impl AmbientTables {
     pub fn load(root: &Path) -> Self {
         let read = |dir: &str| -> HashMap<String, AmbientSounds> {
-            let Ok(entries) = fs::read_dir(root.join("data/minecraft").join(dir)) else {
+            let Ok(entries) = claudium_core::vfs::read_dir(root.join("data/minecraft").join(dir))
+            else {
                 return HashMap::new();
             };
             entries
@@ -62,7 +63,8 @@ impl AmbientTables {
                 .filter_map(|e| {
                     let path = e.path();
                     let name = path.file_stem()?.to_str()?.to_owned();
-                    let json: Value = serde_json::from_slice(&fs::read(&path).ok()?).ok()?;
+                    let json: Value =
+                        serde_json::from_slice(&claudium_core::vfs::read(&path).ok()?).ok()?;
                     let v = &json["attributes"]["minecraft:audio/ambient_sounds"];
                     (!v.is_null()).then(|| (format!("minecraft:{name}"), AmbientSounds::parse(v)))
                 })

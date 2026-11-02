@@ -52,7 +52,7 @@ use claudium_core::{
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
-    fs, io,
+    io,
     path::Path,
     sync::{Arc, Mutex, OnceLock},
 };
@@ -220,8 +220,8 @@ fn read_bundle(
     name: &str,
 ) -> Result<Bundle, GeneratorError> {
     let path = dir.join(format!("{name}.json"));
-    let text =
-        fs::read_to_string(&path).map_err(|e| resource(format!("{}: {e}", path.display())))?;
+    let text = claudium_core::vfs::read_to_string(&path)
+        .map_err(|e| resource(format!("{}: {e}", path.display())))?;
     Ok(overrides.apply(name, serde_json::from_str(&text)?))
 }
 fn read_optional_bundle(
@@ -358,8 +358,9 @@ impl GeneratorData {
         ov: &WorldgenOverrides,
     ) -> Result<Arc<Self>, GeneratorError> {
         let mut warnings = Vec::new();
-        let flags: Vec<(bool, bool)> =
-            serde_json::from_str(&fs::read_to_string(dir.join("block_flags.json"))?)?;
+        let flags: Vec<(bool, bool)> = serde_json::from_str(&claudium_core::vfs::read_to_string(
+            dir.join("block_flags.json"),
+        )?)?;
         if flags.len() != registry.len() {
             return Err(resource("block_flags.json does not match the registry"));
         }
@@ -394,7 +395,9 @@ impl GeneratorData {
         let structures = loading({
             let (dir, tags, ov) = (dir.to_owned(), block_tags.clone(), ov.clone());
             move || -> Result<_, GeneratorError> {
-                let Ok(json) = fs::read_to_string(dir.join("blocks/structure-blocks.json")) else {
+                let Ok(json) =
+                    claudium_core::vfs::read_to_string(dir.join("blocks/structure-blocks.json"))
+                else {
                     return Ok(None);
                 };
                 Ok(Some(Arc::new(super::structure::StructureResources::new(
@@ -468,7 +471,7 @@ impl GeneratorData {
         let mut presets = read_optional_bundle(dir, ov, "presets")?.unwrap_or_default();
         let reports = dir.join("biome_parameters");
         if reports.is_dir() {
-            for entry in fs::read_dir(&reports)? {
+            for entry in claudium_core::vfs::read_dir(&reports)? {
                 let path = entry?.path();
                 let Some(stem) = path
                     .file_stem()
@@ -479,7 +482,9 @@ impl GeneratorData {
                 };
                 presets
                     .entry(format!("minecraft:{stem}"))
-                    .or_insert(quantize_parameter_report(&fs::read_to_string(&path)?)?);
+                    .or_insert(quantize_parameter_report(
+                        &claudium_core::vfs::read_to_string(&path)?,
+                    )?);
             }
         }
         let source_catalog =

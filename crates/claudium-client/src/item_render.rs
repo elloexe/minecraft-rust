@@ -30,7 +30,6 @@ use glam::{Mat3, Mat4, Vec3};
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, HashMap},
-    fs,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
@@ -413,7 +412,7 @@ impl FileSprites {
             cache.insert(sprite.to_owned(), translucent);
         }
         let alpha: Vec<u8> = argb.iter().map(|p| (p >> 24) as u8).collect();
-        let animation = fs::read_to_string(png.with_extension("png.mcmeta"))
+        let animation = claudium_core::vfs::read_to_string(png.with_extension("png.mcmeta"))
             .ok()
             .and_then(|m| serde_json::from_str::<Value>(&m).ok())
             .and_then(|m| m.get("animation").map(Value::to_string))
@@ -486,7 +485,7 @@ pub struct ItemRenderer {
 /// Every `items/**/*.json` client item definition, by identifier.
 fn load_definitions(root: &Path) -> BTreeMap<String, ClientItem> {
     fn walk(dir: &Path, rel: &str, namespace: &str, out: &mut BTreeMap<String, ClientItem>) {
-        let Ok(entries) = fs::read_dir(dir) else {
+        let Ok(entries) = claudium_core::vfs::read_dir(dir) else {
             return;
         };
         for entry in entries.flatten() {
@@ -502,7 +501,7 @@ fn load_definitions(root: &Path) -> BTreeMap<String, ClientItem> {
             if path.is_dir() {
                 walk(&path, &rel, namespace, out);
             } else if let Some(id) = rel.strip_suffix(".json")
-                && let Some(item) = fs::read_to_string(&path)
+                && let Some(item) = claudium_core::vfs::read_to_string(&path)
                     .ok()
                     .and_then(|t| ClientItem::from_json(&t).ok())
             {
@@ -511,7 +510,7 @@ fn load_definitions(root: &Path) -> BTreeMap<String, ClientItem> {
         }
     }
     let mut out = BTreeMap::new();
-    let Ok(namespaces) = fs::read_dir(root.join("assets")) else {
+    let Ok(namespaces) = claudium_core::vfs::read_dir(root.join("assets")) else {
         return out;
     };
     for ns in namespaces.flatten() {
@@ -537,14 +536,14 @@ impl ItemRenderer {
         library: std::result::Result<Arc<ModelLibrary>, String>,
     ) -> crate::Result<Self> {
         let prototypes: BTreeMap<String, Components> =
-            serde_json::from_slice(&fs::read(root.join("items.json"))?)?;
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("items.json"))?)?;
         let models = ItemModels {
             definitions: load_definitions(root),
             prototypes,
         };
         let library = library?;
         let permutations = PalettedPermutations::from_atlas(
-            &fs::read_to_string(root.join("assets/minecraft/atlases/items.json"))
+            &claudium_core::vfs::read_to_string(root.join("assets/minecraft/atlases/items.json"))
                 .unwrap_or_default(),
         );
         let parts = special::load_parts(root);
@@ -892,6 +891,7 @@ pub fn cluster_poses(state: &ItemRenderState, pose: Mat4, amount: u32, seed: i64
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     /// One frame's glint is read once and shared: every item drawn from the
     /// same `GlintFrame` scrolls by the same phase, and without the atlas

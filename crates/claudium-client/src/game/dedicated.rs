@@ -168,7 +168,7 @@ pub(super) fn player_joined(id: u128, name: &str) {
 /// `server.toml`'s `[anticheat]`, beside server.properties when claudium-server runs the game; off
 /// without the file or the section, or (with an error logged) when the section is wrong.
 fn load_anticheat() -> claudium_anticheat::Config {
-    let Ok(text) = std::fs::read_to_string("server.toml") else {
+    let Ok(text) = claudium_core::vfs::read_to_string("server.toml") else {
         return Default::default();
     };
     match claudium_anticheat::Config::from_server_toml(&text) {
@@ -731,7 +731,7 @@ impl Game<'_> {
         } else {
             Vec::new()
         };
-        let favicon = std::fs::read("server-icon.png")
+        let favicon = claudium_core::vfs::read("server-icon.png")
             .ok()
             .filter(|b| png_size(b) == Some((64, 64)));
         let net = NetConfig {
@@ -1737,7 +1737,9 @@ mod tests {
             if !closed_stdout {
                 assert_log_lines(std::str::from_utf8(&output.stdout).unwrap());
             }
-            assert_log_lines(&fs::read_to_string(home.join("logs/latest.log")).unwrap());
+            assert_log_lines(
+                &claudium_core::vfs::read_to_string(home.join("logs/latest.log")).unwrap(),
+            );
             fs::remove_dir_all(home).unwrap();
         }
     }

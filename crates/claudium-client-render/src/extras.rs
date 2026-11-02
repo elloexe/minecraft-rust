@@ -273,7 +273,7 @@ fn bool_text(v: bool) -> &'static str {
 }
 impl Extras {
     pub fn load(dir: &Path) -> Self {
-        fs::read_to_string(dir.join(FILE))
+        claudium_core::vfs::read_to_string(dir.join(FILE))
             .map(|t| Self::parse(&t))
             .unwrap_or_default()
     }

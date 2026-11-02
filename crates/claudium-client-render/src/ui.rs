@@ -47,7 +47,7 @@ pub fn load_metadata(root: &Path) {
     let base = root.join("assets/minecraft/textures");
     let mut stack = vec![base.join("gui/sprites")];
     while let Some(dir) = stack.pop() {
-        let Ok(entries) = std::fs::read_dir(&dir) else {
+        let Ok(entries) = claudium_core::vfs::read_dir(&dir) else {
             continue;
         };
         for e in entries.flatten() {
@@ -60,7 +60,7 @@ pub fn load_metadata(root: &Path) {
             let Some(stripped) = name.strip_suffix(".png.mcmeta") else {
                 continue;
             };
-            let Ok(text) = std::fs::read_to_string(&p) else {
+            let Ok(text) = claudium_core::vfs::read_to_string(&p) else {
                 continue;
             };
             let Some(nine_slice) = serde_json::from_str(&text)

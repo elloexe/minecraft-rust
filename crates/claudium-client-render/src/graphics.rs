@@ -440,7 +440,7 @@ fn bool_text(v: bool) -> &'static str {
 }
 impl Graphics {
     pub fn load(dir: &Path) -> Self {
-        let mut g: Self = fs::read_to_string(dir.join(FILE))
+        let mut g: Self = claudium_core::vfs::read_to_string(dir.join(FILE))
             .map(|t| Self::parse(&t))
             .unwrap_or_default();
         if fs::remove_file(dir.join(HDR_MARKER)).is_ok() && g.hdr {

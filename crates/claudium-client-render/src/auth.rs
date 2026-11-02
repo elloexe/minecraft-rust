@@ -97,7 +97,7 @@ impl AuthSession {
         if age > MAX_SESSION_FILE_AGE {
             return refuse("it is too old (start the game from the launcher)");
         }
-        let text = std::fs::read_to_string(path);
+        let text = claudium_core::vfs::read_to_string(path);
         let _ = std::fs::remove_file(path);
         Self::parse(&text.map_err(|e| format!("{}: {e}", path.display()))?)
     }

@@ -96,7 +96,7 @@ fn vanilla_info(vanilla: &Path) -> PackInfo {
         description_style: Style::default(),
         source: PackSource::BuiltIn,
         compat: Compat::Compatible,
-        icon: std::fs::read(vanilla.join("pack.png"))
+        icon: claudium_core::vfs::read(vanilla.join("pack.png"))
             .ok()
             .as_deref()
             .and_then(pack_screen::load_icon),

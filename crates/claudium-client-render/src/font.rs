@@ -194,7 +194,7 @@ fn parse_hex(text: &[u8], out: &mut HashMap<u32, HexGlyph>) {
     }
 }
 fn read_json(root: &Path, path: &str) -> Option<serde_json::Value> {
-    serde_json::from_slice(&std::fs::read(root.join(path)).ok()?).ok()
+    serde_json::from_slice(&claudium_core::vfs::read(root.join(path)).ok()?).ok()
 }
 fn resource_path(id: &str, folder: &str, ext: &str) -> String {
     let (ns, path) = id.split_once(':').unwrap_or(("minecraft", id));
@@ -359,7 +359,7 @@ fn load_bitmap(
 /// `font/`, its Unicode characters but the `skip` ones.
 fn load_true_type(root: &Path, p: &serde_json::Value) -> Option<TrueType> {
     let file = p["file"].as_str()?;
-    let data = std::fs::read(root.join(resource_path(file, "font", "")))
+    let data = claudium_core::vfs::read(root.join(resource_path(file, "font", "")))
         .map_err(|e| log::warn!("font file {file}: {e}"))
         .ok()?;
     // FT_Get_Font_Format must say TrueType: CFF outlines ("OTTO") are refused.
@@ -502,7 +502,11 @@ fn load_hex(root: &Path, p: &serde_json::Value) -> HashMap<u32, HexGlyph> {
 /// The ids of every font definition (`font/**/*.json` of each namespace).
 fn font_ids(root: &Path) -> Vec<String> {
     fn walk(dir: &Path, prefix: &str, out: &mut Vec<String>) {
-        for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        for entry in claudium_core::vfs::read_dir(dir)
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
             let path = entry.path();
             let name = entry.file_name().to_string_lossy().into_owned();
             if path.is_dir() {
@@ -513,7 +517,7 @@ fn font_ids(root: &Path) -> Vec<String> {
         }
     }
     let mut ids = Vec::new();
-    for ns in std::fs::read_dir(root.join("assets"))
+    for ns in claudium_core::vfs::read_dir(root.join("assets"))
         .into_iter()
         .flatten()
         .flatten()

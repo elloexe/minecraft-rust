@@ -8,7 +8,6 @@ use claudium_client_core::pattern::Pattern;
 use serde_json::Value;
 use std::{
     collections::BTreeMap,
-    fs,
     path::{Path, PathBuf},
 };
 
@@ -174,7 +173,7 @@ fn decode_source(s: &Value) -> Option<SpriteSource> {
 /// `assets/<namespace>/textures/<path>.png`.
 pub fn list_textures(root: &Path) -> Vec<String> {
     let mut out = Vec::new();
-    let Ok(namespaces) = fs::read_dir(root.join("assets")) else {
+    let Ok(namespaces) = claudium_core::vfs::read_dir(root.join("assets")) else {
         return out;
     };
     for ns in namespaces.flatten() {
@@ -182,7 +181,7 @@ pub fn list_textures(root: &Path) -> Vec<String> {
         let base = ns.path().join("textures");
         let mut stack = vec![base.clone()];
         while let Some(dir) = stack.pop() {
-            let Ok(entries) = fs::read_dir(&dir) else {
+            let Ok(entries) = claudium_core::vfs::read_dir(&dir) else {
                 continue;
             };
             for e in entries.flatten() {
@@ -370,12 +369,12 @@ pub fn generate(
 /// namespace), by atlas id.
 pub fn atlases(root: &Path) -> BTreeMap<String, Vec<SpriteSource>> {
     let mut out = BTreeMap::new();
-    let Ok(namespaces) = fs::read_dir(root.join("assets")) else {
+    let Ok(namespaces) = claudium_core::vfs::read_dir(root.join("assets")) else {
         return out;
     };
     for ns in namespaces.flatten() {
         let namespace = ns.file_name().to_string_lossy().into_owned();
-        let Ok(files) = fs::read_dir(ns.path().join("atlases")) else {
+        let Ok(files) = claudium_core::vfs::read_dir(ns.path().join("atlases")) else {
             continue;
         };
         for f in files.flatten() {
@@ -384,7 +383,10 @@ pub fn atlases(root: &Path) -> BTreeMap<String, Vec<SpriteSource>> {
                 continue;
             }
             let name = path.file_stem().unwrap_or_default().to_string_lossy();
-            if let Some(sources) = fs::read_to_string(&path).ok().and_then(|t| decode(&t)) {
+            if let Some(sources) = claudium_core::vfs::read_to_string(&path)
+                .ok()
+                .and_then(|t| decode(&t))
+            {
                 out.insert(format!("{namespace}:{name}"), sources);
             }
         }

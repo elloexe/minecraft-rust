@@ -99,7 +99,7 @@ fn fingerprint(path: &Path) -> Option<u64> {
         let meta = std::fs::metadata(path).ok()?;
         path.hash(hasher);
         if meta.is_dir() {
-            let mut entries: Vec<_> = std::fs::read_dir(path)
+            let mut entries: Vec<_> = claudium_core::vfs::read_dir(path)
                 .ok()?
                 .flatten()
                 .map(|e| e.path())

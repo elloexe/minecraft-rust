@@ -936,7 +936,7 @@ impl Game<'_> {
         if self.end.exits.is_none() {
             let path = claudium_client::save::dimension_dir(&self.world_root, "minecraft:the_end")
                 .join(GATEWAY_FILE);
-            let parsed: Option<Vec<([i32; 3], [i32; 3], bool)>> = std::fs::read(&path)
+            let parsed: Option<Vec<([i32; 3], [i32; 3], bool)>> = claudium_core::vfs::read(&path)
                 .ok()
                 .and_then(|b| serde_json::from_slice(&b).ok());
             self.end.exits = Some(

@@ -1403,7 +1403,7 @@ impl Game<'_> {
         };
         let tree = self.advancement_tree();
         let path = super::stats::player_json(&self.world_root, "advancements", uuid);
-        let saved = std::fs::read_to_string(path)
+        let saved = claudium_core::vfs::read_to_string(path)
             .ok()
             .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok());
         if let Some(g) = host.hub.guest_mut(conn)

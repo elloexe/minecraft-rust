@@ -79,7 +79,7 @@ impl Session {
             let result = self
                 .run(&["screenshot".to_owned(), path.display().to_string()])
                 .and_then(|reply| {
-                    std::fs::read(&path)
+                    claudium_core::vfs::read(&path)
                         .map(|png| (reply, png))
                         .map_err(|e| crate::Failure {
                             reply: json!({ "error": format!("{}: {e}", path.display()) }),

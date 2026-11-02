@@ -75,7 +75,7 @@ pub struct SyncData {
 
 /// Every `*.json` under `dir`, as (path without extension relative to dir, value), sorted.
 fn walk(dir: &Path, prefix: &str, out: &mut BTreeMap<String, Value>) {
-    let Ok(read) = std::fs::read_dir(dir) else {
+    let Ok(read) = claudium_core::vfs::read_dir(dir) else {
         return;
     };
     for entry in read.flatten() {
@@ -84,7 +84,7 @@ fn walk(dir: &Path, prefix: &str, out: &mut BTreeMap<String, Value>) {
         if path.is_dir() {
             walk(&path, &format!("{prefix}{name}/"), out);
         } else if let Some(stem) = name.strip_suffix(".json")
-            && let Ok(text) = std::fs::read_to_string(&path)
+            && let Ok(text) = claudium_core::vfs::read_to_string(&path)
             && let Ok(value) = serde_json::from_str::<Value>(&text)
         {
             out.insert(format!("{prefix}{stem}"), value);

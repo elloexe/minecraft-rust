@@ -7,13 +7,7 @@ use claudium_world::{
     registry::{BlockRegistry, BlockStateId},
 };
 use serde_json::Value;
-use std::{
-    collections::HashMap,
-    fs::{self, File},
-    io::BufReader,
-    path::Path,
-    sync::Arc,
-};
+use std::{collections::HashMap, fs::File, io::BufReader, path::Path, sync::Arc};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RenderShape {
@@ -282,7 +276,7 @@ impl BlockFacts {
         behaviours: &Value,
         callback: impl FnOnce(&[decode::Entry<'_>]) -> Result<T>,
     ) -> Result<(Self, T)> {
-        let bytes = fs::read(root.join("gameplay-facts.json"))?;
+        let bytes = claudium_core::vfs::read(root.join("gameplay-facts.json"))?;
         serde_json::from_slice::<decode::Validate>(&bytes)?;
         let raw: decode::Gameplay<'_> = serde_json::from_slice(&bytes)?;
         let entries = raw

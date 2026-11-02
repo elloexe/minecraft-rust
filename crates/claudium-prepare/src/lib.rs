@@ -504,6 +504,14 @@ fn prepare_impl(options: &Options, log: Log, compile_only: bool) -> Result<PathB
         return Ok(run.bundle()?.to_path_buf());
     }
     steps(&run, &lock, &oracle, options.minecraft_dir.as_deref())?;
+    // The small files as one bundle (claudium_core::vfs), so the game reads one file instead of
+    // tens of thousands, from its very first launch. Without it the game makes it then.
+    match claudium_core::vfs::write_bundle(&resources) {
+        Ok(files) => log(&format!("Bundled {files} resource files for a fast start")),
+        Err(e) => log(&format!(
+            "No resource bundle ({e}); the game makes one when it starts"
+        )),
+    }
     log(&format!(
         "Prepared Claudium native-client resources: {}",
         resources.display()

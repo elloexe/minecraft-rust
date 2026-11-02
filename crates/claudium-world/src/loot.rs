@@ -12,7 +12,7 @@ use claudium_core::random::{LegacyRandom, RandomSource};
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, HashMap},
-    fs, io,
+    io,
     path::Path,
 };
 
@@ -319,7 +319,7 @@ fn overlay_map(overlay: &PackOverlay, kind: &str, out: &mut HashMap<String, Valu
 }
 
 fn load_kind(data: &Path, kind: &str, out: &mut HashMap<String, Value>) -> io::Result<()> {
-    let Ok(entries) = fs::read_dir(data) else {
+    let Ok(entries) = claudium_core::vfs::read_dir(data) else {
         return Ok(());
     };
     let mut namespaces: Vec<String> = entries
@@ -340,7 +340,7 @@ fn load_dir(
     prefix: &str,
     out: &mut HashMap<String, Value>,
 ) -> io::Result<()> {
-    let Ok(entries) = fs::read_dir(dir) else {
+    let Ok(entries) = claudium_core::vfs::read_dir(dir) else {
         return Ok(());
     };
     for entry in entries.flatten() {
@@ -351,7 +351,7 @@ fn load_dir(
         if path.is_dir() {
             load_dir(&path, namespace, &format!("{prefix}{stem}/"), out)?;
         } else if path.extension().is_some_and(|e| e == "json") {
-            let value = serde_json::from_slice(&fs::read(&path)?)?;
+            let value = serde_json::from_slice(&claudium_core::vfs::read(&path)?)?;
             out.insert(format!("{namespace}:{prefix}{stem}"), value);
         }
     }
@@ -382,7 +382,7 @@ impl LootData {
         load_kind(&all, "predicate", &mut predicates)?;
         overlay_map(overlay, "predicate", &mut predicates);
         let raw: BTreeMap<String, Value> =
-            serde_json::from_slice(&fs::read(root.join("items.json"))?)?;
+            serde_json::from_slice(&claudium_core::vfs::read(root.join("items.json"))?)?;
         let items = raw
             .iter()
             .map(|(name, c)| {
@@ -1596,6 +1596,7 @@ fn enchant(stack: &mut LootStack, name: &str, level: i32) {
 #[cfg(test)]
 mod namespace_tests {
     use super::*;
+    use std::fs;
 
     /// A content mods' root: the mods' loot tables and tags load beside
     /// vanilla's, under their own namespaces.

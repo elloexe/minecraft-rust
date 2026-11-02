@@ -15848,6 +15848,20 @@ fn load_resources(
     publish: &mut dyn FnMut(UiResources, &std::path::Path),
 ) -> Result<Loaded> {
     let requested_root = root.clone();
+    // The prepared resources' small files from one bundle (claudium_core::vfs): one read
+    // instead of tens of thousands of file opens, which Windows makes slow.
+    for r in [vanilla_root, root.as_path()] {
+        let bundle_started = Instant::now();
+        match claudium_core::vfs::mount(r) {
+            Ok(0) => {}
+            Ok(files) => log::info!(
+                "Claudium: {files} resource files from {} in {} ms",
+                claudium_core::vfs::FILE,
+                bundle_started.elapsed().as_millis()
+            ),
+            Err(e) => log::debug!("Claudium: no resource bundle for {}: {e}", r.display()),
+        }
+    }
     let threads = settings.claudium.worker_threads();
     // Stage A: the menu bundle (atlas and panorama). With a loading screen it is
     // published at once so the title screen can appear while the world bundle

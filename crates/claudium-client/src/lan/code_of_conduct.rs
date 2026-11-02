@@ -57,7 +57,7 @@ pub fn read(dir: &Path) -> Result<Vec<(String, String)>, String> {
             dir.display()
         ));
     }
-    let mut files: Vec<_> = std::fs::read_dir(dir)
+    let mut files: Vec<_> = claudium_core::vfs::read_dir(dir)
         .map_err(|e| format!("Failed to read Code of Conduct folder: {e}"))?
         .flatten()
         .map(|e| e.path())
@@ -78,7 +78,7 @@ pub fn read(dir: &Path) -> Result<Vec<(String, String)>, String> {
                 "Failed to read Code of Conduct file \"{name}\" because it links to a file outside the allowed directory"
             ));
         }
-        let bytes = std::fs::read(&file)
+        let bytes = claudium_core::vfs::read(&file)
             .map_err(|e| format!("Failed to read Code of Conduct file {name}: {e}"))?;
         let text = String::from_utf8(bytes)
             .map_err(|_| format!("Failed to read Code of Conduct file {name}"))?;

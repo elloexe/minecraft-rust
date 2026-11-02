@@ -6069,7 +6069,7 @@ mod tests {
     #[test]
     fn shaders_translate_to_hlsl_for_directx_12() {
         fn wgsl_files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
-            for entry in std::fs::read_dir(dir).unwrap() {
+            for entry in claudium_core::vfs::read_dir(dir).unwrap() {
                 let path = entry.unwrap().path();
                 if path.is_dir() {
                     wgsl_files(&path, out);
@@ -6085,7 +6085,7 @@ mod tests {
         );
         assert!(files.len() >= 10, "{files:?}");
         for path in files {
-            let text = std::fs::read_to_string(&path).unwrap();
+            let text = claudium_core::vfs::read_to_string(&path).unwrap();
             // entity.wgsl comes after the overlay's constants (entity_shader).
             let module = naga::front::wgsl::parse_str(&text)
                 .or_else(|_| {

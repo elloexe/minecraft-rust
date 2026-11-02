@@ -195,9 +195,10 @@ fn sources_digest(root: &Path) -> io::Result<[u8; 32]> {
     .iter()
     .map(|relative| root.join(relative))
     .collect();
-    let mut fluids: Vec<PathBuf> = fs::read_dir(root.join("data/minecraft/tags/fluid"))?
-        .map(|entry| entry.map(|entry| entry.path()))
-        .collect::<io::Result<_>>()?;
+    let mut fluids: Vec<PathBuf> =
+        claudium_core::vfs::read_dir(root.join("data/minecraft/tags/fluid"))?
+            .map(|entry| entry.map(|entry| entry.path()))
+            .collect::<io::Result<_>>()?;
     fluids.sort();
     paths.extend(fluids);
     let stamps = paths
@@ -234,7 +235,7 @@ fn hash_file(hasher: &mut Sha256, root: &Path, path: &Path) -> io::Result<()> {
         .strip_prefix(root)
         .map_err(|e| invalid(e.to_string()))?;
     hash_str(hasher, &relative.to_string_lossy());
-    let bytes = fs::read(path)?;
+    let bytes = claudium_core::vfs::read(path)?;
     hasher.update((bytes.len() as u64).to_le_bytes());
     hasher.update(bytes);
     Ok(())
@@ -699,7 +700,7 @@ pub(super) fn load(registry: &BlockRegistry, root: &Path) -> Option<Behaviours> 
 }
 
 fn load_from(dir: &Path, registry: &BlockRegistry, root: &Path) -> Option<Behaviours> {
-    let bytes = fs::read(dir.join(FILE_NAME)).ok()?;
+    let bytes = claudium_core::vfs::read(dir.join(FILE_NAME)).ok()?;
     let fingerprint = fingerprint(registry, root).ok()?;
     // Validate bounds before decoding untrusted cache contents.
     if bytes.len() < 8 + 4 + 32 + 32 || bytes.len() > MAX_FILE_BYTES {
@@ -810,7 +811,8 @@ mod tests {
         ] {
             fs::copy(source.join(file), dir.join(file)).unwrap();
         }
-        for entry in fs::read_dir(source.join("data/minecraft/tags/fluid")).unwrap() {
+        for entry in claudium_core::vfs::read_dir(source.join("data/minecraft/tags/fluid")).unwrap()
+        {
             let entry = entry.unwrap();
             if entry.file_type().unwrap().is_file() {
                 fs::copy(
@@ -859,7 +861,7 @@ mod tests {
         assert_eq!(sources_digest(&root.0).unwrap(), first);
         assert_eq!(entries(), 1);
         let tags = root.0.join("block-tags.json");
-        let mut bytes = fs::read(&tags).unwrap();
+        let mut bytes = claudium_core::vfs::read(&tags).unwrap();
         bytes[0] ^= 1;
         fs::write(&tags, bytes).unwrap();
         assert_ne!(sources_digest(&root.0).unwrap(), first);
@@ -908,7 +910,7 @@ mod tests {
             "fallback should replace cache"
         );
         let cache_file = dir.join(FILE_NAME);
-        let mut bytes = fs::read(&cache_file).unwrap();
+        let mut bytes = claudium_core::vfs::read(&cache_file).unwrap();
         bytes[80] ^= 0x80;
         fs::write(&cache_file, bytes).unwrap();
         assert!(
@@ -919,7 +921,7 @@ mod tests {
         assert!(load_from(&dir, &registry, &root.0).is_some());
         // A snapshot written under another key (another build of the game,
         // other resources) is never trusted.
-        let mut other = fs::read(&cache_file).unwrap();
+        let mut other = claudium_core::vfs::read(&cache_file).unwrap();
         other[12] ^= 1;
         fs::write(&cache_file, other).unwrap();
         assert!(load_from(&dir, &registry, &root.0).is_none());

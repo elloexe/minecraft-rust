@@ -20,5 +20,6 @@ pub mod ticks;
 
 pub mod release;
 pub mod version;
+pub mod vfs;
 
 pub use version::VANILLA_VERSION;

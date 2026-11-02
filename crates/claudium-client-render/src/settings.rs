@@ -325,7 +325,7 @@ impl Settings {
             .parent()
             .map(crate::mod_list::ModList::load)
             .unwrap_or_default();
-        let settings = match fs::read(path) {
+        let settings = match claudium_core::vfs::read(path) {
             Ok(bytes) => Self {
                 claudium,
                 controller,

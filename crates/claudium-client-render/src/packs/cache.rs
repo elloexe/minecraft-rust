@@ -98,7 +98,7 @@ fn stamp(hash: &mut Sha256, path: &Path) -> io::Result<()> {
     Ok(())
 }
 fn entries(path: &Path) -> io::Result<Vec<PathBuf>> {
-    let mut entries = fs::read_dir(path)?
+    let mut entries = claudium_core::vfs::read_dir(path)?
         .map(|e| e.map(|e| e.path()))
         .collect::<io::Result<Vec<_>>>()?;
     entries.sort();
@@ -282,7 +282,7 @@ pub(super) fn build(vanilla: &Path, packs: &[Pack], out: &Path) -> io::Result<()
     let marker_path = marker_path(out);
     let signature = pack_signature(packs);
     if let Ok(signature) = &signature
-        && let Ok(bytes) = fs::read(&marker_path)
+        && let Ok(bytes) = claudium_core::vfs::read(&marker_path)
         && let Ok(marker) = serde_json::from_slice::<Marker>(&bytes)
         && marker.version == VERSION
         && marker.vanilla == vanilla_key
@@ -487,18 +487,21 @@ mod tests {
             let check = || {
                 for name in [blockstate, model, font] {
                     assert_eq!(
-                        fs::read(out.join(name)).unwrap(),
-                        fs::read(vanilla.join(name)).unwrap()
+                        claudium_core::vfs::read(out.join(name)).unwrap(),
+                        claudium_core::vfs::read(vanilla.join(name)).unwrap()
                     );
                 }
-                assert_eq!(fs::read(out.join(texture)).unwrap(), b"pack texture");
+                assert_eq!(
+                    claudium_core::vfs::read(out.join(texture)).unwrap(),
+                    b"pack texture"
+                );
             };
             check();
             // Before #1688, Windows silently omitted untouched directories.
             // A v3 marker still validates because it checks only source files.
             let marker_path = marker_path(&out);
             let mut marker: Marker =
-                serde_json::from_slice(&fs::read(&marker_path).unwrap()).unwrap();
+                serde_json::from_slice(&claudium_core::vfs::read(&marker_path).unwrap()).unwrap();
             marker.version = 3;
             for dir in ["blockstates", "models", "textures/font"] {
                 fs::remove_dir_all(out.join("assets/minecraft").join(dir)).unwrap();
@@ -577,8 +580,12 @@ mod tests {
         // Published output is trusted; clearing the marker explicitly repairs
         // a cache tree changed outside the builder.
         packs::build_overlay(&f.0.join("vanilla"), std::slice::from_ref(&low), &out).unwrap();
-        assert_eq!(fs::read(out.join(resource)).unwrap(), b"corrupt");
-        let mut old: Marker = serde_json::from_slice(&fs::read(&marker).unwrap()).unwrap();
+        assert_eq!(
+            claudium_core::vfs::read(out.join(resource)).unwrap(),
+            b"corrupt"
+        );
+        let mut old: Marker =
+            serde_json::from_slice(&claudium_core::vfs::read(&marker).unwrap()).unwrap();
         old.version = VERSION - 1;
         fs::write(&marker, serde_json::to_vec(&old).unwrap()).unwrap();
         f.rebuild_matches(std::slice::from_ref(&low));
@@ -596,16 +603,17 @@ mod tests {
             low.filter.clear();
             f.rebuild_matches(std::slice::from_ref(&low));
             // Unrelated vanilla content remains live through the directory symlink.
-            let before = fs::read(&marker).unwrap();
+            let before = claudium_core::vfs::read(&marker).unwrap();
             f.write("vanilla/assets/minecraft/textures/untouched/a", b"new live");
             f.write(
                 "vanilla/assets/minecraft/textures/untouched/b",
                 b"added live",
             );
             f.rebuild_matches(std::slice::from_ref(&low));
-            assert_eq!(fs::read(&marker).unwrap(), before);
+            assert_eq!(claudium_core::vfs::read(&marker).unwrap(), before);
             assert_eq!(
-                fs::read(out.join("assets/minecraft/textures/untouched/b")).unwrap(),
+                claudium_core::vfs::read(out.join("assets/minecraft/textures/untouched/b"))
+                    .unwrap(),
                 b"added live"
             );
         }
@@ -641,7 +649,10 @@ mod tests {
         f.rebuild_matches(std::slice::from_ref(&pack));
         f.write("pack.zip", &archive(&files(b"bbb"), false));
         f.rebuild_matches(std::slice::from_ref(&pack));
-        assert_eq!(fs::read(f.0.join("cached").join(name)).unwrap(), b"bbb");
+        assert_eq!(
+            claudium_core::vfs::read(f.0.join("cached").join(name)).unwrap(),
+            b"bbb"
+        );
         // The ZIP opens and enumerates, then its unsupported method fails after
         // mirror has created directories. No reusable marker survives.
         let mut broken = archive(&files(b"ccc"), false);
@@ -735,13 +746,13 @@ mod tests {
             .set_times(fs::FileTimes::new().set_modified(original_time))
             .unwrap();
         f.rebuild_matches(std::slice::from_ref(&pack));
-        assert_eq!(fs::read(out.join(name)).unwrap(), b"bbb");
+        assert_eq!(claudium_core::vfs::read(out.join(name)).unwrap(), b"bbb");
         assert_eq!(fs::metadata(&marker).unwrap().modified().unwrap(), before);
         // Replacing a regular file at the same linked path is also already live.
         f.write("replacement", b"ccc");
         fs::rename(f.0.join("replacement"), &path).unwrap();
         f.rebuild_matches(std::slice::from_ref(&pack));
-        assert_eq!(fs::read(out.join(name)).unwrap(), b"ccc");
+        assert_eq!(claudium_core::vfs::read(out.join(name)).unwrap(), b"ccc");
         assert_eq!(fs::metadata(&marker).unwrap().modified().unwrap(), before);
         // A changed source symlink identity is fingerprinted. Output is trusted
         // until its marker is cleared explicitly.
@@ -749,7 +760,7 @@ mod tests {
         f.write("other", b"ddd");
         std::os::unix::fs::symlink(f.0.join("other"), &path).unwrap();
         f.rebuild_matches(std::slice::from_ref(&pack));
-        assert_eq!(fs::read(out.join(name)).unwrap(), b"ddd");
+        assert_eq!(claudium_core::vfs::read(out.join(name)).unwrap(), b"ddd");
         fs::remove_file(out.join(name)).unwrap();
         std::os::unix::fs::symlink(f.0.join("other"), out.join(name)).unwrap();
         fs::remove_file(&marker).unwrap();
@@ -775,7 +786,7 @@ mod tests {
             f.write(&format!("pack/extra/{name}"), br#"{"p":2}"#);
             f.rebuild_matches(std::slice::from_ref(&pack));
             assert_eq!(
-                fs::read(f.0.join("cached").join(name)).unwrap(),
+                claudium_core::vfs::read(f.0.join("cached").join(name)).unwrap(),
                 br#"{"p":2,"v":1}"#
             );
             f.write(&format!("pack/extra/{name}"), br#"{"p":1}"#);
@@ -791,7 +802,7 @@ mod tests {
             f.write(&format!("outside/{name}"), br#"{"p":4}"#);
             f.rebuild_matches(std::slice::from_ref(&pack));
             assert_eq!(
-                fs::read(f.0.join("cached").join(name)).unwrap(),
+                claudium_core::vfs::read(f.0.join("cached").join(name)).unwrap(),
                 br#"{"p":4,"v":1}"#
             );
             f.write(&format!("outside/{name}"), br#"{"p":3}"#);
@@ -824,13 +835,19 @@ mod tests {
         std::os::unix::fs::symlink(f.0.join("vanilla-b"), &vanilla).unwrap();
         std::os::unix::fs::symlink(f.0.join("pack-b"), &source).unwrap();
         let out = f.0.join("cached");
-        assert_eq!(fs::read(out.join("facts.json")).unwrap(), b"b");
         assert_eq!(
-            fs::read(out.join("assets/minecraft/textures/a")).unwrap(),
+            claudium_core::vfs::read(out.join("facts.json")).unwrap(),
+            b"b"
+        );
+        assert_eq!(
+            claudium_core::vfs::read(out.join("assets/minecraft/textures/a")).unwrap(),
             b"b"
         );
         f.rebuild_matches(std::slice::from_ref(&pack));
-        assert_eq!(fs::read(out.join(name)).unwrap(), br#"{"p":"b","v":"b"}"#);
+        assert_eq!(
+            claudium_core::vfs::read(out.join(name)).unwrap(),
+            br#"{"p":"b","v":"b"}"#
+        );
     }
 
     #[test]
@@ -885,7 +902,7 @@ mod tests {
             } else {
                 br#"{"p":"b","v":1}"#
             };
-            assert_eq!(fs::read(out.join(name)).unwrap(), expected);
+            assert_eq!(claudium_core::vfs::read(out.join(name)).unwrap(), expected);
         }
         assert!(lock_path(&out).exists());
     }
@@ -920,12 +937,18 @@ mod tests {
         .unwrap();
         for root in [&out, &reference] {
             assert!(fs::read_link(root.join(name)).unwrap().is_absolute());
-            assert_eq!(fs::read(root.join(name)).unwrap(), b"pack");
-            assert_eq!(fs::read(root.join("facts.json")).unwrap(), b"[]");
+            assert_eq!(claudium_core::vfs::read(root.join(name)).unwrap(), b"pack");
+            assert_eq!(
+                claudium_core::vfs::read(root.join("facts.json")).unwrap(),
+                b"[]"
+            );
         }
         packs::build_overlay(&vanilla, &[pack], &out).unwrap();
-        assert_eq!(fs::read(out.join(name)).unwrap(), b"pack");
-        assert_eq!(fs::read(out.join("facts.json")).unwrap(), b"[]");
+        assert_eq!(claudium_core::vfs::read(out.join(name)).unwrap(), b"pack");
+        assert_eq!(
+            claudium_core::vfs::read(out.join("facts.json")).unwrap(),
+            b"[]"
+        );
     }
 
     #[test]

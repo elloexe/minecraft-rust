@@ -1,7 +1,7 @@
 //! Parsed resource models for one startup or resource-pack reload.
 use crate::Result;
 use claudium_assets::{model::CuboidModel, resolve::ModelLibrary};
-use std::{collections::BTreeMap, fs, path::Path, sync::Arc};
+use std::{collections::BTreeMap, path::Path, sync::Arc};
 
 #[derive(Default)]
 pub struct ParsedModels {
@@ -10,7 +10,7 @@ pub struct ParsedModels {
 impl ParsedModels {
     /// Every `models/**.json` of a namespace directory, by identifier.
     pub fn load(root: &Path) -> Self {
-        let Ok(namespaces) = fs::read_dir(root.join("assets")) else {
+        let Ok(namespaces) = claudium_core::vfs::read_dir(root.join("assets")) else {
             return Self::default();
         };
         // Listed first, then read and parsed at once: a content pack has tens
@@ -21,7 +21,7 @@ impl ParsedModels {
             let base = ns.path().join("models");
             let mut stack = vec![base.clone()];
             while let Some(dir) = stack.pop() {
-                let Ok(entries) = fs::read_dir(&dir) else {
+                let Ok(entries) = claudium_core::vfs::read_dir(&dir) else {
                     continue;
                 };
                 for e in entries.flatten() {
@@ -44,7 +44,7 @@ impl ParsedModels {
             }
         }
         let parsed = crate::par::par_map(&files, |(_, path)| {
-            let text = fs::read_to_string(path).ok()?;
+            let text = claudium_core::vfs::read_to_string(path).ok()?;
             CuboidModel::from_json(&text).ok().map(Arc::new)
         });
         let models = files
@@ -89,7 +89,7 @@ impl ParsedModels {
                     let read = || -> Result<CuboidModel> {
                         let (namespace, path) =
                             name.split_once(':').ok_or("invalid model identifier")?;
-                        let text = fs::read_to_string(
+                        let text = claudium_core::vfs::read_to_string(
                             root.join(format!("assets/{namespace}/models/{path}.json")),
                         )?;
                         Ok(CuboidModel::from_json(&text)?)
@@ -123,6 +123,7 @@ impl ParsedModels {
 mod tests {
     use super::*;
     use claudium_assets::resolve::{GENERATED_MODEL, MISSING_MODEL};
+    use std::fs;
 
     struct Fixture(std::path::PathBuf);
     impl Fixture {

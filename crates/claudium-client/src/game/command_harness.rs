@@ -180,7 +180,7 @@ impl Game<'_> {
         }
         self.harness_owner(|g| g.harness_settle(deadline))?;
         let mut out = String::new();
-        for line in std::fs::read_to_string(script)?.lines() {
+        for line in claudium_core::vfs::read_to_string(script)?.lines() {
             if line.trim().is_empty() {
                 continue;
             }

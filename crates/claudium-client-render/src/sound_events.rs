@@ -8,7 +8,6 @@ use claudium_core::random::RandomSource;
 use serde_json::Value;
 use std::{
     collections::{HashMap, HashSet},
-    fs,
     path::Path,
 };
 
@@ -233,7 +232,7 @@ fn sound_files(namespace: &Path) -> HashSet<String> {
     let mut files = HashSet::new();
     let mut stack = vec![namespace.join("sounds")];
     while let Some(dir) = stack.pop() {
-        let Ok(entries) = fs::read_dir(&dir) else {
+        let Ok(entries) = claudium_core::vfs::read_dir(&dir) else {
             continue;
         };
         for e in entries.flatten() {
@@ -261,7 +260,7 @@ impl SoundRegistry {
     /// validated against `assets/<namespace>/sounds/`.
     pub fn load(root: &Path) -> Self {
         let assets = root.join("assets");
-        let mut namespaces: Vec<String> = fs::read_dir(&assets)
+        let mut namespaces: Vec<String> = claudium_core::vfs::read_dir(&assets)
             .into_iter()
             .flatten()
             .flatten()
@@ -277,7 +276,8 @@ impl SoundRegistry {
         let exists = |ns: &str, path: &str| files.get(ns).is_some_and(|f| f.contains(path));
         let mut registry = Self::default();
         for namespace in &namespaces {
-            let Ok(text) = fs::read(assets.join(namespace).join("sounds.json")) else {
+            let Ok(text) = claudium_core::vfs::read(assets.join(namespace).join("sounds.json"))
+            else {
                 continue;
             };
             registry.add_file(namespace, &text, &exists);
@@ -406,6 +406,7 @@ impl SoundRegistry {
 mod tests {
     use super::*;
     use claudium_core::random::LegacyRandom;
+    use std::fs;
 
     #[test]
     fn load_keeps_the_sound_files_a_root_holds() {

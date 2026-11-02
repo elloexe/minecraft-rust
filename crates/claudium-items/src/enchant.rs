@@ -8,7 +8,6 @@ use claudium_core::random::{LegacyRandom, RandomSource};
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
-    fs,
     path::Path,
     sync::Arc,
 };
@@ -88,7 +87,7 @@ fn string_list(v: &Value) -> Vec<String> {
 }
 fn read_tag_dir(dir: &Path) -> HashMap<String, Vec<String>> {
     fn walk(dir: &Path, base: &Path, out: &mut HashMap<String, Vec<String>>) {
-        let Ok(entries) = fs::read_dir(dir) else {
+        let Ok(entries) = claudium_core::vfs::read_dir(dir) else {
             return;
         };
         for e in entries.flatten() {
@@ -97,7 +96,7 @@ fn read_tag_dir(dir: &Path) -> HashMap<String, Vec<String>> {
                 walk(&p, base, out);
             } else if p.extension().is_some_and(|x| x == "json")
                 && let Ok(rel) = p.strip_prefix(base)
-                && let Ok(bytes) = fs::read(&p)
+                && let Ok(bytes) = claudium_core::vfs::read(&p)
                 && let Ok(v) = serde_json::from_slice::<Value>(&bytes)
             {
                 let name = format!(
@@ -172,44 +171,46 @@ impl Enchantments {
         let damage_tags = unordered(read_tag_dir(&data.join("tags/damage_type")));
         // The registry lists entries sorted by id, like the data-pack loader.
         let mut files: BTreeMap<String, Value> = BTreeMap::new();
-        if let Ok(entries) = fs::read_dir(data.join("enchantment")) {
+        if let Ok(entries) = claudium_core::vfs::read_dir(data.join("enchantment")) {
             for e in entries.flatten() {
                 let p = e.path();
-                if let (Some(stem), Ok(bytes)) =
-                    (p.file_stem().and_then(|s| s.to_str()), fs::read(&p))
-                    && let Ok(v) = serde_json::from_slice(&bytes)
+                if let (Some(stem), Ok(bytes)) = (
+                    p.file_stem().and_then(|s| s.to_str()),
+                    claudium_core::vfs::read(&p),
+                ) && let Ok(v) = serde_json::from_slice(&bytes)
                 {
                     files.insert(format!("minecraft:{stem}"), v);
                 }
             }
         }
-        let lang: HashMap<String, String> = fs::read(root.join("assets/minecraft/lang/en_us.json"))
-            .ok()
-            .and_then(|b| serde_json::from_slice::<HashMap<String, String>>(&b).ok())
-            .unwrap_or_default()
-            .into_iter()
-            .filter(|(k, _)| {
-                k.starts_with("enchantment.")
-                    || k.starts_with("attribute.")
-                    || k.starts_with("item.modifiers.")
-                    || k.starts_with("effect.")
-                    || k.starts_with("item.minecraft.potion")
-                    || k.starts_with("item.minecraft.splash_potion")
-                    || k.starts_with("item.minecraft.lingering_potion")
-                    || k.starts_with("item.minecraft.tipped_arrow")
-                    || k.starts_with("item.minecraft.firework_rocket.")
-                    || k.starts_with("item.minecraft.firework_star.")
-                    || k.starts_with("trim_")
-                    || k.starts_with("potion.")
-                    || k.starts_with("container.")
-                    || k.starts_with("merchant.")
-                    || k.starts_with("entity.minecraft.")
-                    || k.starts_with("gui.recipebook.")
-                    || k.starts_with("gui.togglable_slot")
-                    || k.starts_with("block.minecraft.banner.")
-                    || k.starts_with("recipe.toast.")
-            })
-            .collect();
+        let lang: HashMap<String, String> =
+            claudium_core::vfs::read(root.join("assets/minecraft/lang/en_us.json"))
+                .ok()
+                .and_then(|b| serde_json::from_slice::<HashMap<String, String>>(&b).ok())
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|(k, _)| {
+                    k.starts_with("enchantment.")
+                        || k.starts_with("attribute.")
+                        || k.starts_with("item.modifiers.")
+                        || k.starts_with("effect.")
+                        || k.starts_with("item.minecraft.potion")
+                        || k.starts_with("item.minecraft.splash_potion")
+                        || k.starts_with("item.minecraft.lingering_potion")
+                        || k.starts_with("item.minecraft.tipped_arrow")
+                        || k.starts_with("item.minecraft.firework_rocket.")
+                        || k.starts_with("item.minecraft.firework_star.")
+                        || k.starts_with("trim_")
+                        || k.starts_with("potion.")
+                        || k.starts_with("container.")
+                        || k.starts_with("merchant.")
+                        || k.starts_with("entity.minecraft.")
+                        || k.starts_with("gui.recipebook.")
+                        || k.starts_with("gui.togglable_slot")
+                        || k.starts_with("block.minecraft.banner.")
+                        || k.starts_with("recipe.toast.")
+                })
+                .collect();
         let mut list = Vec::new();
         for (id, v) in &files {
             let exclusive = match &v["exclusive_set"] {
@@ -247,7 +248,7 @@ impl Enchantments {
             .map(|(i, e)| (e.id.clone(), i))
             .collect();
         let mut props = HashMap::new();
-        if let Ok(bytes) = fs::read(root.join("items.json"))
+        if let Ok(bytes) = claudium_core::vfs::read(root.join("items.json"))
             && let Ok(raw) = serde_json::from_slice::<BTreeMap<String, Value>>(&bytes)
         {
             for (id, c) in raw {

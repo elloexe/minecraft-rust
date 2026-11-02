@@ -11,7 +11,7 @@ use crate::{
 use claudium_core::random::{LegacyRandom, RandomSource};
 use claudium_world::loot::PackOverlay;
 use serde_json::Value;
-use std::{fs, path::Path, sync::Arc};
+use std::{path::Path, sync::Arc};
 
 /// Everything the workstation menus read, loaded once with the resources.
 pub struct StationData {
@@ -490,20 +490,21 @@ impl StationRecipes {
         let namespaces =
             std::iter::once("minecraft".to_owned()).chain(crate::mod_content::namespaces(root));
         for namespace in namespaces {
-            let mut more: Vec<_> = fs::read_dir(root.join(format!("data/{namespace}/recipe")))
-                .into_iter()
-                .flatten()
-                .flatten()
-                .map(|e| e.path())
-                .filter(|p| p.extension().is_some_and(|e| e == "json"))
-                .collect();
+            let mut more: Vec<_> =
+                claudium_core::vfs::read_dir(root.join(format!("data/{namespace}/recipe")))
+                    .into_iter()
+                    .flatten()
+                    .flatten()
+                    .map(|e| e.path())
+                    .filter(|p| p.extension().is_some_and(|e| e == "json"))
+                    .collect();
             more.sort();
             files.extend(more.into_iter().map(|p| (namespace.clone(), p)));
         }
         let mut sources: Vec<(String, Value)> = files
             .iter()
             .filter_map(|(namespace, p)| {
-                let bytes = fs::read(p).ok()?;
+                let bytes = claudium_core::vfs::read(p).ok()?;
                 let v = serde_json::from_slice::<Value>(&bytes).ok()?;
                 let id = format!(
                     "{namespace}:{}",
@@ -561,15 +562,16 @@ impl StationRecipes {
             }
         }
         let mut trim_materials = Vec::new();
-        let mut tm: Vec<_> = fs::read_dir(root.join("data/minecraft/trim_material"))
-            .into_iter()
-            .flatten()
-            .flatten()
-            .map(|e| e.path())
-            .collect();
+        let mut tm: Vec<_> =
+            claudium_core::vfs::read_dir(root.join("data/minecraft/trim_material"))
+                .into_iter()
+                .flatten()
+                .flatten()
+                .map(|e| e.path())
+                .collect();
         tm.sort();
         for p in tm {
-            if let Ok(bytes) = fs::read(&p)
+            if let Ok(bytes) = claudium_core::vfs::read(&p)
                 && let Ok(v) = serde_json::from_slice::<Value>(&bytes)
             {
                 let id = format!(

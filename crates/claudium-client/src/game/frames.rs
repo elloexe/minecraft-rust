@@ -23,9 +23,9 @@ pub(super) fn bake_frame(root: &std::path::Path, name: &str) -> FrameModel {
         let Some((ns, path)) = model.split_once(':') else {
             continue;
         };
-        let Ok(text) =
-            std::fs::read_to_string(root.join(format!("assets/{ns}/models/{path}.json")))
-        else {
+        let Ok(text) = claudium_core::vfs::read_to_string(
+            root.join(format!("assets/{ns}/models/{path}.json")),
+        ) else {
             continue;
         };
         let Ok(m) = CuboidModel::from_json(&text) else {

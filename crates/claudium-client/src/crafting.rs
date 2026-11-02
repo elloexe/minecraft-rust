@@ -14,7 +14,6 @@ use claudium_world::nbt::Tag;
 use serde_json::Value;
 use std::{
     collections::{HashMap, HashSet},
-    fs,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -1186,7 +1185,7 @@ impl Recipes {
         let mut cooking = Vec::new();
         let mut meta = HashMap::new();
         let json_files = |dir: &Path| -> Result<Vec<PathBuf>> {
-            let mut files: Vec<_> = fs::read_dir(dir)?
+            let mut files: Vec<_> = claudium_core::vfs::read_dir(dir)?
                 .flatten()
                 .map(|e| e.path())
                 .filter(|p| p.extension().is_some_and(|e| e == "json"))
@@ -1203,13 +1202,16 @@ impl Recipes {
         // Vanilla's recipes by bare name, then content mods' as `<ns>:<name>`.
         let mut sources: Vec<(String, Vec<u8>)> = Vec::new();
         for p in json_files(&root.join("data/minecraft/recipe"))? {
-            sources.push((stem(&p), fs::read(&p)?));
+            sources.push((stem(&p), claudium_core::vfs::read(&p)?));
         }
         for namespace in crate::mod_content::namespaces(root) {
             let dir = root.join(format!("data/{namespace}/recipe"));
             if dir.is_dir() {
                 for p in json_files(&dir)? {
-                    sources.push((format!("{namespace}:{}", stem(&p)), fs::read(&p)?));
+                    sources.push((
+                        format!("{namespace}:{}", stem(&p)),
+                        claudium_core::vfs::read(&p)?,
+                    ));
                 }
             }
         }

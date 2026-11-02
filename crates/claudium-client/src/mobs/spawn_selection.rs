@@ -21,7 +21,7 @@ use claudium_core::{
     random::RandomSource,
 };
 use serde_json::Value;
-use std::{collections::HashMap, fs, path::Path};
+use std::{collections::HashMap, path::Path};
 
 pub use crate::biome::{SpawnCost, parse_costs, parse_entries};
 
@@ -596,12 +596,16 @@ impl StructureSpawns {
     pub fn load(root: &Path) -> Self {
         let mut overrides = FxHashMap::default();
         let dir = root.join("data/minecraft/worldgen/structure");
-        for entry in fs::read_dir(dir).into_iter().flatten().flatten() {
+        for entry in claudium_core::vfs::read_dir(dir)
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
             let path = entry.path();
             let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
                 continue;
             };
-            let Some(v) = fs::read(&path)
+            let Some(v) = claudium_core::vfs::read(&path)
                 .ok()
                 .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
             else {

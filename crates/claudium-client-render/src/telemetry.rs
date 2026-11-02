@@ -314,7 +314,7 @@ impl Session {
 /// The game's resident memory: the peak on Linux, what it uses now elsewhere.
 fn peak_ram_mb() -> u32 {
     let kib = if cfg!(target_os = "linux") {
-        std::fs::read_to_string("/proc/self/status")
+        claudium_core::vfs::read_to_string("/proc/self/status")
             .ok()
             .and_then(|t| {
                 t.lines()
