@@ -138,6 +138,16 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 - The look has not been seen running. It is checked by `cargo fmt`, clippy and
   the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.
 
+## Chat Heads, and ten mods on in our build (2026-11-02)
+
+- **Chat heads** (`Mod::ChatHeads`): a chat line remembers its sender (`<Name> ...`,
+  `chat::sender_of`), and while the mod is on the game hands the chat each listed player's
+  face skin (`Chat::heads`, from the player list, downloaded skins through `face_skin`); the
+  line draws the face (8 px, with the hat layer) and starts 10 px later, and clicks and hovers
+  follow it.
+- The launcher's bundled build switches ten mods on once (`bundle::starter_mods`), never
+  over a saved choice. The game's own defaults are unchanged.
+
 ## Fast start on Windows: the resources as one bundle (2026-11-02)
 
 The game opened about 26,000 small files on every launch before the title screen, and about

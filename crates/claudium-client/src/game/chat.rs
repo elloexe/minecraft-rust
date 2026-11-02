@@ -1012,9 +1012,45 @@ impl Game<'_> {
         if self.ui.hide_gui && !focused {
             return;
         }
+        self.update_chat_heads();
         self.ui
             .chat
             .draw(batch, &self.gui.atlas, self.ticks, focused);
+    }
+    /// Chat Heads (`Mod::ChatHeads`): each listed player's face skin, by name, for the chat to
+    /// draw before their messages; none while the mod is off.
+    fn update_chat_heads(&mut self) {
+        if !self
+            .settings
+            .extras
+            .on(claudium_client::extras::Mod::ChatHeads)
+        {
+            if !self.ui.chat.heads.is_empty() {
+                self.ui.chat.heads.clear();
+            }
+            return;
+        }
+        let players = match self.remote_tab_players() {
+            Some((players, _, _)) => players,
+            None => {
+                let uuid = self.level.player_uuid.map_or(0, |u| {
+                    u.iter()
+                        .fold(0u128, |a, &w| (a << 32) | u128::from(w as u32))
+                });
+                let mut me = claudium_client::tab_list::TabPlayer::new(uuid, PLAYER_NAME);
+                me.skin = "entity/player/wide/steve".into();
+                let guests = self.lan.as_ref().map_or(&[][..], |h| &h.hub.guests);
+                super::scoreboard::local_tab_players(me, guests)
+            }
+        };
+        let heads = players
+            .into_iter()
+            .map(|p| {
+                let skin = self.face_skin(p.uuid, &p.skin);
+                (p.name.to_ascii_lowercase(), skin)
+            })
+            .collect();
+        self.ui.chat.heads = heads;
     }
     /// `HoverEvent.EntityTooltipInfo.getTooltipLines`: the name when the
     /// event has one, the entity type and the UUID.

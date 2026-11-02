@@ -180,6 +180,22 @@ struct Line {
     added: u64,
     content: Text,
     indicator: Option<u32>,
+    /// The player who wrote it (`<Name> ...`), on a message's first line only: Chat Heads
+    /// draws their face before it.
+    sender: Option<String>,
+}
+
+/// The width a chat head takes before its line: the 8-pixel face and a 2-pixel gap.
+pub const HEAD_WIDTH: i32 = 10;
+
+/// The player name a chat message starts with, as vanilla's chat type writes it
+/// (`<Name> message`): 1 to 16 letters, digits and underscores.
+pub fn sender_of(plain: &str) -> Option<&str> {
+    let rest = plain.strip_prefix('<')?;
+    let (name, _) = rest.split_once('>')?;
+    let valid = (1..=16).contains(&name.len())
+        && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+    valid.then_some(name)
 }
 
 /// `ChatComponent.AlphaCalculator.timeBased`: opaque for 180 ticks, then
@@ -216,6 +232,9 @@ pub struct Chat {
     /// `ChatComponent.messageDeletionQueue`: deletions of messages still
     /// too new to replace, with the tick from which they may be.
     deletions: Vec<(Box<Signature>, u64)>,
+    /// Chat Heads (a Claudium mod, off unless the game fills it): each listed player's name,
+    /// lower case, and their skin texture. Empty draws no heads, as vanilla.
+    pub heads: std::collections::HashMap<String, String>,
 }
 impl Chat {
     pub fn lines_per_page(&self, focused: bool) -> usize {
@@ -309,6 +328,7 @@ impl Chat {
     fn add_lines(&mut self, font: &crate::font::Font, message: &Message, focused: bool) {
         let width = self.max_width();
         let content = self.displayed(&message.content);
+        let mut sender = sender_of(&message.content.plain()).map(str::to_owned);
         for line in font.wrap_components(&content, width) {
             if focused && self.scroll > 0 {
                 self.new_since_scroll = true;
@@ -320,6 +340,7 @@ impl Chat {
                     added: message.added,
                     content: line,
                     indicator: message.indicator,
+                    sender: sender.take(),
                 },
             );
         }
@@ -531,10 +552,23 @@ impl Chat {
             let bottom = chat_bottom - i as i32 * entry_height;
             let opacity = alpha * text_opacity;
             let color = hud_layout::white(opacity);
+            let head = self.head_of(line);
             if color >> 24 != 0 {
+                if let Some(skin) = head {
+                    crate::tab_list::face(
+                        &mut out,
+                        skin,
+                        0,
+                        bottom - entry_height,
+                        8,
+                        true,
+                        false,
+                        color,
+                    );
+                }
                 out.push(GuiDraw::Text {
                     text: line.content.clone(),
-                    x: 0,
+                    x: if head.is_some() { HEAD_WIDTH } else { 0 },
                     y: bottom - bottom_to_text,
                     color,
                     shadow: true,
@@ -583,6 +617,14 @@ impl Chat {
         }
         out.push(GuiDraw::Pop);
         out
+    }
+    /// The skin of the line's sender when Chat Heads draws one.
+    fn head_of(&self, line: &Line) -> Option<&str> {
+        if self.heads.is_empty() {
+            return None;
+        }
+        let name = line.sender.as_deref()?.to_ascii_lowercase();
+        self.heads.get(&name).map(String::as_str)
     }
     /// Draws [`Chat::layout`] into the HUD batch, and with the chat screen
     /// open the restricted prompt above the lines.
@@ -679,7 +721,14 @@ impl Chat {
         if row >= self.lines_per_page(true) {
             return None;
         }
-        Some((self.lines.get(self.scroll + row)?, x))
+        let line = self.lines.get(self.scroll + row)?;
+        // A line with a chat head starts after it.
+        let x = if self.head_of(line).is_some() {
+            x - f64::from(HEAD_WIDTH)
+        } else {
+            x
+        };
+        Some((line, x))
     }
     /// ChatComponent.getClickedComponentStyleAt.
     pub fn style_at(

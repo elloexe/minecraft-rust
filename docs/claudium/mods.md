@@ -62,6 +62,7 @@ queue, roughly in the order we expect to build it.
 | 24 | Exact durability in tooltips | client | Durability tooltips | Planned: tooltip hook |
 | 25 | Enchantment descriptions in tooltips | client | Enchantment Descriptions | Planned: tooltip hook |
 | 26 | Chat timestamps | client | Chat timestamps | Planned |
+| 26b | Player faces before their chat messages | client | Chat Heads | Done |
 | 27 | Keep chat history across worlds | client | Chat history mods | Planned |
 | 28 | Item pickup notifications | client | Item pickup notifier | Planned |
 | 29 | Ping and server TPS in the HUD | client | Ping display | Planned |
@@ -87,6 +88,14 @@ queue, roughly in the order we expect to build it.
 | 49 | Villager trade cycling without breaking blocks | world | Easy Villagers | Planned |
 | 50 | Silk Touch picks up spawners | world | Silk Spawners | Planned |
 
-Counted honestly: 17 are new in Claudium, 6 came with Horizon, 27 are queued. Of the 17,
+Counted honestly: 18 are new in Claudium, 6 came with Horizon, 27 are queued. Of the 17,
 the four real mod ports are the item viewer (JEI), block info (Jade), food info (AppleSkin)
-and vein mining (VeinMiner); the other 13 are smaller HUD and quality-of-life features.
+vein mining (VeinMiner) and chat heads (Chat Heads); the other 13 are smaller HUD and quality-of-life features.
+
+## Claudium's own build starts with ten on
+
+The game's defaults stay vanilla. The Windows build the launcher ships (`launcher/src/bundle.rs`,
+`starter_mods`) switches ten on the first time it runs, only while `claudium-extras.txt` has no
+`builtinMods` line (the game writes it the first time it saves), so a player's own choices are
+never undone: item viewer, block info, food info, vein mining, chat heads, armor HUD, zoom, the
+FPS counter, keystrokes and the minimap.

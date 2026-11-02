@@ -4349,8 +4349,15 @@ fn main() {
         std::process::exit(code);
     }
     // The game shipped beside the launcher becomes an installed version: no release to download.
-    if let Some(Err(e)) = claudium_launcher::bundle::adopt() {
-        eprintln!("Could not set up the bundled game: {e}");
+    match claudium_launcher::bundle::adopt() {
+        Some(Err(e)) => eprintln!("Could not set up the bundled game: {e}"),
+        // Claudium's own build: its mods on, the first time (never over the player's choices).
+        Some(Ok(_)) => {
+            if let Err(e) = claudium_launcher::bundle::starter_mods(&backend::game_home()) {
+                eprintln!("Could not switch the starter mods on: {e}");
+            }
+        }
+        None => {}
     }
     Application::new()
         .with_assets(blocks::Assets)

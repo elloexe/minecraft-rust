@@ -141,6 +141,35 @@ fn adopt_electron_install(tag: &str) {
     let _ = fs::rename(&old, &target);
 }
 
+/// The mods Claudium's own build starts with switched on: the item viewer, block info, food
+/// info, vein mining, chat heads and the armor HUD (`builtinMods`), and zoom, the FPS counter,
+/// keystrokes and the minimap. The game's own default stays vanilla (all off); this build is
+/// for players who want them.
+const STARTER_MODS: &str = "zoom:true\nfps:true\nkeystrokes:true\nminimap:true\nbuiltinMods:itemViewer,blockInfo,foodInfo,veinMining,chatHeads,armorHud\n";
+
+/// Switches the starter mods on in the game folder `home`'s `claudium-extras.txt`, once: only
+/// while the file has no `builtinMods` line, which the game writes the first time it saves its
+/// extras, so a player's own choices are never undone. Earlier lines are kept; these come last
+/// and win.
+pub fn starter_mods(home: &Path) -> std::io::Result<bool> {
+    let path = home.join("claudium-extras.txt");
+    let existing = fs::read_to_string(&path).unwrap_or_default();
+    if existing
+        .lines()
+        .any(|l| l.trim_start().starts_with("builtinMods:"))
+    {
+        return Ok(false);
+    }
+    fs::create_dir_all(home)?;
+    let mut text = existing;
+    if !text.is_empty() && !text.ends_with('\n') {
+        text.push('\n');
+    }
+    text.push_str(STARTER_MODS);
+    fs::write(path, text)?;
+    Ok(true)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -202,6 +231,28 @@ mod tests {
             r#"{"minecraft":{"version":"../evil"}}"#,
         );
         assert_eq!(tag_of(game.path()), "bundled");
+    }
+
+    #[test]
+    fn the_starter_mods_go_on_once_and_never_undo_a_choice() {
+        let home = Scratch::new("starter");
+        assert!(starter_mods(home.path()).unwrap());
+        let text = fs::read_to_string(home.path().join("claudium-extras.txt")).unwrap();
+        assert!(text.contains("builtinMods:itemViewer") && text.contains("zoom:true"));
+        assert!(!starter_mods(home.path()).unwrap(), "only once");
+        // A player's saved file (it has the line) is left as it is.
+        let other = Scratch::new("starter-saved");
+        write(
+            &other.path().join("claudium-extras.txt"),
+            "fullbright:true\nbuiltinMods:\n",
+        );
+        assert!(!starter_mods(other.path()).unwrap());
+        // An older file without the line keeps its lines, with the mods after them.
+        let old = Scratch::new("starter-old");
+        write(&old.path().join("claudium-extras.txt"), "fullbright:true");
+        assert!(starter_mods(old.path()).unwrap());
+        let text = fs::read_to_string(old.path().join("claudium-extras.txt")).unwrap();
+        assert!(text.starts_with("fullbright:true\nzoom:true"));
     }
 
     #[test]

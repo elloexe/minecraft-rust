@@ -34,6 +34,7 @@ fn add(chat: &mut Chat, font: &Font, content: Text) {
                 added: 0,
                 content,
                 indicator: None,
+                sender: None,
             },
         );
     }
@@ -577,4 +578,17 @@ fn a_deleted_message_shows_60_ticks_then_becomes_the_marker() {
     chat.delete_message_with(&font, &[9; 256], 200);
     assert_eq!(lines(&chat), [marker.clone(), marker]);
     assert!(chat.deletions.is_empty());
+}
+
+#[test]
+fn chat_heads_find_the_sender_of_a_player_message() {
+    assert_eq!(sender_of("<Steve> hello"), Some("Steve"));
+    assert_eq!(
+        sender_of("<ello_bello_man> <3 this"),
+        Some("ello_bello_man")
+    );
+    assert_eq!(sender_of("Steve joined the game"), None);
+    assert_eq!(sender_of("<> empty"), None);
+    assert_eq!(sender_of("<not a name> hi"), None);
+    assert_eq!(sender_of("<abcdefghijklmnopq> too long"), None);
 }

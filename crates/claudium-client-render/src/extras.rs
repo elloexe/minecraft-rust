@@ -21,6 +21,7 @@ pub enum Mod {
     BlockInfo,
     FoodInfo,
     VeinMining,
+    ChatHeads,
     Coordinates,
     Biome,
     LightLevel,
@@ -32,11 +33,12 @@ pub enum Mod {
     LowDurability,
 }
 impl Mod {
-    pub const ALL: [Mod; 13] = [
+    pub const ALL: [Mod; 14] = [
         Mod::ItemViewer,
         Mod::BlockInfo,
         Mod::FoodInfo,
         Mod::VeinMining,
+        Mod::ChatHeads,
         Mod::Coordinates,
         Mod::Biome,
         Mod::LightLevel,
@@ -54,6 +56,7 @@ impl Mod {
             Mod::BlockInfo => "blockInfo",
             Mod::FoodInfo => "foodInfo",
             Mod::VeinMining => "veinMining",
+            Mod::ChatHeads => "chatHeads",
             Mod::Coordinates => "coordinates",
             Mod::Biome => "biome",
             Mod::LightLevel => "lightLevel",
@@ -71,6 +74,7 @@ impl Mod {
             Mod::BlockInfo => "Block info (Jade)",
             Mod::FoodInfo => "Food info (AppleSkin)",
             Mod::VeinMining => "Vein mining (VeinMiner)",
+            Mod::ChatHeads => "Chat heads",
             Mod::Coordinates => "Coordinates",
             Mod::Biome => "Biome",
             Mod::LightLevel => "Light level",
@@ -96,6 +100,7 @@ impl Mod {
             Mod::VeinMining => {
                 "Sneak while mining an ore or a log to break the whole connected vein, up to 64 blocks, with your tool's durability and the drops of each. In worlds you host; reopen the world after switching it."
             }
+            Mod::ChatHeads => "The face of the player who wrote each chat message, before it.",
             Mod::Coordinates => "Your position and the direction you face, in the info corner.",
             Mod::Biome => "The biome you stand in, in the info corner.",
             Mod::LightLevel => {
@@ -559,6 +564,7 @@ pub fn rows() -> Vec<Result<Item, &'static str>> {
         Ok(Mod(self::Mod::BlockInfo)),
         Ok(Mod(self::Mod::FoodInfo)),
         Ok(Mod(self::Mod::VeinMining)),
+        Ok(Mod(self::Mod::ChatHeads)),
         Err("Lighting"),
         Ok(Fullbright),
         Ok(DynamicLights),
