@@ -15849,8 +15849,10 @@ fn load_resources(
 ) -> Result<Loaded> {
     let requested_root = root.clone();
     // The prepared resources' small files from one bundle (claudium_core::vfs): one read
-    // instead of tens of thousands of file opens, which Windows makes slow.
-    for r in [vanilla_root, root.as_path()] {
+    // instead of tens of thousands of file opens, which Windows makes slow. Only the prepared
+    // root: a resource pack's or a content mod's overlay changes under its own rules (files
+    // rewritten in place, rebuilt at any start), which the bundle's checks can't see.
+    for r in [vanilla_root] {
         let bundle_started = Instant::now();
         match claudium_core::vfs::mount(r) {
             Ok(0) => {}

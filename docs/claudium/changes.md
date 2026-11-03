@@ -138,6 +138,22 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 - The look has not been seen running. It is checked by `cargo fmt`, clippy and
   the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.
 
+## The bundle beside the root, and only for the prepared root (2026-11-03)
+
+A player's log on Windows: the loading screen in 1.3 s, then 59 s before the bundle was even
+opened, a second bundle of a 17,584-file overlay (a resource pack or content mod is on), and
+item icons missing in game.
+
+- The bundle is written beside the prepared root (`<root>.claudium-bundle.bin`), not in it.
+  A resource pack's overlay records the prepared root's directories as dependencies
+  (`packs/cache.rs`), so writing into the root made every overlay rebuild, which on Windows
+  copies every file again. One left inside an old root is removed.
+- Only the prepared root is bundled. An overlay is rebuilt under its own rules and rewrites
+  merged files in place, which the bundle's directory times can't see: a stale overlay bundle
+  is the likeliest cause of the missing icons (not reproduced on Linux, where overlays are
+  symlinks).
+- The startup loader logs how long the resource-pack and content-mod overlays took.
+
 ## Built-in mods on the Mods page; a switch to turn the bundle off (2026-11-03)
 
 - Options → Claudium Settings → **Mods** lists the built-in mods with on/off buttons

@@ -239,12 +239,29 @@ pub(super) fn spawn_loader(
         .name("resource-loader".into())
         .spawn(move || {
             let mut pack_error = None;
+            let overlay_started = Instant::now();
             let root = packs::startup_root(&vanilla_root, &settings.resource_packs, &[])
                 .unwrap_or_else(|error| {
                     pack_error = Some(error.to_string());
                     vanilla_root.clone()
                 });
+            if root != vanilla_root {
+                log::info!(
+                    "Claudium: resource packs {:?} ready in {} ms",
+                    settings.resource_packs,
+                    overlay_started.elapsed().as_millis()
+                );
+            }
+            let content_started = Instant::now();
+            let before = root.clone();
             let root = mods::content_root(&root, &settings.mods.enabled, &dev_mods);
+            if root != before {
+                log::info!(
+                    "Claudium: content mods {:?} ready in {} ms",
+                    settings.mods.enabled,
+                    content_started.elapsed().as_millis()
+                );
+            }
             let result = load_resources(
                 root,
                 &vanilla_root,

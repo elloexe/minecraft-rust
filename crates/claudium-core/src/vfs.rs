@@ -30,8 +30,24 @@ pub use std::fs::{
     set_permissions, symlink_metadata, write,
 };
 
-/// The bundle's file name in a prepared root.
+/// The bundle's file name, beside the prepared root it is of (`<root>.claudium-bundle.bin`).
 pub const FILE: &str = "claudium-bundle.bin";
+
+/// Where `root`'s bundle lives: beside the root, not in it. Writing into the root would change
+/// its modification time, which a resource pack's overlay checks (`packs/cache.rs` records the
+/// prepared root's directories as its dependencies): every new bundle then rebuilt the overlay,
+/// which on Windows copies every file again.
+fn bundle_path(root: &Path) -> PathBuf {
+    match (root.parent(), root.file_name()) {
+        (Some(parent), Some(name)) => {
+            let mut file = name.to_os_string();
+            file.push(".");
+            file.push(FILE);
+            parent.join(file)
+        }
+        _ => root.join(FILE),
+    }
+}
 const MAGIC: &[u8; 4] = b"CLBN";
 /// Bump when the format or what goes in changes.
 const VERSION: u32 = 3;
@@ -89,7 +105,12 @@ pub fn write_bundle(root: &Path) -> Result<usize, String> {
 /// disk next time).
 fn fresh_bytes(root: &Path) -> Result<Vec<u8>, String> {
     let key = key(root).ok_or_else(|| format!("{} has no {KEY_FILE}", root.display()))?;
-    let path = root.join(FILE);
+    let path = bundle_path(root);
+    // The first bundles were written inside the root: take one away.
+    let old = root.join(FILE);
+    if old.is_file() {
+        let _ = std::fs::remove_file(old);
+    }
     let fresh = |b: &Vec<u8>| {
         header_key(b) == Some(key)
             && parse(root, b.clone()).is_some_and(|bundle| tree_key(&bundle) == header_tree_key(b))
@@ -98,7 +119,9 @@ fn fresh_bytes(root: &Path) -> Result<Vec<u8>, String> {
         return Ok(bytes);
     }
     let bytes = build(root, key)?;
-    let tmp = root.join(format!("{FILE}.{}.tmp", std::process::id()));
+    let mut tmp = path.clone().into_os_string();
+    tmp.push(format!(".{}.tmp", std::process::id()));
+    let tmp = PathBuf::from(tmp);
     if std::fs::write(&tmp, &bytes).is_ok() && std::fs::rename(&tmp, &path).is_err() {
         let _ = std::fs::remove_file(&tmp);
     }
@@ -478,16 +501,18 @@ mod tests {
     struct Scratch(PathBuf);
     impl Scratch {
         fn new(name: &str) -> Self {
-            let dir =
-                std::env::temp_dir().join(format!("claudium-vfs-{name}-{}", std::process::id()));
-            let _ = std::fs::remove_dir_all(&dir);
+            // In a parent of its own: the bundle goes beside the root.
+            let dir = std::env::temp_dir()
+                .join(format!("claudium-vfs-{name}-{}", std::process::id()))
+                .join("root");
+            let _ = std::fs::remove_dir_all(dir.parent().unwrap());
             std::fs::create_dir_all(&dir).unwrap();
             Scratch(dir)
         }
     }
     impl Drop for Scratch {
         fn drop(&mut self) {
-            let _ = std::fs::remove_dir_all(&self.0);
+            let _ = std::fs::remove_dir_all(self.0.parent().unwrap());
         }
     }
     fn put(root: &Path, rel: &str, bytes: &[u8]) {
@@ -528,7 +553,8 @@ mod tests {
         assert!(!b.partial.contains("assets/minecraft/models"));
         // Mounted: reads come from memory, and match the disk.
         assert_eq!(mount(root).unwrap(), 3);
-        assert!(root.join(FILE).is_file(), "written beside the files");
+        assert!(bundle_path(root).is_file(), "written beside the root");
+        assert!(!root.join(FILE).exists(), "not inside it");
         let stone = root.join("assets/minecraft/models/block/stone.json");
         std::fs::remove_file(&stone).unwrap();
         assert_eq!(
