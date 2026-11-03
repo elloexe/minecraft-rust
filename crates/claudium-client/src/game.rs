@@ -15852,17 +15852,18 @@ fn load_resources(
     // instead of tens of thousands of file opens, which Windows makes slow. Only the prepared
     // root: a resource pack's or a content mod's overlay changes under its own rules (files
     // rewritten in place, rebuilt at any start), which the bundle's checks can't see.
-    for r in [vanilla_root] {
-        let bundle_started = Instant::now();
-        match claudium_core::vfs::mount(r) {
-            Ok(0) => {}
-            Ok(files) => log::info!(
-                "Claudium: {files} resource files from {} in {} ms",
-                claudium_core::vfs::FILE,
-                bundle_started.elapsed().as_millis()
-            ),
-            Err(e) => log::debug!("Claudium: no resource bundle for {}: {e}", r.display()),
-        }
+    let bundle_started = Instant::now();
+    match claudium_core::vfs::mount(vanilla_root) {
+        Ok(0) => {}
+        Ok(files) => log::info!(
+            "Claudium: {files} resource files from {} in {} ms",
+            claudium_core::vfs::FILE,
+            bundle_started.elapsed().as_millis()
+        ),
+        Err(e) => log::debug!(
+            "Claudium: no resource bundle for {}: {e}",
+            vanilla_root.display()
+        ),
     }
     let threads = settings.claudium.worker_threads();
     // Stage A: the menu bundle (atlas and panorama). With a loading screen it is
