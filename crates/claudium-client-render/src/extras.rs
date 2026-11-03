@@ -555,6 +555,38 @@ pub enum Item {
     /// A built-in mod's switch.
     Mod(Mod),
 }
+/// The built-in mods as the Mods page lists them: the real mod ports first, then the
+/// camera and HUD ones.
+pub fn builtin_mod_items() -> Vec<Item> {
+    let mut items = vec![
+        Item::Mod(Mod::ItemViewer),
+        Item::Mod(Mod::BlockInfo),
+        Item::Mod(Mod::FoodInfo),
+        Item::Mod(Mod::VeinMining),
+        Item::Mod(Mod::ChatHeads),
+        Item::Minimap,
+        Item::Zoom,
+        Item::ZoomKey,
+        Item::Fps,
+        Item::Keystrokes,
+    ];
+    items.extend(
+        [
+            Mod::ArmorHud,
+            Mod::Coordinates,
+            Mod::Biome,
+            Mod::LightLevel,
+            Mod::Clock,
+            Mod::Speedometer,
+            Mod::EffectTimers,
+            Mod::DeathCoordinates,
+            Mod::LowDurability,
+        ]
+        .map(Item::Mod),
+    );
+    items.push(Item::InfoCorner);
+    items
+}
 /// The Extras page: headers and items.
 pub fn rows() -> Vec<Result<Item, &'static str>> {
     use Item::*;

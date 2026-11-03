@@ -62,6 +62,9 @@ static MOUNTS: RwLock<Vec<Arc<Bundle>>> = RwLock::new(Vec::new());
 /// stale. Returns how many files the bundle holds, or why it isn't used (the files are then
 /// read one by one).
 pub fn mount(root: &Path) -> Result<usize, String> {
+    if std::env::var_os("CLAUDIUM_NO_BUNDLE").is_some() {
+        return Err("CLAUDIUM_NO_BUNDLE is set".into());
+    }
     if MOUNTS.read().unwrap().iter().any(|b| b.root == root) {
         return Ok(0);
     }

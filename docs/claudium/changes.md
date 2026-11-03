@@ -138,6 +138,16 @@ code comments, and `LICENSE`/`NOTICE.md`, where the copyright notice is required
 - The look has not been seen running. It is checked by `cargo fmt`, clippy and
   the launcher's 296 tests, but GPUI needs a GPU and no CI here opens a window.
 
+## Built-in mods on the Mods page; a switch to turn the bundle off (2026-11-03)
+
+- Options → Claudium Settings → **Mods** lists the built-in mods with on/off buttons
+  (`extras::builtin_mod_items`), under mods installed from files, or alone when there are
+  none. Before, the page said no mods were installed and the switches were only on Extras.
+- `CLAUDIUM_NO_BUNDLE` (any value) makes `vfs::mount` refuse, so the game reads the loose
+  files as before the bundle: a way out while a player reports missing textures on Windows
+  that do not reproduce on Linux (item icons blank, with and without the bundle and the ten
+  starter mods, all drew there).
+
 ## Chat Heads, and ten mods on in our build (2026-11-02)
 
 - **Chat heads** (`Mod::ChatHeads`): a chat line remembers its sender (`<Name> ...`,

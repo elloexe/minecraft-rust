@@ -1322,6 +1322,25 @@ impl OptionsUi {
         let label = format!("{}: {}", item.caption(), item.value(&s.extras));
         button(0.0, 0.0, 150.0, Text::literal(label), Act::Extra(item))
     }
+    /// A switch of `claudium-extras.txt` with the Extras page's look: a key waiting for its
+    /// key in yellow, and greyed while the switch it belongs to is off.
+    fn extra_widget(&self, s: &Settings, item: crate::extras::Item) -> Widget {
+        let value = format!("{}: {}", item.caption(), item.value(&s.extras));
+        let label = if item.key_name().is_some() && self.selected_key == item.key_name() {
+            Text::literal(format!("> {value} <")).with_color(text::YELLOW)
+        } else {
+            Text::literal(value)
+        };
+        let widget = button(0.0, 0.0, 150.0, label, Act::Extra(item));
+        if item
+            .parent()
+            .is_some_and(|parent| parent.switch(&s.extras) == Some(false))
+        {
+            inactive(widget)
+        } else {
+            widget
+        }
+    }
     fn settings_search_active(&self) -> bool {
         self.settings_search.focused
             && matches!(self.page(), Page::Video | Page::Controls | Page::KeyBinds)
@@ -1805,10 +1824,23 @@ impl OptionsUi {
             }
             Page::Font => pairs(&[Opt::ForceUnicode, Opt::JapaneseGlyphs]),
             Page::Mods => {
+                // Mods installed from files first, as before, then Claudium's built-in mods
+                // (the same switches as the Extras page), two to a row.
+                let builtin = crate::extras::builtin_mod_items();
+                let builtin_rows = builtin.chunks(2).map(|c| {
+                    Row::Buttons(
+                        self.extra_widget(s, c[0]),
+                        c.get(1).map(|&b| self.extra_widget(s, b)),
+                    )
+                });
                 if s.mods.installed.is_empty() {
-                    return vec![Row::Header("claudium.mods.empty")];
+                    let mut rows = vec![Row::Header("Built-in mods")];
+                    rows.extend(builtin_rows);
+                    rows.push(Row::Header("claudium.mods.empty"));
+                    return rows;
                 }
-                s.mods
+                let mut rows: Vec<Row> = s
+                    .mods
                     .installed
                     .iter()
                     .enumerate()
@@ -1841,7 +1873,10 @@ impl OptionsUi {
                             Row::Buttons(if dead { inactive(widget) } else { widget }, None)
                         }
                     })
-                    .collect()
+                    .collect();
+                rows.push(Row::Header("Built-in mods"));
+                rows.extend(builtin_rows);
+                rows
             }
             Page::NativeMod(i) => self.native_rows(s, i),
             Page::ShaderPacks => {
